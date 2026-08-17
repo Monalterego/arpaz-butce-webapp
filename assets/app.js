@@ -83,7 +83,7 @@
   function updateSelInfo() {
     const path = [state.sel.uh1, state.sel.uh2, state.sel.uh3].filter(Boolean).join(" › ");
     const n = DataService.loadMix().length;
-    $("selInfo").textContent = `Seçim: ${path}  •  Seviye: ${state.level.toUpperCase()}  •  ${n} satır  (metrikler prototip/deterministik).`;
+    $("selInfo").textContent = `Seçim: ${path}  •  Seviye: ${state.level.toUpperCase()}  •  ${n} satır.`;
   }
 
   // --- Parametreleri oku ---
@@ -162,6 +162,12 @@
   // --- Tabloyu bir kez kur (input'lar korunsun diye) ---
   function buildTable() {
     const data = DataService.loadMix();
+    if (!data.length) {
+      $("rows").innerHTML = `<tr><td colspan="17" style="text-align:center;color:var(--grey);padding:18px">Bu seçim için veri bulunamadı.</td></tr>`;
+      state.covers = [];
+      state.childCovers = {};
+      return;
+    }
     // main covers = ÜH3 veya ÜH4 satırlarına göre set edilir
     if (!state.covers)
       state.covers = data.map((d) => Math.max(1, Math.round(d[1] / (d[2] || 1)))); // default = LY cover
@@ -337,16 +343,19 @@
     }
 
     // footer, kpis ve forecast
+    const footCover = m.T.sales ? m.T.stock / m.T.sales : 0;
+    const footTurnover = m.T.stock ? m.T.sales / m.T.stock : 0;
+    const footStockGrowth = m.T.stock ? m.T.planStock / m.T.stock - 1 : 0;
     $("tfoot").innerHTML = `
       <td>TOPLAM</td>
-      <td>${fmtN(m.T.stock)}</td><td>100%</td>
-      <td>${fmtN(m.T.sales)}</td><td>100%</td>
-      <td class="num-cell">${fmtN(m.T.profit)}</td><td>100%</td>
-      <td>${fmtD(m.T.stock / m.T.sales)}</td><td>${fmtD2(m.T.sales / m.T.stock)}</td>
-      <td>100%</td><td>${fmtN(m.T.planStock)}</td>
+      <td>${fmtN(m.T.stock)}</td><td>${m.rows.length ? "100%" : "—"}</td>
+      <td>${fmtN(m.T.sales)}</td><td>${m.rows.length ? "100%" : "—"}</td>
+      <td class="num-cell">${fmtN(m.T.profit)}</td><td>${m.rows.length ? "100%" : "—"}</td>
+      <td>${fmtD(footCover)}</td><td>${fmtD2(footTurnover)}</td>
+      <td>${m.rows.length ? "100%" : "—"}</td><td>${fmtN(m.T.planStock)}</td>
       <td>—</td><td>${fmtN(m.T.salesBudget)}</td>
-      <td class="${m.T.lfl >= 0 ? "up" : "down"}">${fmtP0(m.T.lfl)}</td>
-      <td class="${m.T.planStock / m.T.stock - 1 >= 0 ? "up" : "down"}">${fmtP0(m.T.planStock / m.T.stock - 1)}</td>
+      <td class="${m.rows.length ? (m.T.lfl >= 0 ? "up" : "down") : ""}">${m.rows.length ? fmtP0(m.T.lfl) : "—"}</td>
+      <td class="${m.rows.length ? (footStockGrowth >= 0 ? "up" : "down") : ""}">${m.rows.length ? fmtP0(footStockGrowth) : "—"}</td>
       <td></td><td></td>`;
 
     renderKpis(m);
@@ -368,8 +377,8 @@
       ["Toplam Satış (LY)", fmtN(m.T.sales), "adet", ""],
       ["Toplam Kâr (LY)", fmtN(m.T.profit), "₺", ""],
       ["Bayi Stok Ay (Cover)", fmtD(m.T.cover), "ay", ""],
-      ["Toplam Satış Bütçe (TY)", fmtN(m.T.salesBudget), "adet", m.T.lfl >= 0 ? "up" : "down"],
-      ["LFL Büyüme", fmtP0(m.T.lfl), "", m.T.lfl >= 0 ? "up" : "down"],
+      ["Toplam Satış Bütçe (TY)", fmtN(m.T.salesBudget), "adet", m.rows.length ? (m.T.lfl >= 0 ? "up" : "down") : ""],
+      ["LFL Büyüme", m.rows.length ? fmtP0(m.T.lfl) : "—", "", m.rows.length ? (m.T.lfl >= 0 ? "up" : "down") : ""],
     ];
     $("kpis").innerHTML = kpis.map((k) => {
       const sc = k[3] === "up" || k[3] === "down" ? k[3] : "";
@@ -422,7 +431,8 @@
   function renderForecast(model) {
     const m = model || computeModel(readParams(), state.covers);
     const method = $("fcMethod").value;
-    const avgCover = state.covers.reduce((a, b) => a + b, 0) / state.covers.length;
+    const covSum = state.covers.reduce((a, b) => a + b, 0);
+    const avgCover = (state.covers.length && covSum) ? covSum / state.covers.length : 0;
     const months = DataService.months();
     const seasonal = DataService.seasonal();
     let idx;
