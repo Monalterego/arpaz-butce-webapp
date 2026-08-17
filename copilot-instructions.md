@@ -25,7 +25,7 @@ assets/styles.css     → stiller
 - Kaynak liste ÜH1 › ÜH2 › ÜH3 › ÜH4 dört seviyelidir.
 - **(İPTAL) / (İptal) içeren tüm satırlar elenir** — asla eklenmez.
 - Büyük/küçük harf kaynaklı tekrarlar **tek kayıtta birleştirilir** (ör. "OCAK" = "Ocak").
-- Ekran ÜH4'ten çalışır; "Çalışma Seviyesi" ile ÜH4 / ÜH3 / ÜH2 kırılımı seçilebilir.
+- Ekran her zaman ÜH4'ten çalışır; "Çalışma Seviyesi" seçeneği kaldırıldı ve arayüz her zaman ÜH4 kırılımı ile çalışır.
 - Güncel sayılar: 10 ÜH1 · 34 ÜH2 · 128 ÜH3 · 346 ÜH4.
 
 ## Bütçe Kurgusu (ÇEKİRDEK MANTIK — değiştirme, sadece geliştir)

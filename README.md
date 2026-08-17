@@ -33,7 +33,7 @@ arpaz-butce-webapp/
 ## Ürün Hiyerarşisi
 `hierarchy.js` gerçek ağacı içerir: **10 ÜH1 · 34 ÜH2 · 128 ÜH3 · 346 ÜH4** (tüm (İPTAL) satırları
 elenmiş, büyük/küçük harf tekrarları birleştirilmiş). Sidebar kaskad çalışır: ÜH1 → ÜH2 → ÜH3 seçilir,
-"Çalışma Seviyesi" ile tablo ÜH4 / ÜH3 / ÜH2 kırılımında üretilir.
+tablo her zaman ÜH4 kırılımı ile üretilir ("Çalışma Seviyesi" kaldırıldı).
 Metrikler şu an **deterministik prototip** (grup adından türetilen sabit sayılar); gerçek veri gelince
 `DataService.loadMixFor()` fetch ile değişir.
 

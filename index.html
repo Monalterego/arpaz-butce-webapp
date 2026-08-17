@@ -23,16 +23,10 @@
     <h3>Ürün Hiyerarşisi</h3>
     <label>ÜH1</label>
     <select id="h_uh1"></select>
-    <label>ÜH2 (Klasman)</label>
+    <label>ÜH2</label>
     <select id="h_uh2"></select>
     <label>ÜH3</label>
     <select id="h_uh3"></select>
-    <label>Çalışma Seviyesi</label>
-    <select id="h_level">
-      <option value="uh4">ÜH4</option>
-      <option value="uh3">ÜH3</option>
-      <option value="uh2">ÜH2 (klasman)</option>
-    </select>
 
     <h3>Teşkilat</h3>
     <label>Satış Teşkilatı</label>
@@ -126,13 +120,14 @@
           <thead>
             <tr>
               <th rowspan="2" id="grpColHead">Grup (ÜH4)</th>
-              <th colspan="7" class="grp-real">GERÇEKLEŞEN (LY)</th>
+              <th colspan="8" class="grp-real">GERÇEKLEŞEN (LY)</th>
               <th colspan="6" class="grp-plan">GELECEK YIL PLANI (TY)</th>
               <th rowspan="2">Aksiyon</th>
             </tr>
             <tr>
               <th>Stok Adet</th><th>Stok %</th>
               <th>Satış Adet</th><th>Satış %</th>
+              <th>Brüt Kâr (₺)</th>
               <th>Kâr %</th>
               <th>Cover</th><th>Turnover</th>
               <th>Plan Stok %</th><th>Plan Stok Adet</th>
@@ -200,6 +195,7 @@
 </div>
 
 <script src="assets/hierarchy.js"></script>
+<script src="assets/realdata.js"></script>
 <script src="assets/data.js"></script>
 <script src="assets/app.js"></script>
 </body>

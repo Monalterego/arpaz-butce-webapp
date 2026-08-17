@@ -44,7 +44,6 @@
     $("h_uh3").addEventListener("change", () => {
       state.sel.uh3 = $("h_uh3").value; rebuild();
     });
-    $("h_level").addEventListener("change", () => { state.level = $("h_level").value; rebuild(); });
   }
   function refreshUh2() {
     const uh2s = Object.keys(HIERARCHY[state.sel.uh1] || {});
@@ -165,6 +164,7 @@
           <td>${d[0]}</td>
           <td class="num-cell" id="st_${i}"></td><td class="pct" id="stp_${i}"></td>
           <td class="num-cell" id="sa_${i}"></td><td class="pct" id="sap_${i}"></td>
+          <td class="num-cell" id="bk_${i}"></td>
           <td id="ktp_${i}"></td>
           <td id="cov_${i}"></td><td id="tov_${i}"></td>
           <td class="pct" id="psp_${i}"></td><td class="num-cell" id="psa_${i}"></td>
@@ -193,13 +193,14 @@
         <td><span class="expander" data-i="${i}">▶</span>${d[0]}</td>
         <td class="num-cell" id="st_${i}"></td><td class="pct" id="stp_${i}"></td>
         <td class="num-cell" id="sa_${i}"></td><td class="pct" id="sap_${i}"></td>
-        <td id="ktp_${i}"></td>
-        <td id="cov_${i}"></td><td id="tov_${i}"></td>
-        <td class="pct" id="psp_${i}"></td><td class="num-cell" id="psa_${i}"></td>
-        <td class="covcell"><input type="number" class="covin" id="hcov_${i}" min="1" step="0.5" value="${state.covers[i]}"></td>
-        <td class="num-cell" id="sb_${i}"></td>
-        <td id="lfl_${i}"></td><td id="sg_${i}"></td>
-        <td id="act_${i}"></td>`;
+      <td class="num-cell" id="bk_${i}"></td>
+      <td id="ktp_${i}"></td>
+      <td id="cov_${i}"></td><td id="tov_${i}"></td>
+      <td class="pct" id="psp_${i}"></td><td class="num-cell" id="psa_${i}"></td>
+      <td class="covcell"><input type="number" class="covin" id="hcov_${i}" min="1" step="0.5" value="${state.covers[i]}"></td>
+      <td class="num-cell" id="sb_${i}"></td>
+      <td id="lfl_${i}"></td><td id="sg_${i}"></td>
+      <td id="act_${i}"></td>`;
       tb.appendChild(tr);
 
       // ÜH4 alt satırlar (gizli başlat)
@@ -216,6 +217,7 @@
           <td style="padding-left:18px">${c[0]}</td>
           <td class="num-cell" id="st_${i}_c${j}"></td><td class="pct" id="stp_${i}_c${j}"></td>
           <td class="num-cell" id="sa_${i}_c${j}"></td><td class="pct" id="sap_${i}_c${j}"></td>
+          <td class="num-cell" id="bk_${i}_c${j}"></td>
           <td id="ktp_${i}_c${j}"></td>
           <td id="cov_${i}_c${j}"></td><td id="tov_${i}_c${j}"></td>
           <td class="pct" id="psp_${i}_c${j}"></td><td class="num-cell" id="psa_${i}_c${j}"></td>
@@ -271,18 +273,19 @@
       $("stp_" + i).textContent = fmtP(r.stockShare);
       $("sa_" + i).textContent = fmtN(r.sales);
       $("sap_" + i).textContent = fmtP(r.salesShare);
-      $("ktp_" + i).innerHTML = `<span class="heat" style="background:${heat(r.profitShare, 0, 0.3)}">${fmtP(r.profitShare)}</span>`;
-      $("cov_" + i).textContent = fmtD(r.lyCover);
-      $("tov_" + i).textContent = fmtD2(r.turnover);
-      $("psp_" + i).textContent = fmtP(r.planPct);
-      $("psa_" + i).textContent = fmtN(r.planStock);
-      $("sb_" + i).textContent = fmtN(r.salesBudget);
-      const lflEl = $("lfl_" + i); lflEl.textContent = fmtP0(r.lfl); lflEl.className = r.lfl >= 0 ? "up" : "down";
-      const sgEl = $("sg_" + i); sgEl.textContent = fmtP0(r.stockGrowth); sgEl.className = r.stockGrowth >= 0 ? "up" : "down";
-      $("act_" + i).innerHTML = `<span class="badge ${r.cls}">${r.tg}</span>`;
-      // ensure Hedef Cover input value shown
-      const covEl = $("hcov_" + i);
-      if (covEl && document.activeElement !== covEl) covEl.value = r.hedefCover;
+    $("bk_" + i).textContent = fmtN(r.profit);
+    $("ktp_" + i).innerHTML = `<span class="heat" style="background:${heat(r.profitShare, 0, 0.3)}">${fmtP(r.profitShare)}</span>`;
+    $("cov_" + i).textContent = fmtD(r.lyCover);
+    $("tov_" + i).textContent = fmtD2(r.turnover);
+    $("psp_" + i).textContent = fmtP(r.planPct);
+    $("psa_" + i).textContent = fmtN(r.planStock);
+    $("sb_" + i).textContent = fmtN(r.salesBudget);
+    const lflEl = $("lfl_" + i); lflEl.textContent = fmtP0(r.lfl); lflEl.className = r.lfl >= 0 ? "up" : "down";
+    const sgEl = $("sg_" + i); sgEl.textContent = fmtP0(r.stockGrowth); sgEl.className = r.stockGrowth >= 0 ? "up" : "down";
+    $("act_" + i).innerHTML = `<span class="badge ${r.cls}">${r.tg}</span>`;
+    // ensure Hedef Cover input value shown
+    const covEl = $("hcov_" + i);
+    if (covEl && document.activeElement !== covEl) covEl.value = r.hedefCover;
     });
 
     // Eğer ÜH3 görünümündeyse, her ÜH3 için altındaki ÜH4'leri hesaplayıp doldur
@@ -299,6 +302,7 @@
           const set = (id, v) => { const el = document.getElementById(id); if (el) el.textContent = v; };
           set('st_' + prefix, fmtN(r.stock)); set('stp_' + prefix, fmtP(r.stockShare));
           set('sa_' + prefix, fmtN(r.sales)); set('sap_' + prefix, fmtP(r.salesShare));
+          set('bk_' + prefix, fmtN(r.profit));
           set('ktp_' + prefix, `<span class="heat" style="background:${heat(r.profitShare, 0, 0.3)}">${fmtP(r.profitShare)}</span>`);
           set('cov_' + prefix, fmtD(r.lyCover)); set('tov_' + prefix, fmtD2(r.turnover));
           set('psp_' + prefix, fmtP(r.planPct)); set('psa_' + prefix, fmtN(r.planStock));
@@ -318,7 +322,7 @@
       <td>TOPLAM</td>
       <td>${fmtN(m.T.stock)}</td><td>100%</td>
       <td>${fmtN(m.T.sales)}</td><td>100%</td>
-      <td>100%</td>
+      <td class="num-cell">${fmtN(m.T.profit)}</td><td>100%</td>
       <td>${fmtD(m.T.stock / m.T.sales)}</td><td>${fmtD2(m.T.sales / m.T.stock)}</td>
       <td>100%</td><td>${fmtN(m.T.planStock)}</td>
       <td>—</td><td>${fmtN(m.T.salesBudget)}</td>
@@ -328,31 +332,8 @@
 
     renderKpis(m);
     renderForecast(m);
-  }" style="background:${heat(r.profitShare, 0, 0.3)}">${fmtP(r.profitShare)}</span>`;      $("cov_" + i).textContent = fmtD(r.lyCover);
-      $("tov_" + i).textContent = fmtD2(r.turnover);
-      $("psp_" + i).textContent = fmtP(r.planPct);
-      $("psa_" + i).textContent = fmtN(r.planStock);
-      $("sb_" + i).textContent = fmtN(r.salesBudget);
-      const lflEl = $("lfl_" + i); lflEl.textContent = fmtP0(r.lfl); lflEl.className = r.lfl >= 0 ? "up" : "down";
-      const sgEl = $("sg_" + i); sgEl.textContent = fmtP0(r.stockGrowth); sgEl.className = r.stockGrowth >= 0 ? "up" : "down";
-      $("act_" + i).innerHTML = `<span class="badge ${r.cls}">${r.tg}</span>`;
-    });
 
-    $("tfoot").innerHTML = `
-      <td>TOPLAM</td>
-      <td>${fmtN(m.T.stock)}</td><td>100%</td>
-      <td>${fmtN(m.T.sales)}</td><td>100%</td>
-      <td>100%</td>
-      <td>${fmtD(m.T.stock / m.T.sales)}</td><td>${fmtD2(m.T.sales / m.T.stock)}</td>
-      <td>100%</td><td>${fmtN(m.T.planStock)}</td>
-      <td>—</td><td>${fmtN(m.T.salesBudget)}</td>
-      <td class="${m.T.lfl >= 0 ? "up" : "down"}">${fmtP0(m.T.lfl)}</td>
-      <td class="${m.T.planStock / m.T.stock - 1 >= 0 ? "up" : "down"}">${fmtP0(m.T.planStock / m.T.stock - 1)}</td>
-      <td></td>`;
-
-    renderKpis(m);
-    renderForecast(m);
-  }
+}
 
   function heat(v, lo, hi) {
     const t = Math.max(0, Math.min(1, (v - lo) / (hi - lo)));
