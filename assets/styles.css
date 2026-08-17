@@ -82,3 +82,11 @@ tfoot td{background:#eef3f8;font-weight:700;border-top:2px solid var(--navy)}
 #grid th:first-child{position:sticky;left:0;z-index:3}
 #grid td:first-child{position:sticky;left:0;background:#fff;z-index:1}
 #grid tbody tr:hover td:first-child{background:#f0f7fb}
+
+/* Expander (▶/▼) for UH3 rows */
+.expander{cursor:pointer;display:inline-block;width:18px;text-align:center;margin-right:6px;color:var(--grey);font-weight:700}
+
+/* Child rows (ÜH4 under ÜH3) - subtle grey tone and slight indent */
+.child-row td:first-child{padding-left:18px;background:#fbfcfd;color:var(--grey)}
+.child-row{background:linear-gradient(180deg,#fbfcfd,#f7f8fa)}
+.child-row td{font-size:12px}

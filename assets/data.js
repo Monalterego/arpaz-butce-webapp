@@ -102,7 +102,7 @@ const DataService = {
       });
       return out;
     }
-    // uh4: seçili ÜH2 (ve varsa ÜH3) altındaki buyer grupları
+    // uh4: seçili ÜH2 (ve varsa ÜH3) altındaki ÜH4 grupları
     const uh2node=(H[sel.uh1]||{})[sel.uh2]||{};
     const uh3keys = sel.uh3 ? [sel.uh3] : Object.keys(uh2node);
     const out=[];
