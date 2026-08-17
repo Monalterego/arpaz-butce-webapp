@@ -12,7 +12,9 @@ Arçelik Pazarlama A.Ş. / **Arpaz** tedarik zinciri veri analitiğine uyarlanm�
 **web uygulaması** (saf HTML + CSS + Vanilla JS, framework yok). Kullanıcı; teşkilat
 (org/bölge) ve ürün hiyerarşisi (ÜH1→ÜH4) seçer, geçmiş (LY) stok/satış/kâr paylarına
 bakarak gelecek yıl (TY) için **plan stok payını, satış bütçesini ve hedef cover'ı**
-belirler. Şu an **prototip veri** ile çalışır; IT tam veri verene kadar bu böyle kalacak.
+belirler. Şu an **gerçek demo veri** ile çalışır (Demo Gerçek Veri.xlsx'ten türetilmiş,
+org×bölge×ÜH4 aylık ortalama); IT tam (API) veri verene kadar bu böyle kalacak. Sentetik
+olan tek alan **brüt kâr** (marj bandından hesaplanıyor) — stok/satış/tutar gerçek.
 
 **Rol:** Ben (kullanıcı) veri/analitik uzmanıyım (Power BI, Power Apps, Qlik, Excel,
 DAX/M). Yazılım geliştirici değilim; bu yüzden **açık, adım adım, kopyala-yapıştır kod**
@@ -64,12 +66,13 @@ Git kullanılıyor; her anlamlı değişiklikten sonra commit al.
 - `ORGS = ["Arçelik","Beko"]`
 - `REGIONS = ["ADANA","ANKARA","MARMARA BATI KARADENİZ","İSTANBUL TRAKYA","İZMİR"]`
 - `REAL_DATA = [{ org, region, uh1, uh2, uh3, uh4, stok_adet, satis_adet,
-   stok_tutar, satis_tutar, marj, indirim, brut_kar }, ...]`  (~3.060 satır)
+   stok_tutar, satis_tutar, marj, indirim, brut_kar }, ...]`  (**2.866 satır**)
 
 Kaynak: **Demo Gerçek Veri.xlsx** (2025-07 … 2026-07, 13 ay). Değerler **aylık ortalamadır**.
-Temizlik: (İPTAL/İptal) satırları elendi; büyük/küçük harf ve TR/EN tekrarları birleştirildi
-(ENERGY SOLUTIONS→ENERJİ ÇÖZÜMLERİ, NON-GROUPED→GRUPSUZ; İST.TRK.=İSTANBUL TRAKYA;
-MR-B.K.DENİZ=MARMARA BATI KARADENİZ). Ölü gruplar (satış<0.5 & stok<1) atıldı.
+Temizlik TAMAMLANDI: (İPTAL/İptal) satırları elendi (194 kayıt silindi, 3.060→2.866);
+büyük/küçük harf ve TR/EN tekrarları birleştirildi (ENERGY SOLUTIONS→ENERJİ ÇÖZÜMLERİ,
+NON-GROUPED→GRUPSUZ; İST.TRK.=İSTANBUL TRAKYA; MR-B.K.DENİZ=MARMARA BATI KARADENİZ).
+Ölü gruplar (satış<0.5 & stok<1) atıldı. `grep -c "PTAL" assets/realdata.js` → 0.
 
 **Brüt kâr SENTETİKtir** (IT gerçek perakende brüt kârı verene kadar):
 `brut_kar = satis_tutar × marj%`. Marj = ÜH2 baz bandı + ÜH4 deterministik ±4 puan sapma.
@@ -94,8 +97,15 @@ Küçük ev aletleri/kişisel bakım %30-45 · Aksesuar/yedek parça ~%48.
 ## 4) Ürün Hiyerarşisi (HIERARCHY)
 - Dört seviye: **ÜH1 › ÜH2 › ÜH3 › ÜH4**. Ekran ÜH4'ten çalışır (buyer grup DEĞİL — Arpaz'da
   "buyer grup" kavramı yoktur, sadece "ÜH4" de).
-- Yaklaşık boyut: 7-8 ÜH1 · ~33 ÜH2 · ~132 ÜH3 · ~375 ÜH4 (gerçek demo veriden türetildi).
+- Güncel boyut: **7 ÜH1 · 31 ÜH2 · 120 ÜH3 · 328 ÜH4** (gerçek demo veriden türetildi).
+  ÜH1 listesi: BEYAZ EŞYA, DİĞER, ENERJİ ÇÖZÜMLERİ, EV KONFORU, KEA, NON-PRODUCT,
+  TÜKETİCİ ELEKTRONİĞİ.
 - **(İPTAL) satırları ASLA eklenmez.** Büyük/küçük harf tekrarları tek kayıtta birleşir.
+- **HIERARCHY elle tutulmuyor** — temizlenmiş REAL_DATA'dan script ile üretiliyor (bkz.
+  Bölüm 10). Bu yüzden her yaprağın veride karşılığı GARANTİ (0 eşleşmeyen düğüm); veri
+  değişirse hiyerarşi de yeniden üretilmeli. Veride hiç karşılığı olmayan **GRUPSUZ** dalı
+  (eski hiyerarşide GRUPSUZ›GRUPSUZ›GRUPSUZ vardı, seçilince tablo boş kalıyordu) bu
+  yüzden düştü.
 - Sidebar kaskad: ÜH1 seç → ÜH2 dolar → ÜH3 dolar ("Tümü (ÜH3)" seçeneği var).
 - "Çalışma Seviyesi" seçici KALDIRILDI; `state.level` sabit `"uh4"`. (Not: app.js'te ÜH3
   drill-down için `level==='uh3'` dalları hâlâ var; ÜH3 görünümünde ana satır + gizli ÜH4
@@ -121,7 +131,31 @@ Stok Büyüme  = Plan Stok / LY Stok − 1
 - Çarpanlar çarpımsal: `Π(1 + çarpan%)`. Çarpanlar: Paro, Bundle, Özel gün, Gam, Kota.
   Pazarlama Büyümesi de çarpımsaldır (×1,05 gibi).
 - **Doğrulama (Excel ile birebir tutmalı):** LFL, R-LFL, Stok Büyümesi formülleri kullanıcının
-  Excel'iyle test edildi ve tuttu (örn. bir satırda LFL %12, R-LFL %19, Stok Büyümesi −6).
+  Excel'iyle test edildi ve tuttu (örn. bir satırda LFL %12, R-LFL %19, Stok Büyümesi −6;
+  gerçek veride Hedef Cover elle ayarlanarak yeniden üretildi — bkz. Bölüm 10 doğrulama notu).
+
+### 5.1) R-LFL ne anlama gelir?
+- **R-LFL = stoktan arındırılmış büyüme.** LFL "büyüdüm mü" sorusunu cevaplar; R-LFL
+  "stoğu şişirmeden mi büyüdüm" sorusunu cevaplar.
+- Üç metrik çarpımsal olarak kapanır — bu bir **cebirsel kimliktir, her satırda her zaman
+  tutar** (kodda doğrulandı):
+  ```
+  (1 + LFL) = (1 + R-LFL) × (1 + Stok Büyümesi)
+  ```
+  İyi bir kanarya: formüllerden birine dokunulup diğeri unutulursa bu kimlik bozulur.
+- Formül sadeleştiğinde **Plan Stok tamamen düşer**:
+  ```
+  1 + R-LFL = ÇarpanFaktörü × (LY Cover / Hedef Cover)
+  ```
+  Yani R-LFL; Hedef Stok Büyümesi %'inden, 40/30/20 ağırlıklarından ve Plan Stok payından
+  **ETKİLENMEZ**. Sadece elle girilen Hedef Cover'ın LY Cover'a oranına ve çarpanlara
+  (Pazarlama Büyümesi × kampanyalar) bağlıdır.
+- Pratik anlamı: pay dağıtımı mekaniktir (formül yapar), cover ise insan kararıdır. R-LFL,
+  bütçe sahibinin uzman yargısını izole eden tek metriktir — "cover'ı 10'dan 8'e çektim"
+  demek "aynı stoktan %25 daha hızlı satacağımı varsayıyorum" demektir.
+- **Uyarı:** Yüksek LFL + negatif R-LFL = büyüme tamamen stok yatırımından geliyor,
+  verimlilik geriliyor demektir. Arpaz'da bayiler arası iade/transfer olmadığı için bu
+  doğrudan bayi stok riskidir; tek başına LFL'e bakan bu tuzağı göremez.
 
 ---
 
@@ -159,10 +193,14 @@ Sol menü sırası: **TEŞKİLAT → ÜRÜN HİYERARŞİSİ → PERİYOT**.
 - Sekmeler: **Bütçe & Stok Miks** (ana) · Kampanya/Özel Gün Takvimi (2021+) ·
   Perakende/Toptan Rasyo · Tahmin (Forecast: LFL / Mevsimsel / 3-Aylık Hareketli Ort.).
 - Ana tablo blokları: **GERÇEKLEŞEN (LY)** [Stok Adet, Stok%, Satış Adet, Satış%,
-  Brüt Kâr (₺), Kâr%, Cover, Turnover] ve **GELECEK YIL PLANI (TY)** [Plan Stok %,
-  Plan Stok Adet, Hedef Cover(elle), Satış Bütçe, LFL%, Stok Büy.%] + Durum + Aksiyon.
-- KPI kartları: Toplam Stok, Toplam Satış (LY), Toplam Kâr (LY ₺), Bayi Stok Ay (Cover),
-  Toplam Satış Bütçe (TY), LFL Büyüme.
+  Brüt Kâr (₺), Kâr%, Cover, Turnover — 8 kolon] ve **GELECEK YIL PLANI (TY)** [Plan Stok %,
+  Plan Stok Adet, Hedef Cover(elle), Satış Bütçe, LFL%, **R-LFL%**, Stok Büy.% — 7 kolon]
+  + Durum + Aksiyon. Toplam: Grup(1) + LY(8) + TY(7) + Durum(1) + Aksiyon(1) = **18 kolon**.
+- KPI kartları (üst şerit, `#kpis`, 6 kart): Toplam Stok, Toplam Satış (LY), Toplam Kâr
+  (LY ₺), Bayi Stok Ay (Cover), Toplam Satış Bütçe (TY), LFL Büyüme.
+- Durum Dağılımı şeridi (`#durumKpis`, ayrı grid, 4 kart): actionTag'in 2×2 matrisindeki
+  dört durumun (Hızlı&Kârlı/Kârsız, Yavaş&Kârlı/Kârsız) grup sayısı ve toplam içindeki payı
+  — rozet renkleri `.badge b-green/b-amber/b-blue/b-red` ile aynı.
 - Senaryo Yönetimi: parametre + hedef cover setini kaydet/karşılaştır; en iyi LFL yeşil.
 
 ---
@@ -174,6 +212,8 @@ Sol menü sırası: **TEŞKİLAT → ÜRÜN HİYERARŞİSİ → PERİYOT**.
 - `buildTable()` — DOM'u bir kez kurar (input focus korunur). uh4/uh2 düz; uh3 drill-down.
 - `updateAll()` — hücreleri yeniden hesaplayıp yazar; tfoot TOPLAM; KPI; forecast.
 - `actionTag(...)` — 2×2 matris (bkz. Bölüm 6).
+- `renderDurumKpis(m)` — actionTag'in ürettiği 4 duruma göre grup sayısını ve payını
+  `#durumKpis` şeridine yazar (kategori adları actionTag'ten türetilir, hardcode değil).
 - `renderKpis / renderScenarios / renderCalendar / renderRatio / renderForecast`.
 - Biçimleyiciler: `fmtN` (tr-TR tam sayı), `fmtP`/`fmtP0` (yüzde), `fmtX` (çarpan),
   `fmtD`/`fmtD2` (ondalık). Türkçe locale ZORUNLU.
@@ -189,34 +229,54 @@ Sol menü sırası: **TEŞKİLAT → ÜRÜN HİYERARŞİSİ → PERİYOT**.
   paren. Değişiklik sonrası konsol temiz olmalı.)
 - **Bütçe formüllerinin özünü değiştirme; HedefCover elle-girişini ezme.**
 - **hierarchy.js'e (İPTAL) grup ekleme.** "buyer grup" deme; "ÜH4" de.
+- **Ana tabloya (`#grid`) kolon eklerken/çıkarırken ÜÇ yeri BİRLİKTE güncelle:**
+  1) `index.html` thead (grup `colspan` + 2. satır `<th>`), 2) `app.js` `tfoot` (`<td>`
+  sayısı), 3) `app.js` boş-veri satırının `colspan`'ı. Güncel toplam kolon sayısı: **18**
+  (Grup 1 + GERÇEKLEŞEN 8 + GELECEK YIL PLANI 7 + Durum 1 + Aksiyon 1).
 - **Cerrahi düzenleme yap** (mümkünse tüm dosyayı değil ilgili bloğu değiştir).
 - Küçük, sık commit al. Geri dönülebilir olsun.
 
 ---
 
 ## 10) Mevcut Durum (Bilinen Noktalar)
-- ÇALIŞIYOR: kaskad hiyerarşi, gerçek veri, KPI, bütçe hesabı, Hedef Cover elle giriş,
-  Brüt Kâr (₺) kolonu, senaryo/takvim/rasyo/forecast sekmeleri, org/bölge filtreleme
-  (data.js + yeni realdata.js ile).
-- SON ADIM/DİKKAT: Teşkilat dropdown'ları `ORGS/REGIONS`'tan beslenir. Boş görünüyorsa
+- TAMAMLANANLAR:
+  - Durum + Aksiyon iki ayrı kolon (2×2 matris, Arpaz aksiyonları — bkz. Bölüm 6).
+  - Teşkilat (org/bölge) filtresi uçtan uca çalışıyor; marj/indirim ciro-ağırlıklı
+    (satış tutarına göre) toplanıyor, düz ortalama değil.
+  - (İPTAL) temizliği TAMAMLANDI ve hiyerarşi artık veriden yeniden üretiliyor (bkz.
+    Bölüm 3-4).
+  - Boş seçim koruması: org/bölge/ÜH filtresi 0 satır dönerse tabloda "Bu seçim için
+    veri bulunamadı." bilgi satırı çıkar; tfoot/KPI'lar NaN/Infinity yerine 0 veya "—"
+    gösterir.
+  - R-LFL kolonu ve Durum Dağılımı KPI şeridi (bkz. Bölüm 5.1 ve 7).
+- DİKKAT NOTU — Hedef Cover tavanı tartışıldı, TAVAN UYGULANMAYACAK: Varsayılan (org/bölge
+  Tümü) görünümde 328 ÜH4 yaprağının LY cover'ı ölçüldü — medyan ≈11,4 ay, ~153'ü 12 ayın
+  üzerinde, en uçta satışı sıfıra yakın kalemlerde 3.687 aya kadar çıkıyor. Yine de tavan
+  KONULMAYACAK: `Satış Bütçe = Plan Stok ÷ Hedef Cover` olduğu için cover'ı düşürmek
+  bütçeyi BÜYÜTÜR — ölü stoğa yapay yüksek satış hedefi yazmak olur. Bunun yerine ileride
+  bir "ölü stok" rozeti/eşiği düşünülüyor; eşik değeri (ör. 24 ay mı 36 ay mı) kullanıcı
+  kararı, henüz verilmedi (bkz. Bölüm 11).
+- GELİŞTİRME ORTAMI NOTU: Bu makinede Node.js ve Python KURULU DEĞİL. `node --check`
+  çalıştırılamıyor; sözdizimi/mantık doğrulaması headless Edge (`msedge --headless=new
+  --dump-dom`) ile uygulamayı gerçekten çalıştırıp konsol/DOM kontrolüyle yapılıyor.
+  Yeni bir oturumda önce `node`/`python` PATH'te var mı kontrol et, yoksa aynı yönteme dön.
+- TROUBLESHOOTING: Teşkilat dropdown'ları `ORGS/REGIONS`'tan beslenir. Boş görünüyorsa
   neredeyse her zaman sebep: **eski realdata.js** yüklü (ORGS/REGIONS yok). Konsolda `ORGS`
   yazıp kontrol et; `ReferenceError` gelirse yeni realdata.js konmamış demektir.
-- AÇIK İŞ (yarım kalan): **Durum + Aksiyon iki kolon** ayrımı (Bölüm 6) ekrana tam
-  oturtulmalı; `actionTag` 2×2 matrise göre iki değer döndürmeli; index.html başlığında
-  "Aksiyon" yerine "Durum" + "Aksiyon" olmalı; tfoot kolon sayısı eşlenmeli.
-- OLASI İYİLEŞTİRME: default Hedef Cover'a makul tavan (ör. ≤12 ay) — niş ÜH4'lerde
-  satış çok düşük olunca cover 140 gibi uçuk çıkıyor (gerçekçi ama sunumda dikkat çekiyor).
 
 ---
 
 ## 11) Sıradaki Adımlar (Öncelik Sırası)
-1. **Durum + Aksiyon iki kolonunu** tamamla (2×2 matris, Arpaz aksiyonları).
-2. Teşkilat filtresini uçtan uca doğrula (org/bölge seçince tüm tablo + KPI değişsin).
-3. Default Hedef Cover tavanı / uyarı (opsiyonel).
-4. 4 duruma göre **özet KPI** ("kaç grup kırmızı/aksiyon adayı").
-5. Kampanya/Özel gün takvimini (2021+) ve kampanya geçmişini metadata olarak modele bağla.
-6. Forecast yöntemini bütçe adedine tam entegre et (aylara dağıtım + cover ile plan stok).
-7. IT tam veri verince `DataService`'i API'ye çevir (şema aynı).
+1. **Ölü stok eşiği + rozeti.** Eşik değeri (ör. 24 ay mı 36 ay mı) **KULLANICI KARARI
+   bekliyor**, henüz verilmedi — uydurup uygulama.
+2. **Senaryo kaydı Hedef Cover setini tutmuyor.** `currentScenario()` sadece parametreleri
+   ve toplamları saklıyor, `state.covers` saklanmıyor; senaryo kaydedilirken elle girilen
+   cover seti dahil edilmiyor (geri yükleme özelliği de şu an yok, sadece kayıt/kıyas var).
+   (Not: "en iyi LFL yeşil" vurgusu kontrol edildi — `renderScenarios()` içinde MEVCUT ve
+   çalışıyor, kaldırılmasına gerek yok.)
+3. Kampanya/Özel gün takvimini (2021+) ve kampanya geçmişini metadata olarak modele bağla.
+4. Forecast yöntemini bütçe adedine tam entegre et (aylara dağıtım + cover ile plan stok).
+5. IT tam veri verince `DataService`'i API'ye çevir (şema aynı).
 
 ---
 

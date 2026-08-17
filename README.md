@@ -1,10 +1,11 @@
 # Arpaz — Bütçe & Stok Miks Çalışma Ekranı (Web App)
 
 LC Waikiki perakende planlama yaklaşımının Arçelik Pazarlama / Tedarik Zinciri
-veri analitiğine uyarlanmış **prototip web uygulaması**.
+veri analitiğine uyarlanmış **web uygulaması**.
 
-> Durum: **Prototip veri** ile çalışır. Gerçek veri (IT/Arpaz) geldiğinde yalnızca
-> `assets/data.js` katmanı değişir; arayüz ve mantık aynı kalır.
+> Durum: **Gerçek demo veri** ile çalışır (Demo Gerçek Veri.xlsx'ten türetilmiş, org×bölge×
+> ÜH4 aylık ortalama — sentetik olan tek alan brüt kâr). IT tam (API) veri verdiğinde
+> yalnızca `assets/data.js` katmanı değişir; arayüz ve mantık aynı kalır.
 
 ## Bütçe Kurgusu (ekranın çekirdeği)
 Çalışma ÜH4'ten yapılır. Her grup için:
@@ -17,25 +18,29 @@ R-LFL        = (Satış Bütçe / Plan Stok) / (LY Satış / LY Stok) − 1
 Stok Büyüme  = Plan Stok / LY Stok − 1
 ```
 **Hedef Cover** her satırda elle girilir (bütçe sahibinin uzman yargısı).
+**R-LFL** = stoktan arındırılmış büyüme (LFL'nin ne kadarı stok şişirmeden geldiğini gösterir).
 
 ## Proje Yapısı
 ```
 arpaz-butce-webapp/
 ├── index.html          # Arayüz iskeleti
 ├── assets/
-│   ├── hierarchy.js    # GERÇEK ürün hiyerarşisi (ÜH1→ÜH4, İPTAL'ler elenmiş)
+│   ├── hierarchy.js    # GERÇEK ürün hiyerarşisi (ÜH1→ÜH4), temizlenmiş REAL_DATA'dan üretilir
+│   ├── realdata.js     # ORGS, REGIONS, REAL_DATA (gerçek demo veri, sentetik kâr)
 │   ├── styles.css      # Stiller
-│   ├── data.js         # VERİ KATMANI (prototip) — gerçek veri buraya bağlanır
+│   ├── data.js         # VERİ KATMANI — filtre + satır şemasına indirgeme
 │   └── app.js          # Hesap motoru + kaskad seçim + senaryo + forecast
 └── README.md
 ```
 
 ## Ürün Hiyerarşisi
-`hierarchy.js` gerçek ağacı içerir: **10 ÜH1 · 34 ÜH2 · 128 ÜH3 · 346 ÜH4** (tüm (İPTAL) satırları
-elenmiş, büyük/küçük harf tekrarları birleştirilmiş). Sidebar kaskad çalışır: ÜH1 → ÜH2 → ÜH3 seçilir,
+`hierarchy.js` gerçek ağacı içerir: **7 ÜH1 · 31 ÜH2 · 120 ÜH3 · 328 ÜH4** (tüm (İPTAL) satırları
+elenmiş, büyük/küçük harf tekrarları birleştirilmiş; hiyerarşi elle değil, temizlenmiş
+`REAL_DATA`'dan script ile üretiliyor). Sidebar kaskad çalışır: ÜH1 → ÜH2 → ÜH3 seçilir,
 tablo her zaman ÜH4 kırılımı ile üretilir ("Çalışma Seviyesi" kaldırıldı).
-Metrikler şu an **deterministik prototip** (grup adından türetilen sabit sayılar); gerçek veri gelince
-`DataService.loadMixFor()` fetch ile değişir.
+Metrikler `assets/realdata.js`'teki **gerçek demo veriden** geliyor (stok/satış/tutar gerçek,
+brüt kâr marj bandından sentetik); IT tam veri verince `DataService.loadMixFor()` fetch'e
+çevrilir, şema aynı kalır.
 
 ## Çalıştırma
 - **En kolay:** `index.html`'e çift tıkla.
@@ -43,8 +48,8 @@ Metrikler şu an **deterministik prototip** (grup adından türetilen sabit say�
 - **Host:** Klasörü statik sunucuya (IIS/Nginx/Azure Static Web Apps/SharePoint) koy.
 
 ## Gerçek Veriye Geçiş (IT notu)
-`assets/data.js` içindeki `DataService.loadMix()` şu an sabit dizi döndürür.
-API hazır olduğunda:
+`assets/data.js` içindeki `DataService.loadMixFor()` şu an yerel `REAL_DATA` dizisini
+(gerçek demo veri) filtreler. API hazır olduğunda:
 ```js
 async loadMix(){ const r = await fetch('/api/miks'); return await r.json(); }
 // beklenen satır şeması: [ Grup, StokAdet, SatışAdet, SatışTutar, Marj%, İndirim% ]
