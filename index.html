@@ -1,0 +1,206 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Arpaz | Bütçe &amp; Stok Miks Çalışma Ekranı</title>
+<link rel="stylesheet" href="assets/styles.css">
+</head>
+<body>
+<header>
+  <h1>📊 Arpaz — Bütçe &amp; Stok Miks Çalışma Ekranı</h1>
+  <span class="tag">Web App · Prototip v0.3</span>
+  <div class="right">
+    <span>Veri Kaynağı</span>
+    <select id="src"><option>Birleşik (Peradb+TPM)</option><option>TPM (Yeni)</option><option>Peradb (Eski)</option></select>
+    <span>Bütçe Yılı</span>
+    <select id="year"><option>2027</option><option>2026</option></select>
+  </div>
+</header>
+
+<div class="wrap">
+  <aside class="side">
+    <h3>Ürün Hiyerarşisi</h3>
+    <label>ÜH1</label>
+    <select id="h_uh1"></select>
+    <label>ÜH2 (Klasman)</label>
+    <select id="h_uh2"></select>
+    <label>ÜH3</label>
+    <select id="h_uh3"></select>
+    <label>Çalışma Seviyesi</label>
+    <select id="h_level">
+      <option value="uh4">ÜH4 (buyer grup)</option>
+      <option value="uh3">ÜH3</option>
+      <option value="uh2">ÜH2 (klasman)</option>
+    </select>
+
+    <h3>Teşkilat</h3>
+    <label>Satış Teşkilatı</label>
+    <select><option>ARÇELİK</option><option>Bayi Dağıtım Kanalı</option></select>
+    <label>Şube / Bölge</label>
+    <select><option>Tümü</option><option>İstanbul Trakya</option><option>Adana</option><option>İzmir</option></select>
+
+    <h3>Periyot (Like-for-Like)</h3>
+    <label>Baz Periyot (LY)</label>
+    <select><option>2026 Ocak</option><option>2026 Tam Yıl</option></select>
+    <label>Hedef Periyot (TY)</label>
+    <select><option>2027 Ocak</option><option>2027 Tam Yıl</option></select>
+    <div class="note" id="selInfo">Not: Ekran ÜH4'ten çalışır. Gerçek hiyerarşi bağlı; metrikler prototip (deterministik) değerlerdir.</div>
+  </aside>
+
+  <main class="main">
+    <div class="tabs">
+      <button class="active" data-tab="miks">Bütçe &amp; Stok Miks</button>
+      <button data-tab="takvim">Kampanya / Özel Gün Takvimi</button>
+      <button data-tab="rasyo">Perakende/Toptan Rasyo</button>
+      <button data-tab="forecast">Tahmin (Forecast)</button>
+    </div>
+
+    <!-- ========== TAB: MIKS ========== -->
+    <div class="tabpane" data-pane="miks">
+      <div class="kpis" id="kpis"></div>
+
+      <!-- FORMÜL AÇIKLAMA -->
+      <div class="panel formula">
+        <h2>🧠 Bütçe Kurgusu — Nasıl Hesaplanıyor? <span class="pill">LC → Arpaz Uyarlaması</span></h2>
+        <div class="fbox">
+          <div><b>1) Plan Stok %</b> = ( <span class="wK">Kâr%×W</span> + <span class="wS">Satış%×W</span> + <span class="wSt">Stok%×W</span> ) → 100'e normalize</div>
+          <div><b>2) Plan Stok Adet</b> = ( Toplam Stok × Hedef Stok Büyümesi ) × Plan Stok %</div>
+          <div><b>3) Satış Bütçe</b> = ( Plan Stok Adet ÷ <span class="wH">Hedef Cover [elle]</span> ) × Pazarlama Büyümesi × Çarpanlar</div>
+          <div><b>4)</b> LFL = Bütçe/LY Satış−1 · R-LFL = (Bütçe/PlanStok)/(LY Satış/LY Stok)−1 · Stok Büyümesi = PlanStok/LY Stok−1</div>
+        </div>
+      </div>
+
+      <!-- PARAMETRELER -->
+      <div class="panel">
+        <h2>⚙️ Planlama Parametreleri <span class="pill">Kullanıcı Girişi</span></h2>
+        <div class="params">
+          <div class="pgroup">
+            <div class="ptitle">Global Hedefler</div>
+            <div class="prow"><label>Hedef Stok Büyümesi %</label><input type="number" id="p_stokbuyume" value="-10" step="1"></div>
+            <div class="prow"><label>Pazarlama Büyümesi %</label><input type="number" id="p_pazar" value="5" step="1"></div>
+          </div>
+          <div class="pgroup">
+            <div class="ptitle">Plan Stok % Ağırlıkları</div>
+            <div class="prow"><label class="wK">Kâr ağırlığı</label><input type="number" id="w_kar" value="40" step="5"></div>
+            <div class="prow"><label class="wS">Satış ağırlığı</label><input type="number" id="w_satis" value="30" step="5"></div>
+            <div class="prow"><label class="wSt">Stok ağırlığı</label><input type="number" id="w_stok" value="20" step="5"></div>
+          </div>
+          <div class="pgroup">
+            <div class="ptitle">Kampanya Çarpanları</div>
+            <div class="prow"><label>Paro</label><input type="range" id="m_paro" min="-20" max="40" value="0"><span class="num" id="v_paro">0%</span></div>
+            <div class="prow"><label>Bundle</label><input type="range" id="m_bundle" min="-20" max="40" value="0"><span class="num" id="v_bundle">0%</span></div>
+            <div class="prow"><label>Özel gün</label><input type="range" id="m_event" min="-20" max="40" value="0"><span class="num" id="v_event">0%</span></div>
+          </div>
+          <div class="pgroup">
+            <div class="ptitle">Gam &amp; Kota</div>
+            <div class="prow"><label>Gam değişimi</label><input type="range" id="m_gam" min="-30" max="30" value="0"><span class="num" id="v_gam">0%</span></div>
+            <div class="prow"><label>Kota ayı</label><input type="range" id="m_kota" min="-30" max="20" value="0"><span class="num" id="v_kota">0%</span></div>
+            <div class="mult-total"><span>Toplam Çarpan</span><span id="mult_total">1,00x</span></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- SENARYO -->
+      <div class="panel" style="padding:12px 16px">
+        <h2>💾 Senaryo Yönetimi <span class="pill">Kaydet &amp; Karşılaştır</span></h2>
+        <div class="scenario-bar">
+          <input id="scName" placeholder="Senaryo adı (ör. Karlı-Agresif)">
+          <button id="saveSc" class="btn">➕ Senaryo kaydet</button>
+          <button id="clearSc" class="btn ghost">🗑️ Temizle</button>
+          <span class="note" style="margin:0">Parametre + Hedef Cover setini kaydeder, yan yana kıyaslar.</span>
+        </div>
+        <div style="overflow:auto;margin-top:12px">
+          <table id="scTable"><thead><tr>
+            <th>Senaryo</th><th>Stok Büy.%</th><th>Pazar.%</th><th>Ağırlık K/S/St</th><th>Çarpan</th>
+            <th>Toplam Satış Bütçe</th><th>Toplam Plan Stok</th><th>LFL %</th><th></th>
+          </tr></thead><tbody id="scRows"></tbody></table>
+        </div>
+      </div>
+
+      <!-- ANA MIKS TABLOSU -->
+      <div class="panel">
+        <h2>🧮 Bütçe &amp; Stok Miks Tablosu <span class="pill">Hedef Cover elle girilir</span></h2>
+        <div style="max-height:520px;overflow:auto">
+        <table id="grid">
+          <thead>
+            <tr>
+              <th rowspan="2" id="grpColHead">Grup (ÜH4)</th>
+              <th colspan="7" class="grp-real">GERÇEKLEŞEN (LY)</th>
+              <th colspan="6" class="grp-plan">GELECEK YIL PLANI (TY)</th>
+              <th rowspan="2">Aksiyon</th>
+            </tr>
+            <tr>
+              <th>Stok Adet</th><th>Stok %</th>
+              <th>Satış Adet</th><th>Satış %</th>
+              <th>Kâr %</th>
+              <th>Cover</th><th>Turnover</th>
+              <th>Plan Stok %</th><th>Plan Stok Adet</th>
+              <th class="wH">Hedef Cover</th><th>Satış Bütçe</th>
+              <th>LFL %</th><th>Stok Büy.%</th>
+            </tr>
+          </thead>
+          <tbody id="rows"></tbody>
+          <tfoot><tr id="tfoot"></tr></tfoot>
+        </table>
+        </div>
+        <div class="legend">
+          <span><span class="dot" style="background:var(--green)"></span> Stok Payını Artır (karlı/hızlı)</span>
+          <span><span class="dot" style="background:var(--red)"></span> Stok Payını Azalt</span>
+          <span><span class="dot" style="background:var(--amber)"></span> Cover düşük → satış kaçırma riski</span>
+          <span><span class="dot" style="background:var(--grey)"></span> Koru / Dengeli</span>
+        </div>
+        <div class="note">Kâr % = grup kârının alt-toplamdaki payı (Kâr = Satış Tutarı × Marj). Hedef Cover hücresi bütçe sahibinin uzman yargısıdır — değeri değiştir, Satış Bütçe/LFL anında güncellenir.</div>
+      </div>
+      <div class="foot">Kaynak: prototip veri (assets/data.js). Gerçek veri geldiğinde yalnızca bu katman değişir.</div>
+    </div>
+
+    <!-- ========== TAB: TAKVIM ========== -->
+    <div class="tabpane" data-pane="takvim" style="display:none">
+      <div class="panel">
+        <h2>📅 Kampanya &amp; Özel Gün Takvimi (2021+) <span class="pill">Prototip Metadata</span></h2>
+        <table id="calTable"><thead><tr>
+          <th>Ay</th><th>Özel Gün / Event</th><th>Tip</th><th>Kampanya</th><th>Çarpan Önerisi</th><th>Geçmiş Uplift*</th>
+        </tr></thead><tbody id="calRows"></tbody></table>
+        <div class="note">* Uplift = kampanya ayı satış / normal ay satış. Gerçek kampanya geçmişi bağlanınca otomatik hesaplanıp çarpan panelini besleyecek.</div>
+      </div>
+    </div>
+
+    <!-- ========== TAB: RASYO ========== -->
+    <div class="tabpane" data-pane="rasyo" style="display:none">
+      <div class="panel">
+        <h2>⚖️ Perakende / Toptan Satış Rasyosu <span class="pill">Pandemi Sonrası</span></h2>
+        <table id="ratioTable"><thead><tr>
+          <th>Yıl</th><th>Perakende %</th><th>Toptan %</th><th>Rasyo (Per/Top)</th><th>Yorum</th>
+        </tr></thead><tbody id="ratioRows"></tbody></table>
+        <div class="note">2021+ veriyle perakende ağırlığı takip edilir; bütçe dağılımında kanal miksini belirler.</div>
+      </div>
+    </div>
+
+    <!-- ========== TAB: FORECAST ========== -->
+    <div class="tabpane" data-pane="forecast" style="display:none">
+      <div class="panel">
+        <h2>🔮 Tahmin (Forecast) <span class="pill">Yöntem Seçimi</span></h2>
+        <div class="fc-controls">
+          <label>Yöntem</label>
+          <select id="fcMethod">
+            <option value="lfl">LFL Trend (büyüme oranı)</option>
+            <option value="seasonal">Mevsimsel (özel gün ağırlıklı)</option>
+            <option value="avg">3-Aylık Hareketli Ort.</option>
+          </select>
+          <span class="note" style="margin:0">Toplam Satış Bütçesini aylara dağıtır.</span>
+        </div>
+        <table id="fcTable"><thead><tr>
+          <th>Ay</th><th>LY Satış</th><th>Mevsim Endeksi</th><th>TY Tahmin</th><th>Plan Stok (Cover)</th>
+        </tr></thead><tbody id="fcRows"></tbody></table>
+        <div class="note">Prototip mevsim endeksleri örnek değerlerdir. Gerçek veri gelince ay-bazlı geçmişten otomatik türetilir.</div>
+      </div>
+    </div>
+  </main>
+</div>
+
+<script src="assets/hierarchy.js"></script>
+<script src="assets/data.js"></script>
+<script src="assets/app.js"></script>
+</body>
+</html>

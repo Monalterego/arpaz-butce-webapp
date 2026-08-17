@@ -1,0 +1,693 @@
+/* Gerçek ürün hiyerarşisi (İPTAL'ler elenmiş). Otomatik üretildi. */
+const HIERARCHY = {
+ "BEYAZ EŞYA": {
+  "ASPIRATÖR - DAVLUMBAZ": {
+   "ADA": [
+    "40 CM / ADA",
+    "60 CM / ADA",
+    "90 CM / ADA"
+   ],
+   "EĞIMLI": [
+    "60 CM / EĞIMLI",
+    "90 CM / EĞIMLI"
+   ],
+   "KANOPI": [
+    "50 CM / KANOPI",
+    "70 CM / KANOPI",
+    "80 CM / KANOPI",
+    "90 CM / KANOPI"
+   ],
+   "PIRAMIT": [
+    "60 CM / PIRAMIT",
+    "100 CM / PIRAMIT",
+    "110 CM / PIRAMIT"
+   ],
+   "STANDART": [
+    "60 CM / STANDART",
+    "70 CM / STANDART"
+   ],
+   "SÜRGÜLÜ": [
+    "60 CM / SÜRGÜLÜ"
+   ],
+   "T TIPI": [
+    "60 CM / T TIPI",
+    "90 CM / T TIPI"
+   ],
+   "TAVAN": [
+    "110 CM / TAVAN"
+   ]
+  },
+  "BULAŞIK MAKINESI": {
+   "DAR - 45CM": [
+    "DAR- KNOB CONTROL",
+    "DAR- TOP-STATUS DISP-TOUCH",
+    "DAR- TOP-TIME DISP-TOUCH"
+   ],
+   "STANDART 60CM": [
+    "STANDART-KNOB CONTROL",
+    "STANDART-FRONT-STATUS DISP-BUTTON",
+    "STANDART-FRONT-TIME DISP-BUTTON",
+    "STANDART-FRONT-TIME DISP-TOUCH",
+    "STANDART-FRONT-TIME DISP-TOUCH W/WIFI",
+    "STANDART-TOP-STATUS DISP-TOUCH",
+    "STANDART-TOP-TIME DISP-BUTTON",
+    "STANDART-TOP-TIME DISP-TOUCH",
+    "STANDART-TOP-TIME DISP-TOUCH W/WIFI",
+    "Standart - Top-ICON-Touch w/HeatPump",
+    "Standart - Top-ICON-Touch w/Wifi"
+   ],
+   "TEZGAH ÜSTÜ": [
+    "TEZGAH ÜSTÜ-OUTSOURCE TOUCH BUTTON"
+   ],
+   "YÜKSEK GÖVDELI": [
+    "YÜKSEK GÖVDELI-TOP-STATUS DISP-TOUCH",
+    "YÜKSEK GÖVDELI-TOP-TIME DISP-BUTTON",
+    "YÜKSEK GÖVDELI-TOP-TIME DISP-TOUCH"
+   ]
+  },
+  "ÇAMAŞIR KURUTMA MAKINESI": {
+   "BACALI": [
+    "<= 7 KG 54 CM - BACALI"
+   ],
+   "ISI POMPALI": [
+    "7 KG 46 CM - ISI POMPALI",
+    "7 KG 54 CM - ISI POMPALI",
+    "8 KG 46 CM - ISI POMPALI",
+    "8 KG 54 CM - ISI POMPALI",
+    "8 KG 60 CM - ISI POMPALI",
+    "9 KG 54 CM - ISI POMPALI",
+    "9 KG 60 CM - ISI POMPALI",
+    "10 KG 54 CM - ISI POMPALI",
+    "10 KG 60 CM - ISI POMPALI",
+    "11 KG 60 CM - ISI POMPALI",
+    "12 KG 60 CM - ISI POMPALI"
+   ],
+   "KONDENSERLI": [
+    "7 KG 54 CM - KONDANSERLI",
+    "8 KG 54 CM - KONDANSERLI",
+    "9 KG 54 CM - KONDANSERLI",
+    "9 KG 60 CM - KONDANSERLI",
+    "10 KG 54 CM - KONDANSERLI"
+   ]
+  },
+  "ÇAMAŞIR MAKINESI": {
+   "ÖNDEN YÜKLEMELI": [
+    "3,6-5 KG / 40 - <45 CM",
+    "5,1-6 KG / 40 - <45 CM",
+    "5,1-6 KG / 45 - <48 CM",
+    "5,1-6 KG / 48 - <54 CM",
+    "6,1-7 KG / 45 - <48 CM",
+    "6,1-7 KG / 48 - <54 CM",
+    "7,1-8 KG / 48 - <54 CM",
+    "7,1-8 KG / 54 - <59 CM",
+    "8,1-9 KG / 48 - <54 CM",
+    "8,1-9 KG / >= 54 CM",
+    "9,1-10 KG / 54 - <59 CM",
+    "9,1-10 KG / >=59 CM",
+    "10,1-11 KG / >=59 CM",
+    "11,1-12 KG / >=59 CM"
+   ],
+   "YIKAYICI KURUTUCU / ÖNDEN YÜKLEMELI": [
+    "7KG-4KG / 40 - <45 CM",
+    "8KG-5KG / 48 - <54 CM",
+    "9KG-5KG / 48 - <54 CM",
+    "9KG-6KG / 48 - <59 CM",
+    "10KG-6KG / 48 - <59 CM",
+    ">=10KG->=6KG / >=59 CM",
+    ">=12kg->=7kg / >=62 cm"
+   ]
+  },
+  "DONDURUCU": {
+   "DIKEY DONDURUCU - NF": [
+    "53-59 CM - DIKEY DONDURUCU - NF",
+    "60-63 CM - DIKEY DONDURUCU - NF",
+    "70-73 CM - DIKEY DONDURUCU - NF"
+   ],
+   "DIKEY DONDURUCU - ST": [
+    "53-59 CM - DIKEY DONDURUCU - ST",
+    "60-63 CM - DIKEY DONDURUCU - ST"
+   ],
+   "TEZGAH SEVIYESI DONDURUCU - NF": [
+    "53-59 CM-TEZGAH SEVIYESI DONDURUCU-NF"
+   ],
+   "TEZGAH SEVIYESI DONDURUCU - ST": [
+    "<=52 CM - TEZGAH SEVIYESI DONDURUCU - ST",
+    "53-59 CM-TEZGAH SEVIYESI DONDURUCU-ST",
+    "60-63 CM-TEZGAH SEVIYESI DONDURUCU-ST"
+   ],
+   "YATAY DONDURUCU": [
+    "75-125 L - YATAY DONDURUCU",
+    "125-225 L - YATAY DONDURUCU",
+    "225-325 L - YATAY DONDURUCU",
+    "325-425L - YATAY DONDURUCU",
+    "425-525L - YATAY DONDURUCU",
+    "525-625L - Yatay dondurucu"
+   ]
+  },
+  "FIRIN": {
+   "50 X 50 X 85 CM": [
+    "50 X 50 X 85 CM VITROSERAMIK"
+   ],
+   "50 x 60 x 85 CM": [
+    "50 x 60 x 85 CM Gaz"
+   ],
+   "60 X 60 X 45 CM": [
+    "60 X 60 X 45 CM OCAKSIZ"
+   ],
+   "60 X 60 X 60 CM": [
+    "60 X 60 X 60 CM GAZ",
+    "60 X 60 X 60 CM OCAKSIZ",
+    "60 X 60 X 60 CM VITROSERAMIK"
+   ],
+   "60 X 60 X 85 CM": [
+    "60 X 60 X 85 CM GAZ",
+    "60 X 60 X 85 CM MIX",
+    "60 X 60 X 85 CM OCAKSIZ",
+    "60 X 60 X 85 CM VITROSERAMIK"
+   ],
+   "60 X 60 X 90 CM": [
+    "60 X 60 X 90 CM GAZ"
+   ],
+   "71 X 62,5 X 112,2 CM": [
+    "71 X 62,5 X 112,2 CM GAZ"
+   ],
+   "90 X 60 X 60 CM": [
+    "90 X 60 X 60 CM OCAKSIZ"
+   ],
+   "90 X 60 X 85 CM": [
+    "90 X 60 X 85 CM GAZ"
+   ],
+   "100 X 60 X 90 CM": [
+    "100 X 60 X 90 CM MIX"
+   ],
+   "110 X 60 X 90 CM": [
+    "110 X 60 X 90 CM MIX"
+   ]
+  },
+  "MIKRO DALGA FIRIN": {
+   "MIKRO DALGA FIRIN": [
+    "MIKRODALGA",
+    "IZGARALI MIKRODALGA",
+    "MIKRODALGA G45",
+    "MIKRODALGA KOMBI",
+    "MIKRODALGA DIĞER"
+   ]
+  },
+  "OCAK": {
+   "ELEKTRIKLI OCAK": [
+    "METAL / ÖN - ELEKTRIKLI OCAK",
+    "METAL / YAN - ELEKTRIKLI OCAK"
+   ],
+   "GAZLI OCAK": [
+    "CAM / ÖN - GAZLI OCAK",
+    "CAM / YAN - GAZLI OCAK",
+    "DÖKÜM / ÖN - GAZLI OCAK",
+    "METAL / ÖN - GAZLI OCAK",
+    "METAL / YAN - GAZLI OCAK"
+   ],
+   "İNDÜKSIYON": [
+    "FULL FLEXI",
+    "HALF BRIDGE",
+    "HOB EXTRACTOR",
+    "QUASI",
+    "DIĞER İNDÜKSIYON"
+   ],
+   "MIX OCAK": [
+    "CAM / ÖN - MIX OCAK",
+    "CAM / YAN - MIX OCAK",
+    "METAL / YAN - MIX OCAK"
+   ],
+   "VITROSERAMIK": [
+    "DOKUNMATIK KONTROL / ÖN - VITROSERAMIK",
+    "DÜĞMEDEN KONTROL / ÖN - VITROSERAMIK",
+    "DÜĞMEDEN KONTROL / YAN - VITROSERAMIK"
+   ]
+  },
+  "SOĞUTUCU": {
+   "3 KAPILI BUZDOLABI": [
+    "60-63 CM - 3 KAPILI BUZDOLABI",
+    "74-79 CM - 3 KAPILI BUZDOLABI",
+    "80-89 cm - 3 kapılı buzdolabı",
+    "90 CM - 3 KAPILI BUZDOLABI"
+   ],
+   "4+ KAPILI BUZDOLABI": [
+    "74-79 CM - 4+ KAPILI BUZDOLABI",
+    "80-89 CM - 4+ KAPILI BUZDOLABI",
+    "90+ CM - 4+ KAPILI BUZDOLABI"
+   ],
+   "AŞI SOĞUTUCU": [
+    "60-63 CM - AŞI SOĞUTUCU"
+   ],
+   "ÇIFT KAPILI DONDURUCU ALTTA - NF": [
+    "53-59 CM-ÇIFT KAPILI DONDURUCU ALTTA-NF",
+    "60-63 CM-ÇIFT KAPILI DONDURUCU ALTTA-NF",
+    "64-69 CM-ÇIFT KAPILI DONDURUCU ALTTA-NF",
+    "70-73 CM-ÇIFT KAPILI DONDURUCU ALTTA-NF",
+    "74-79 CM-ÇIFT KAPILI DONDURUCU ALTTA-NF",
+    "80-89 CM-ÇIFT KAPILI DONDURUCU ALTTA-NF"
+   ],
+   "ÇIFT KAPILI DONDURUCU ALTTA - ST": [
+    "53-59 CM-ÇIFT KAPILI DONDURUCU ALTTA-ST",
+    "70-73 CM-ÇIFT KAPILI DONDURUCU ALTTA-ST"
+   ],
+   "ÇIFT KAPILI DONDURUCU ÜSTTE - NF": [
+    "53-59 CM-ÇIFT KAPILI DONDURUCU ÜSTTE-NF",
+    "60-63 CM-ÇIFT KAPILI DONDURUCU ÜSTTE-NF",
+    "64-69 CM-ÇIFT KAPILI DONDURUCU ÜSTTE-NF",
+    "70-73 CM-ÇIFT KAPILI DONDURUCU ÜSTTE-NF",
+    "74-79 CM-ÇIFT KAPILI DONDURUCU ÜSTTE-NF",
+    "80-89 CM-ÇIFT KAPILI DONDURUCU ÜSTTE-NF"
+   ],
+   "ÇIFT KAPILI DONDURUCU ÜSTTE - ST": [
+    "53-59 CM-ÇIFT KAPILI DONDURUCU ÜSTTE-ST",
+    "60-63 CM-ÇIFT KAPILI DONDURUCU ÜSTTE-ST",
+    "70-73 CM-ÇIFT KAPILI DONDURUCU ÜSTTE-ST"
+   ],
+   "GARDROP TIPI BUZDOLABI": [
+    "90+ CM - GARDROP TIPI BUZDOLABI"
+   ],
+   "MINIBAR": [
+    "<=52 CM - MINIBAR"
+   ],
+   "ŞARAP SOĞUTUCU": [
+    "53-59 CM - ŞARAP SOĞUTUCU",
+    "60-63 CM - ŞARAP SOĞUTUCU"
+   ],
+   "TEK KAPILI BUZDOLABI - NF": [
+    "60-63 CM - TEK KAPILI BUZDOLABI - NF"
+   ],
+   "TEK KAPILI BUZDOLABI - ST": [
+    "<=52 CM - TEK KAPILI BUZDOLABI - ST",
+    "53-59 CM - TEK KAPILI BUZDOLABI - ST",
+    "60-63 CM - TEK KAPILI BUZDOLABI - ST"
+   ],
+   "TEZGAH SEVIYESI BUZDOLABI": [
+    "<=52 CM - TEZGAH SEVIYESI BUZDOLABI",
+    "53-59 CM - TEZGAH SEVIYESI BUZDOLABI",
+    "60-63 CM - TEZGAH SEVIYESI BUZDOLABI"
+   ]
+  }
+ },
+ "DİĞER": {
+  "DIĞER": {
+   "AYDINLATMA": [
+    "AYDINLATMA"
+   ],
+   "BEYAZ EŞYA AKSESUARLARI": [
+    "BEYAZ EŞYA AKSESUARLARI - BM",
+    "BEYAZ EŞYA AKSESUARLARI - DIĞER",
+    "BEYAZ EŞYA AKSESUARLARI - FIRIN"
+   ],
+   "GAMDAN ÇIKMIŞ ÜRÜN GRUPLARI (BISIKLET/MOTOSIKLET)": [
+    "GAMDAN ÇIKMIŞ ÜRÜN GRUPLARI (BISIKLET/MOTOSIKLET)"
+   ],
+   "HAZIR MUTFAK": [
+    "HAZIR MUTFAK"
+   ],
+   "HIZMET (ÜRÜN KIRALAMA BEDELI VE EK GARANTI)": [
+    "HIZMET (ÜRÜN KIRALAMA BEDELI VE EK GARANTI)"
+   ],
+   "MOBILYA": [
+    "MOBILYA"
+   ],
+   "DİĞER": [
+    "DİĞER"
+   ]
+  },
+  "PROMOSYON ÜRÜNLER": {
+   "PROMOSYON ÜRÜNLER": [
+    "PROMOSYON ÜRÜNLER"
+   ]
+  }
+ },
+ "ENERJİ ÇÖZÜMLERİ": {
+  "E-MOBILITE HARICI SISTEMLER": {
+   "E-MOBILITE ŞARJ SISTEMLERI": [
+    "E-MOBILITE AC ŞARJ CIHAZLARI"
+   ]
+  },
+  "SOLAR ENERJI": {
+   "ENERJI DEPOLAMA SISTEMI": [
+    "ENERJI DEPOLAMA SISTEMI"
+   ],
+   "INVERTER": [
+    "INVERTER"
+   ],
+   "SOLAR PANEL": [
+    "SOLAR PANEL - BIFACIAL PERC",
+    "SOLAR PANEL - MONOFACIAL PERC",
+    "SOLAR PANEL - TOPCON"
+   ],
+   "SOLAR UPS": [
+    "SOLAR UPS"
+   ],
+   "TÜKETICI ÜRÜNÜ – ENERJI": [
+    "KATLANIR SOLAR PANEL",
+    "SOLAR SIRT ÇANTASI"
+   ]
+  }
+ },
+ "EV KONFORU": {
+  "HAVALANDIRMA": {
+   "HAVA SERINLETICI": [
+    "HAVA SERINLETICI"
+   ],
+   "HAVA TEMIZLEYICI": [
+    "HAVA TEMIZLEYICI"
+   ],
+   "NEM ALICI": [
+    "NEM ALICI"
+   ],
+   "ODA NEMLENDIRICISI": [
+    "ODA NEMLENDIRICISI"
+   ],
+   "VANTILATÖRLER": [
+    "AYAKLI VANTILATÖR",
+    "KULE TIPI VANTILATÖR",
+    "MASA ÜSTÜ VANTILATÖR"
+   ]
+  },
+  "ISITICILAR": {
+   "EV TIPI ISITICILAR": [
+    "CONVECTOR HEATER",
+    "ELEKTRIKLI ANI SU ISITICISI",
+    "FANLI ISITICI",
+    "KIZILÖTESI",
+    "KOMBI",
+    "KONVEKTÖR ISITICI",
+    "ŞOFBEN",
+    "TERMOSIFON",
+    "YAĞLI RADYATÖR"
+   ],
+   "ISITICI AKSESUARLARI": [
+    "ISITICI AKSESUARLARI"
+   ]
+  },
+  "KLIMA": {
+   "EV TIPI KLIMA": [
+    "BIRE BIR DUVAR TIPI",
+    "DIĞER SINGLE (YER/TAVAN/KASET)",
+    "MULTI SPLIT",
+    "PENCERE TIPI",
+    "PORTATIF",
+    "SALON TIPI"
+   ],
+   "ISI POMPASI": [
+    "MONO HAVA KAYNAKLI ISI POMPASI"
+   ],
+   "KLIMA AKSESUARLARI": [
+    "KLIMA AKSESUARLARI"
+   ],
+   "KLIMA- EK GARANTI": [
+    "KLIMA- EK GARANTI"
+   ],
+   "SISTEM KLIMA": [
+    "BIRE BIR KANALLI TIP",
+    "BIRE BIR KASET TIPI",
+    "CHILLER",
+    "FAN COIL UNIT",
+    "HAVA PERDESI",
+    "MULTI INVERTER",
+    "SANTRAL",
+    "VRS"
+   ]
+  },
+  "SU ÇÖZÜMLERI": {
+   "SU ARITMA VE FILTRASYON": [
+    "SU ARITMA CIHAZLARI"
+   ],
+   "SU SEBILLERI": [
+    "SU SEBILI AKSESUARLARI",
+    "SU SEBILLERI"
+   ]
+  }
+ },
+ "GRUPSUZ": {
+  "GRUPSUZ": {
+   "GRUPSUZ": [
+    "GRUPSUZ"
+   ]
+  }
+ },
+ "KEA": {
+  "DIĞER KEA": {
+   "EVCIL HAYVAN CIHAZLARI": [
+    "EVCIL HAYVAN CIHAZLARI"
+   ],
+   "MINI -MIDI FIRIN": [
+    "MINI 26 LT",
+    "MINI 30 LT",
+    "MIDI 35 LT",
+    "MIDI 45 LT",
+    "MIDI 50 lt"
+   ],
+   "SICAK TUTMA ÇEKMECESI": [
+    "SICAK TUTMA ÇEKMECESI"
+   ]
+  },
+  "HIJYEN": {
+   "DEZENFEKSIYON": [
+    "UV TEMIZLEME CIHAZLARI"
+   ],
+   "KIŞISEL TANI CIHAZLARI": [
+    "BANYO TARTISI"
+   ]
+  },
+  "KIŞISEL BAKIM": {
+   "ERKEK BAKIM": [
+    "ERKEK KIŞISEL BAKIM",
+    "ERKEK TIRAŞ MAKINESI"
+   ],
+   "SAÇ BAKIMI": [
+    "SAÇ KURUTMA MAKINESI",
+    "SAÇ ŞEKILLENDIRICI"
+   ],
+   "SAĞLIKLI YAŞAM ÜRÜNLERI": [
+    "KIŞISEL BAKIM ELEKTRONIĞI",
+    "SONIK DIŞ FIRÇASI"
+   ]
+  },
+  "MUTFAK ALETLERI": {
+   "GIDA HAZIRLAMA": [
+    "BLENDER",
+    "DOĞRAYICI",
+    "HAND BLENDER",
+    "KIYMA MAKINESI",
+    "MIKSER",
+    "MUTFAK MAKINESI",
+    "MUTFAK ROBOTU",
+    "DONDURMA MAKINESI"
+   ],
+   "İÇECEK HAZIRLAMA": [
+    "ANKASTRE KAHVE MAKINESI",
+    "BUZLU İÇECEK MAKINESI",
+    "ÇAY MAKINESI",
+    "ÇAYMATIK",
+    "FILTRE KAHVE MAKINESI",
+    "İÇECEK HAZIRLAMA AKSESUARLARI",
+    "KAHVE GRUBU - YAN ÜRÜNLER",
+    "KETTLE",
+    "NARENCIYE SIKACAĞI",
+    "SEMAVER",
+    "TAM OTOMATIK ESPRESSO MAKINESI",
+    "TERMOS",
+    "YARI OTOMATIK ESPRESSO MAKINESI"
+   ],
+   "MUTFAK ALETLERI AKSESUARLARI": [
+    "MUTFAK ALETLERI AKSESUARLARI"
+   ],
+   "PIŞIRICILER": [
+    "ÇOK AMAÇLI PIŞIRICI",
+    "EKMEK KIZARTMA MAKINESI",
+    "FRITÖZ",
+    "IZGARA",
+    "MINI TOST MAKINESI",
+    "TOST MAKINESI",
+    "YOĞURT MAKINESI"
+   ],
+   "TÜRK KAHVE MAKINESI": [
+    "MINI TKM",
+    "MIDI - ÇIFTLI TKM",
+    "KAPSÜLLÜ TKM",
+    "PROFESYONEL TKM"
+   ]
+  },
+  "SÜPÜRGE": {
+   "BUHARLI TEMIZLEME": [
+    "ÇUBUK TIP BUHARLI TEMIZLEYICI",
+    "PORTATIF BUHARLI TEMIZLEYICI"
+   ],
+   "ELEKTRIKLI DIK SÜPÜRGE": [
+    "ISLAK-KURU DIK SÜPÜRGE",
+    "KABLOLU DIK SÜPÜRGE"
+   ],
+   "ELEKTRIKLI KOVA SÜPÜRGE": [
+    "HALI YIKAMA MAKINESI - KOVA",
+    "SU FILTRELI SÜPÜRGE"
+   ],
+   "ELEKTRIKLI YATIK SÜPÜRGE": [
+    "ISLAK-KURU YATIK SÜPÜRGE",
+    "SIKLON SÜPÜRGE",
+    "TORBALI SÜPÜRGE"
+   ],
+   "ROBOT SÜPÜRGE": [
+    "ROBOT SÜPÜRGE"
+   ],
+   "SÜPÜRGE AKSESUARLARI": [
+    "SÜPÜRGE AKSESUARLARI"
+   ],
+   "ŞARJLI SÜPÜRGE": [
+    "EL SÜPÜRGESI",
+    "ŞARJLI DIK SÜPÜRGE"
+   ],
+   "VAKUMLU TEMIZLEYICI": [
+    "VAKUMLU TEMIZLEYICI"
+   ]
+  },
+  "ÜTÜ": {
+   "BUHAR JENERATÖRLÜ ÜTÜLER": [
+    "BUHAR JENERATÖRLÜ ÜTÜ",
+    "ENTEGRE ÜTÜ SISTEMI",
+    "GARMENT STEAMER"
+   ],
+   "EL ÜTÜSÜ": [
+    "BUHARLI EL ÜTÜSÜ",
+    "BUHARSIZ EL ÜTÜSÜ",
+    "SEYAHAT ÜTÜSÜ"
+   ],
+   "ÜTÜ AKSESUARLARI": [
+    "ÜTÜ AKSESUARLARI"
+   ]
+  }
+ },
+ "Non-Product": {
+  "Customer Care": {
+   "Essentials": [
+    "Accessories - as Spare Part",
+    "Cleaning & Maintenance",
+    "Technical Equipments"
+   ],
+   "Extended Warranty": [
+    "Extended Warranty"
+   ],
+   "Spare Parts": [
+    "Spare Parts White Goods"
+   ]
+  }
+ },
+ "TANIMI YOK": {
+  "TANIMI YOK": {
+   "TANIMI YOK": [
+    "TANIMI YOK"
+   ]
+  }
+ },
+ "TANIMSIZ": {
+  "TANIMSIZ": {
+   "TANIMSIZ": [
+    "TANIMSIZ"
+   ]
+  }
+ },
+ "TÜKETİCİ ELEKTRONİĞİ": {
+  "BILGISAYAR": {
+   "BILGISAYAR": [
+    "DIZÜSTÜ BILGISAYAR",
+    "MASAÜSTÜ BILGISAYAR",
+    "MONITÖR",
+    "TABLET BILGISAYAR"
+   ],
+   "BILGISAYAR AKSESUARLARI": [
+    "BILGISAYAR AKSESUARLARI"
+   ]
+  },
+  "CEP TELEFONU": {
+   "CEP TELEFONU": [
+    "CEP TELEFONU"
+   ],
+   "CEP TELEFONU AKSESUARLARI": [
+    "CEP TELEFONU AKSESUARLARI"
+   ]
+  },
+  "DIĞER TÜKETICI ELEKTRONIĞI": {
+   "ELEKTRIKLI MOBIL ÜRÜNLER": [
+    "ELEKTRIKLI SKUTER"
+   ],
+   "GIYILEBILIR TEKNOLOJI": [
+    "AKILLI SAAT"
+   ],
+   "IOT": [
+    "IOT"
+   ]
+  },
+  "PROFESYONEL GÖRÜNTÜLEME ÇÖZÜMLERI": {
+   "EĞITIM SISTEMLERI": [
+    "3D YAZICILAR",
+    "AKILLI TAHTA",
+    "AKILLI TAHTA AKSESUARLARI",
+    "AKILLI TAHTA YAZILIM VE SERVISLERI"
+   ],
+   "LED MODUL EKRANLAR": [
+    "LED MODÜL AKSESUARLARI",
+    "LED MODÜL EKRANLAR"
+   ],
+   "PROFESYONEL MONITÖRLER": [
+    "DIGITAL SIGNAGE YAZILIM VE SERVISLERI",
+    "PROFESYONEL GÖRÜNTÜLEME AKSESUARLARI",
+    "PROFESYONEL MONITÖRLER",
+    "VIDEOWALL"
+   ]
+  },
+  "SES, VIDEO VE GÖRÜNTÜ SISTEMLERI": {
+   "SES, VIDEO VE GÖRÜNTÜ SISTEMLERI": [
+    "GÖRÜNTÜ VE SES SISTEMLERI",
+    "HI-FI SISTEMLER",
+    "HOPARLÖR",
+    "KAMERA VE FOTOĞRAF MAKINESI",
+    "KULAKLIKLAR",
+    "RADYO",
+    "SES, GÖRÜNTÜ SIS. - ALTERNATIF ÜRÜNLER",
+    "SOUNDBAR"
+   ]
+  },
+  "TELEVIZYON": {
+   "LED FHD/HD": [
+    "< 26 INCH - LED FHD/HD",
+    "26 - 32 INCH - LED FHD/HD",
+    "33 - 40 INCH - LED FHD/HD",
+    "> 41 INCH - LED FHD/HD"
+   ],
+   "LED UHD": [
+    "33 - 43 INCH - LED UHD",
+    "44 - 49 INCH - LED UHD",
+    "50 - 54 INCH - LED UHD",
+    "55 - 57 INCH - LED UHD",
+    "58 - 64 INCH - LED UHD",
+    "65 - 74 INCH - LED UHD",
+    ">= 75 INCH - LED UHD"
+   ],
+   "OLED UHD": [
+    "55 - 57 INCH - OLED UHD",
+    "65 - 74 INCH - OLED UHD"
+   ],
+   "QLED UHD": [
+    "33 - 43 INCH - QLED UHD",
+    "50 - 54 INCH - QLED UHD",
+    "55 - 57 INCH - QLED UHD",
+    "65 - 74 INCH - QLED UHD",
+    ">= 75 INCH - QLED UHD"
+   ],
+   "TV AKSESUARLARI": [
+    "TV AKSESUARLARI"
+   ]
+  },
+  "YAZARKASA": {
+   "YAZARKASA": [
+    "YAZARKASA"
+   ],
+   "YAZARKASA AKSESUARLARI": [
+    "YAZARKASA AKSESUARLARI"
+   ]
+  }
+ }
+};
