@@ -19,6 +19,7 @@ header select{background:#fff;border:none;border-radius:6px;padding:5px 8px;font
 .side select,.side input{width:100%;padding:6px;border:1px solid var(--line);border-radius:6px;font-size:12px}
 .main{flex:1;padding:16px 20px;overflow:auto}
 .kpis{display:grid;grid-template-columns:repeat(6,1fr);gap:12px;margin-bottom:16px}
+.durum-kpis{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:16px}
 .kpi{background:#fff;border:1px solid var(--line);border-radius:10px;padding:12px 14px;box-shadow:0 1px 3px rgba(0,0,0,.04)}
 .kpi .lbl{font-size:11px;color:var(--grey);margin-bottom:4px}
 .kpi .val{font-size:19px;font-weight:700;color:var(--navy)}

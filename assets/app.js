@@ -163,7 +163,7 @@
   function buildTable() {
     const data = DataService.loadMix();
     if (!data.length) {
-      $("rows").innerHTML = `<tr><td colspan="17" style="text-align:center;color:var(--grey);padding:18px">Bu seçim için veri bulunamadı.</td></tr>`;
+      $("rows").innerHTML = `<tr><td colspan="18" style="text-align:center;color:var(--grey);padding:18px">Bu seçim için veri bulunamadı.</td></tr>`;
       state.covers = [];
       state.childCovers = {};
       return;
@@ -190,7 +190,7 @@
           <td class="pct" id="psp_${i}"></td><td class="num-cell" id="psa_${i}"></td>
           <td class="covcell"><input type="number" class="covin" id="hcov_${i}" min="1" step="0.5" value="${state.covers[i]}"></td>
           <td class="num-cell" id="sb_${i}"></td>
-          <td id="lfl_${i}"></td><td id="sg_${i}"></td>
+          <td id="lfl_${i}"></td><td id="rlfl_${i}"></td><td id="sg_${i}"></td>
           <td id="tag_${i}"></td>
           <td id="act_${i}"></td>`;
         tb.appendChild(tr);
@@ -220,7 +220,7 @@
       <td class="pct" id="psp_${i}"></td><td class="num-cell" id="psa_${i}"></td>
       <td class="covcell"><input type="number" class="covin" id="hcov_${i}" min="1" step="0.5" value="${state.covers[i]}"></td>
       <td class="num-cell" id="sb_${i}"></td>
-      <td id="lfl_${i}"></td><td id="sg_${i}"></td>
+      <td id="lfl_${i}"></td><td id="rlfl_${i}"></td><td id="sg_${i}"></td>
       <td id="tag_${i}"></td>
       <td id="act_${i}"></td>`;
       tb.appendChild(tr);
@@ -245,7 +245,7 @@
           <td class="pct" id="psp_${i}_c${j}"></td><td class="num-cell" id="psa_${i}_c${j}"></td>
           <td class="covcell"><input type="number" class="covin" id="hcov_${i}_c${j}" min="1" step="0.5" value="${state.childCovers[key]}"></td>
           <td class="num-cell" id="sb_${i}_c${j}"></td>
-          <td id="lfl_${i}_c${j}"></td><td id="sg_${i}_c${j}"></td>
+          <td id="lfl_${i}_c${j}"></td><td id="rlfl_${i}_c${j}"></td><td id="sg_${i}_c${j}"></td>
           <td id="tag_${i}_c${j}"></td>
           <td id="act_${i}_c${j}"></td>`;
         tb.appendChild(ctr);
@@ -304,6 +304,7 @@
     $("psa_" + i).textContent = fmtN(r.planStock);
     $("sb_" + i).textContent = fmtN(r.salesBudget);
     const lflEl = $("lfl_" + i); lflEl.textContent = fmtP0(r.lfl); lflEl.className = r.lfl >= 0 ? "up" : "down";
+    const rlflEl = $("rlfl_" + i); rlflEl.textContent = fmtP0(r.rlfl); rlflEl.className = r.rlfl >= 0 ? "up" : "down";
     const sgEl = $("sg_" + i); sgEl.textContent = fmtP0(r.stockGrowth); sgEl.className = r.stockGrowth >= 0 ? "up" : "down";
     $("tag_" + i).innerHTML = `<span class="badge ${r.tag.eCls}">${r.tag.etiket}</span>`;
     $("act_" + i).innerHTML = `<span class="badge ${r.tag.aCls}">${r.tag.aksiyon}</span>`;
@@ -332,6 +333,7 @@
           set('psp_' + prefix, fmtP(r.planPct)); set('psa_' + prefix, fmtN(r.planStock));
           set('sb_' + prefix, fmtN(r.salesBudget));
           const lflEl = document.getElementById('lfl_' + prefix); if (lflEl) { lflEl.textContent = fmtP0(r.lfl); lflEl.className = r.lfl >= 0 ? 'up' : 'down'; }
+          const rlflEl = document.getElementById('rlfl_' + prefix); if (rlflEl) { rlflEl.textContent = fmtP0(r.rlfl); rlflEl.className = r.rlfl >= 0 ? 'up' : 'down'; }
           const sgEl = document.getElementById('sg_' + prefix); if (sgEl) { sgEl.textContent = fmtP0(r.stockGrowth); sgEl.className = r.stockGrowth >= 0 ? 'up' : 'down'; }
           const tEl = document.getElementById('tag_' + prefix); if (tEl) tEl.innerHTML = `<span class="badge ${r.tag.eCls}">${r.tag.etiket}</span>`;
           const aEl = document.getElementById('act_' + prefix); if (aEl) aEl.innerHTML = `<span class="badge ${r.tag.aCls}">${r.tag.aksiyon}</span>`;
@@ -346,6 +348,8 @@
     const footCover = m.T.sales ? m.T.stock / m.T.sales : 0;
     const footTurnover = m.T.stock ? m.T.sales / m.T.stock : 0;
     const footStockGrowth = m.T.stock ? m.T.planStock / m.T.stock - 1 : 0;
+    const footRlfl = (m.T.planStock && m.T.sales && m.T.stock)
+      ? (m.T.salesBudget / m.T.planStock) / (m.T.sales / m.T.stock) - 1 : null;
     $("tfoot").innerHTML = `
       <td>TOPLAM</td>
       <td>${fmtN(m.T.stock)}</td><td>${m.rows.length ? "100%" : "—"}</td>
@@ -355,10 +359,12 @@
       <td>${m.rows.length ? "100%" : "—"}</td><td>${fmtN(m.T.planStock)}</td>
       <td>—</td><td>${fmtN(m.T.salesBudget)}</td>
       <td class="${m.rows.length ? (m.T.lfl >= 0 ? "up" : "down") : ""}">${m.rows.length ? fmtP0(m.T.lfl) : "—"}</td>
+      <td class="${footRlfl === null ? "" : (footRlfl >= 0 ? "up" : "down")}">${footRlfl === null ? "—" : fmtP0(footRlfl)}</td>
       <td class="${m.rows.length ? (footStockGrowth >= 0 ? "up" : "down") : ""}">${m.rows.length ? fmtP0(footStockGrowth) : "—"}</td>
       <td></td><td></td>`;
 
     renderKpis(m);
+    renderDurumKpis(m);
     renderForecast(m);
 
 }
@@ -385,6 +391,30 @@
       return `<div class="kpi"><div class="lbl">${k[0]}</div>
         <div class="val">${k[1]}</div><div class="sub ${sc}">${k[2]}</div></div>`;
     }).join("");
+  }
+
+  // --- Durum dağılımı özet KPI'ları (2x2 matris — bkz. actionTag) ---
+  // Kategori adları/rozet sınıfları actionTag'ten üretilir, burada tekrar yazılmaz.
+  function renderDurumKpis(m) {
+    const quadrants = [
+      { stockShare: 0, salesShare: 1, profitShare: 1 }, // Hızlı & Kârlı
+      { stockShare: 1, salesShare: 2, profitShare: 0 }, // Hızlı & Kârsız
+      { stockShare: 1, salesShare: 0, profitShare: 2 }, // Yavaş & Kârlı
+      { stockShare: 1, salesShare: 0, profitShare: 0 }, // Yavaş & Kârsız
+    ];
+    const total = m.rows.length;
+    const cards = quadrants.map((q) => {
+      const tag = actionTag(q.stockShare, q.salesShare, q.profitShare);
+      const count = m.rows.filter((r) => r.tag.etiket === tag.etiket).length;
+      const pct = total ? count / total : 0;
+      return { tag, count, pct };
+    });
+    $("durumKpis").innerHTML = cards.map((c) => `
+      <div class="kpi">
+        <div class="lbl"><span class="badge ${c.tag.eCls}">${c.tag.etiket}</span></div>
+        <div class="val">${c.count}</div>
+        <div class="sub">${fmtP0(c.pct)}</div>
+      </div>`).join("");
   }
 
   // --- Senaryo yönetimi ---
