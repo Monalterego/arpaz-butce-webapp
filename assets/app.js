@@ -29,6 +29,19 @@
   }
   function initHierarchy() {
     state.sel = DataService.firstSelection();
+
+    // --- Teşkilat select'lerini doldur (DataService.orgs / regions)
+    if (document.getElementById('h_org')) {
+      fillSelect($("h_org"), DataService.orgs(), "Tümü");
+      $("h_org").value = "";
+      $("h_org").addEventListener("change", () => { DataService.setOrg($("h_org").value); rebuild(); });
+    }
+    if (document.getElementById('h_region')) {
+      fillSelect($("h_region"), DataService.regions(), "Tümü");
+      $("h_region").value = "";
+      $("h_region").addEventListener("change", () => { DataService.setRegion($("h_region").value); rebuild(); });
+    }
+
     const uh1s = Object.keys(HIERARCHY);
     fillSelect($("h_uh1"), uh1s);
     $("h_uh1").value = state.sel.uh1;
