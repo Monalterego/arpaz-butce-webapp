@@ -157,6 +157,39 @@ Stok Büyüme  = Plan Stok / LY Stok − 1
   verimlilik geriliyor demektir. Arpaz'da bayiler arası iade/transfer olmadığı için bu
   doğrudan bayi stok riskidir; tek başına LFL'e bakan bu tuzağı göremez.
 
+### 5.2) Ölü Stok İşaretleme (SADECE GÖRSEL — bütçe hesabına sıfır etkisi)
+Bir ÜH4 kalemi ölü stok sayılır ancak ve ancak:
+```
+LY Cover > (Ölü Stok Çarpanı × görünen satırların LY Cover MEDYANI)   VE   LY Cover >= 12 ay
+```
+- Çarpan varsayılanı **3,0**, parametre panelinden (`#p_olucarpan`) ayarlanabilir.
+- **Medyan** kullanılır, ortalama DEĞİL (uç değerler — bazı kalemlerde 3.000+ ay — ortalamayı
+  şişirip eşiği anlamsızlaştırır).
+- Medyan tabanı `computeFromData`'ya gelen `data`, yani **o an ekranda görünen satırlar**
+  (varsayılanda bir ÜH2'nin tüm ÜH4'leri; kullanıcı bir ÜH3 seçerse otomatik olarak o
+  ÜH3'ün normuna döner — bunun için ekstra kod gerekmedi, davranış istenen budur).
+- Rozet (kırmızı, mevcut `.badge b-red`) sadece **LY Cover hücresinin görünümünü** değiştirir;
+  Hedef Cover, Plan Stok, Satış Bütçe, LFL, R-LFL, Stok Büyümesi hesaplarına **dokunmaz**.
+
+**Gerekçe (ölçüldü, uydurulmadı):**
+- *Sabit eşik (ör. 24 ay) neden reddedildi:* cover normu ÜH2'ye göre çok değişiyor —
+  KLIMA medyanı 7,4 ay, ÇAMAŞIR KURUTMA MAKINESI medyanı **20,5 ay**. Sabit 24 ay eşiği
+  Çamaşır Kurutma'da neredeyse hiçbir şeyi yakalamaz, Klima'daki gerçek sorunu (7,4 ayın
+  3 katı = ~22 ay üstü) kaçırırdı.
+- *ÜH3 medyanı neden taban alınmadı:* ÜH3 başına ortalama **2,7 ÜH4** var, **%45,8'i
+  (~%46) tek yapraklı**. Tek yapraklı ÜH3'te medyan kalemin kendisidir → o kalem hiçbir
+  zaman kendi medyanının katı olamaz, yapısal kör nokta. Ölçüldü: ÜH2 tabanlı yaklaşım
+  328 kalemden **33'ünü** işaretler, ÜH3 tabanlı yaklaşım sadece **18'ini**; aradaki farkta
+  AYDINLATMA (129 ay) ve SÜPÜRGE AKSESUARLARI (63 ay) gibi gerçek ölü stoklar ÜH3 tabanında
+  kaçıyordu.
+- *12 ay alt sınırı neden var:* medyanı düşük hızlı gruplarda (ör. NON-PRODUCT/CUSTOMER
+  CARE medyanı 1,6 ay) saf göreli kural sağlıklı kalemleri damgalar — ACCESSORIES-AS SPARE
+  PART (cover 11,9 ay, medyanın 7,4 katı ama 12 ay altında) tam bu senaryoyu doğruluyor.
+  KALDIRMA.
+- Rozetin bütçeye etkisi yoktur; **cover'a tavan UYGULANMAZ** (bkz. Bölüm 10) çünkü
+  Satış Bütçe = Plan Stok ÷ Hedef Cover olduğundan cover'ı düşürmek ölü stoğa yapay yüksek
+  satış hedefi yazmak olurdu.
+
 ---
 
 ## 6) Durum + Aksiyon (LC 2×2 pay matrisi — İKİ AYRI KOLON)
@@ -249,13 +282,15 @@ Sol menü sırası: **TEŞKİLAT → ÜRÜN HİYERARŞİSİ → PERİYOT**.
     veri bulunamadı." bilgi satırı çıkar; tfoot/KPI'lar NaN/Infinity yerine 0 veya "—"
     gösterir.
   - R-LFL kolonu ve Durum Dağılımı KPI şeridi (bkz. Bölüm 5.1 ve 7).
+  - Ölü stok işaretleme — KARAR VERİLDİ ve UYGULANDI (bkz. Bölüm 5.2): göreli eşik
+    (çarpan × görünen satırların medyanı, min 12 ay), SADECE görsel rozet, bütçeye etkisi yok.
 - DİKKAT NOTU — Hedef Cover tavanı tartışıldı, TAVAN UYGULANMAYACAK: Varsayılan (org/bölge
   Tümü) görünümde 328 ÜH4 yaprağının LY cover'ı ölçüldü — medyan ≈11,4 ay, ~153'ü 12 ayın
   üzerinde, en uçta satışı sıfıra yakın kalemlerde 3.687 aya kadar çıkıyor. Yine de tavan
   KONULMAYACAK: `Satış Bütçe = Plan Stok ÷ Hedef Cover` olduğu için cover'ı düşürmek
-  bütçeyi BÜYÜTÜR — ölü stoğa yapay yüksek satış hedefi yazmak olur. Bunun yerine ileride
-  bir "ölü stok" rozeti/eşiği düşünülüyor; eşik değeri (ör. 24 ay mı 36 ay mı) kullanıcı
-  kararı, henüz verilmedi (bkz. Bölüm 11).
+  bütçeyi BÜYÜTÜR — ölü stoğa yapay yüksek satış hedefi yazmak olur. Bunun yerine göreli
+  ölü stok rozeti eklendi (Bölüm 5.2); eşik kullanıcı kararı değil, veriden ölçülerek
+  (medyan-tabanlı, göreli) belirlendi.
 - GELİŞTİRME ORTAMI NOTU: Bu makinede Node.js ve Python KURULU DEĞİL. `node --check`
   çalıştırılamıyor; sözdizimi/mantık doğrulaması headless Edge (`msedge --headless=new
   --dump-dom`) ile uygulamayı gerçekten çalıştırıp konsol/DOM kontrolüyle yapılıyor.
@@ -267,16 +302,14 @@ Sol menü sırası: **TEŞKİLAT → ÜRÜN HİYERARŞİSİ → PERİYOT**.
 ---
 
 ## 11) Sıradaki Adımlar (Öncelik Sırası)
-1. **Ölü stok eşiği + rozeti.** Eşik değeri (ör. 24 ay mı 36 ay mı) **KULLANICI KARARI
-   bekliyor**, henüz verilmedi — uydurup uygulama.
-2. **Senaryo kaydı Hedef Cover setini tutmuyor.** `currentScenario()` sadece parametreleri
+1. **Senaryo kaydı Hedef Cover setini tutmuyor.** `currentScenario()` sadece parametreleri
    ve toplamları saklıyor, `state.covers` saklanmıyor; senaryo kaydedilirken elle girilen
    cover seti dahil edilmiyor (geri yükleme özelliği de şu an yok, sadece kayıt/kıyas var).
    (Not: "en iyi LFL yeşil" vurgusu kontrol edildi — `renderScenarios()` içinde MEVCUT ve
    çalışıyor, kaldırılmasına gerek yok.)
-3. Kampanya/Özel gün takvimini (2021+) ve kampanya geçmişini metadata olarak modele bağla.
-4. Forecast yöntemini bütçe adedine tam entegre et (aylara dağıtım + cover ile plan stok).
-5. IT tam veri verince `DataService`'i API'ye çevir (şema aynı).
+2. Kampanya/Özel gün takvimini (2021+) ve kampanya geçmişini metadata olarak modele bağla.
+3. Forecast yöntemini bütçe adedine tam entegre et (aylara dağıtım + cover ile plan stok).
+4. IT tam veri verince `DataService`'i API'ye çevir (şema aynı).
 
 ---
 

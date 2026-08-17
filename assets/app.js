@@ -95,6 +95,7 @@
       stokBuyume: num("p_stokbuyume", 0),
       pazar: num("p_pazar", 0),
       wKar: num("w_kar", 40), wSatis: num("w_satis", 30), wStok: num("w_stok", 20),
+      oluCarpan: num("p_olucarpan", 3),
       camp,
     };
   }
@@ -108,6 +109,14 @@
     if (hizli && !karli) return { etiket: "Hızlı & Kârsız", eCls: "b-amber", aksiyon: "Fiyat / marj gözden geçir", aCls: "b-amber" };
     if (!hizli && karli) return { etiket: "Yavaş & Kârlı", eCls: "b-blue", aksiyon: "İndirim/kampanya ile hızlandır · stok payını azalt", aCls: "b-blue" };
     return { etiket: "Yavaş & Kârsız", eCls: "b-red", aksiyon: "Stok payını azalt · fiyat/kampanya gözden geçir", aCls: "b-red" };
+  }
+
+  // --- SAF yardımcı: medyan (çift sayıda elemanda ortadaki ikinin ortalaması) ---
+  function median(arr) {
+    if (!arr.length) return 0;
+    const s = [...arr].sort((a, b) => a - b);
+    const mid = Math.floor(s.length / 2);
+    return s.length % 2 ? s[mid] : (s[mid - 1] + s[mid]) / 2;
   }
 
   // --- SAF HESAP MODELİ (render'dan bağımsız) ---
@@ -143,10 +152,22 @@
         lyCover, turnover, planPct, planStock, hedefCover, salesBudget, lfl, rlfl, stockGrowth, tag };
     });
 
+    // --- Ölü stok işaretleme (SADECE görsel — bütçe hesabına etkisi yok) ---
+    // Kural: LY Cover > (oluCarpan × görünen satırların LY Cover medyanı) VE LY Cover >= 12 ay
+    const oluCarpan = (typeof p.oluCarpan === "number" && !isNaN(p.oluCarpan)) ? p.oluCarpan : 3;
+    const coverMedian = median(rows.map((r) => r.lyCover));
+    const oluEsik = oluCarpan * coverMedian;
+    rows.forEach((r) => {
+      r.oluStok = r.lyCover > oluEsik && r.lyCover >= 12;
+      r.coverMedian = coverMedian;
+      r.oluCarpan = oluCarpan;
+    });
+
     const T = {
       stock: totStock, sales: totSales, profit: totProfit,
       planStock: rows.reduce((a, r) => a + r.planStock, 0),
       salesBudget: rows.reduce((a, r) => a + r.salesBudget, 0),
+      oluAdet: rows.filter((r) => r.oluStok).length,
     };
     T.lfl = T.salesBudget / (totSales || 1) - 1;
     T.cover = totStock / (totSales || 1);
@@ -298,7 +319,7 @@
       $("sap_" + i).textContent = fmtP(r.salesShare);
     $("bk_" + i).textContent = fmtN(r.profit);
     $("ktp_" + i).innerHTML = `<span class="heat" style="background:${heat(r.profitShare, 0, 0.3)}">${fmtP(r.profitShare)}</span>`;
-    $("cov_" + i).textContent = fmtD(r.lyCover);
+    $("cov_" + i).innerHTML = coverCellHtml(r);
     $("tov_" + i).textContent = fmtD2(r.turnover);
     $("psp_" + i).textContent = fmtP(r.planPct);
     $("psa_" + i).textContent = fmtN(r.planStock);
@@ -329,7 +350,8 @@
           set('sa_' + prefix, fmtN(r.sales)); set('sap_' + prefix, fmtP(r.salesShare));
           set('bk_' + prefix, fmtN(r.profit));
           set('ktp_' + prefix, `<span class="heat" style="background:${heat(r.profitShare, 0, 0.3)}">${fmtP(r.profitShare)}</span>`);
-          set('cov_' + prefix, fmtD(r.lyCover)); set('tov_' + prefix, fmtD2(r.turnover));
+          const covEl = document.getElementById('cov_' + prefix); if (covEl) covEl.innerHTML = coverCellHtml(r);
+          set('tov_' + prefix, fmtD2(r.turnover));
           set('psp_' + prefix, fmtP(r.planPct)); set('psa_' + prefix, fmtN(r.planStock));
           set('sb_' + prefix, fmtN(r.salesBudget));
           const lflEl = document.getElementById('lfl_' + prefix); if (lflEl) { lflEl.textContent = fmtP0(r.lfl); lflEl.className = r.lfl >= 0 ? 'up' : 'down'; }
@@ -362,6 +384,7 @@
       <td class="${footRlfl === null ? "" : (footRlfl >= 0 ? "up" : "down")}">${footRlfl === null ? "—" : fmtP0(footRlfl)}</td>
       <td class="${m.rows.length ? (footStockGrowth >= 0 ? "up" : "down") : ""}">${m.rows.length ? fmtP0(footStockGrowth) : "—"}</td>
       <td></td><td></td>`;
+    $("oluCount").textContent = m.T.oluAdet ? `${m.T.oluAdet} kalem işaretlendi` : "—";
 
     renderKpis(m);
     renderDurumKpis(m);
@@ -375,6 +398,15 @@
     const g = Math.round(40 + (125 - 40) * t);
     const b = Math.round(40 + (50 - 40) * t);
     return `rgba(${r},${g},${b},.14)`;
+  }
+
+  // LY Cover hücresi: normalde düz sayı, ölü stok işaretliyse mevcut b-red rozetiyle sarılır (görsel — bütçeye etkisi yok)
+  function coverCellHtml(r) {
+    const val = fmtD(r.lyCover);
+    if (!r.oluStok) return val;
+    const kat = r.coverMedian ? fmtD(r.lyCover / r.coverMedian) : "—";
+    const title = `Ölü stok: grup medyanının ${kat} katı (eşik = çarpan ${fmtD(r.oluCarpan)} × medyan ${fmtD(r.coverMedian)} ay)`;
+    return `<span class="badge b-red" title="${title}">${val}</span>`;
   }
 
   function renderKpis(m) {
@@ -482,7 +514,7 @@
 
   // --- Olaylar ---
   function bind() {
-    ["p_stokbuyume","p_pazar","w_kar","w_satis","w_stok",...CAMP.map(k=>"m_"+k)]
+    ["p_stokbuyume","p_pazar","w_kar","w_satis","w_stok","p_olucarpan",...CAMP.map(k=>"m_"+k)]
       .forEach((id) => $(id).addEventListener("input", updateAll));
     $("fcMethod").addEventListener("change", () => renderForecast());
     document.querySelectorAll(".tabs button").forEach((b) => {
