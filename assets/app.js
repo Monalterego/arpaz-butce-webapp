@@ -86,14 +86,15 @@
     };
   }
 
-  // --- Aksiyon etiketi (payı artır/azalt + cover sinyali) ---
-  function actionTag(planPct, stockShare, lyCover, hedefCover) {
-    const dpp = (planPct - stockShare) * 100; // yüzde puan farkı
-    if (lyCover < hedefCover * 0.7)
-      return ["Cover Düşük → Satış Kaçırma", "b-amber"];
-    if (dpp > 2)  return ["Stok Payını Artır", "b-green"];
-    if (dpp < -2) return ["Stok Payını Azalt", "b-red"];
-    return ["Koru / Dengeli", "b-grey"];
+    // --- Aksiyon etiketi (LC 2x2 pay matrisi, Arpaz aksiyonları) ---
+  // Hız: Satış payı vs Stok payı | Kârlılık: Kâr payı vs Stok payı
+  function actionTag(stockShare, salesShare, profitShare) {
+    const hizli = salesShare > stockShare;
+    const karli = profitShare > stockShare;
+    if (hizli && karli) return { etiket: "Hızlı & Kârlı", eCls: "b-green", aksiyon: "Plan stok payını artır", aCls: "b-green" };
+    if (hizli && !karli) return { etiket: "Hızlı & Kârsız", eCls: "b-amber", aksiyon: "Fiyat / marj gözden geçir", aCls: "b-amber" };
+    if (!hizli && karli) return { etiket: "Yavaş & Kârlı", eCls: "b-blue", aksiyon: "İndirim/kampanya ile hızlandır · stok payını azalt", aCls: "b-blue" };
+    return { etiket: "Yavaş & Kârsız", eCls: "b-red", aksiyon: "Stok payını azalt · fiyat/kampanya gözden geçir", aCls: "b-red" };
   }
 
   // --- SAF HESAP MODELİ (render'dan bağımsız) ---
@@ -123,10 +124,10 @@
       const lfl = sales ? salesBudget / sales - 1 : 0;
       const rlfl = (planStock && sales && stock) ? (salesBudget / planStock) / (sales / stock) - 1 : 0;
       const stockGrowth = stock ? planStock / stock - 1 : 0;
-      const [tg, cls] = actionTag(planPct, stockShare, lyCover, hedefCover);
+      const tag = actionTag(stockShare, salesShare, profitShare);
 
       return { name, stock, sales, profit, stockShare, salesShare, profitShare,
-        lyCover, turnover, planPct, planStock, hedefCover, salesBudget, lfl, rlfl, stockGrowth, tg, cls };
+        lyCover, turnover, planPct, planStock, hedefCover, salesBudget, lfl, rlfl, stockGrowth, tag };
     });
 
     const T = {
@@ -171,6 +172,7 @@
           <td class="covcell"><input type="number" class="covin" id="hcov_${i}" min="1" step="0.5" value="${state.covers[i]}"></td>
           <td class="num-cell" id="sb_${i}"></td>
           <td id="lfl_${i}"></td><td id="sg_${i}"></td>
+          <td id="tag_${i}"></td>
           <td id="act_${i}"></td>`;
         tb.appendChild(tr);
       });
@@ -200,6 +202,7 @@
       <td class="covcell"><input type="number" class="covin" id="hcov_${i}" min="1" step="0.5" value="${state.covers[i]}"></td>
       <td class="num-cell" id="sb_${i}"></td>
       <td id="lfl_${i}"></td><td id="sg_${i}"></td>
+      <td id="tag_${i}"></td>
       <td id="act_${i}"></td>`;
       tb.appendChild(tr);
 
@@ -224,6 +227,7 @@
           <td class="covcell"><input type="number" class="covin" id="hcov_${i}_c${j}" min="1" step="0.5" value="${state.childCovers[key]}"></td>
           <td class="num-cell" id="sb_${i}_c${j}"></td>
           <td id="lfl_${i}_c${j}"></td><td id="sg_${i}_c${j}"></td>
+          <td id="tag_${i}_c${j}"></td>
           <td id="act_${i}_c${j}"></td>`;
         tb.appendChild(ctr);
       });
@@ -282,7 +286,8 @@
     $("sb_" + i).textContent = fmtN(r.salesBudget);
     const lflEl = $("lfl_" + i); lflEl.textContent = fmtP0(r.lfl); lflEl.className = r.lfl >= 0 ? "up" : "down";
     const sgEl = $("sg_" + i); sgEl.textContent = fmtP0(r.stockGrowth); sgEl.className = r.stockGrowth >= 0 ? "up" : "down";
-    $("act_" + i).innerHTML = `<span class="badge ${r.cls}">${r.tg}</span>`;
+    $("tag_" + i).innerHTML = `<span class="badge ${r.tag.eCls}">${r.tag.etiket}</span>`;
+    $("act_" + i).innerHTML = `<span class="badge ${r.tag.aCls}">${r.tag.aksiyon}</span>`;
     // ensure Hedef Cover input value shown
     const covEl = $("hcov_" + i);
     if (covEl && document.activeElement !== covEl) covEl.value = r.hedefCover;
@@ -309,7 +314,8 @@
           set('sb_' + prefix, fmtN(r.salesBudget));
           const lflEl = document.getElementById('lfl_' + prefix); if (lflEl) { lflEl.textContent = fmtP0(r.lfl); lflEl.className = r.lfl >= 0 ? 'up' : 'down'; }
           const sgEl = document.getElementById('sg_' + prefix); if (sgEl) { sgEl.textContent = fmtP0(r.stockGrowth); sgEl.className = r.stockGrowth >= 0 ? 'up' : 'down'; }
-          const actEl = document.getElementById('act_' + prefix); if (actEl) actEl.innerHTML = `<span class="badge ${r.cls}">${r.tg}</span>`;
+          const tEl = document.getElementById('tag_' + prefix); if (tEl) tEl.innerHTML = `<span class="badge ${r.tag.eCls}">${r.tag.etiket}</span>`;
+          const aEl = document.getElementById('act_' + prefix); if (aEl) aEl.innerHTML = `<span class="badge ${r.tag.aCls}">${r.tag.aksiyon}</span>`;
           // ensure child cov input shows current value
           const covInput = document.getElementById('hcov_' + prefix);
           if (covInput && document.activeElement !== covInput) covInput.value = state.childCovers[`${i}_${j}`];
@@ -328,7 +334,7 @@
       <td>—</td><td>${fmtN(m.T.salesBudget)}</td>
       <td class="${m.T.lfl >= 0 ? "up" : "down"}">${fmtP0(m.T.lfl)}</td>
       <td class="${m.T.planStock / m.T.stock - 1 >= 0 ? "up" : "down"}">${fmtP0(m.T.planStock / m.T.stock - 1)}</td>
-      <td></td>`;
+      <td></td><td></td>`;
 
     renderKpis(m);
     renderForecast(m);
