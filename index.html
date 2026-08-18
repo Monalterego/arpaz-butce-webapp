@@ -115,7 +115,43 @@
 
       <!-- ANA MIKS TABLOSU -->
       <div class="panel">
-        <h2>🧮 Bütçe &amp; Stok Miks Tablosu <span class="pill">Hedef Cover elle girilir</span><button type="button" class="btn ghost mini" id="gridColReset" style="margin-left:auto">↺ Sütun genişliklerini sıfırla</button></h2>
+        <h2>🧮 Bütçe &amp; Stok Miks Tablosu <span class="pill">Hedef Cover elle girilir</span><button type="button" class="btn ghost mini" id="gridFormatToggle" style="margin-left:auto">🎨 Görünüm</button><button type="button" class="btn ghost mini" id="gridColReset">↺ Görünümü sıfırla</button></h2>
+        <div class="pgroup" id="gridFormatPanel" style="display:none;margin-bottom:10px">
+          <div class="ptitle">Görünüm — Sadece Bu Tablo</div>
+          <div class="prow">
+            <label>Satır Yüksekliği</label>
+            <div class="stepper">
+              <button type="button" class="btn ghost mini" data-fmt-step="rowPad" data-dir="-1">−</button>
+              <span class="stepper-val" id="fmtRowPadVal">7px</span>
+              <button type="button" class="btn ghost mini" data-fmt-step="rowPad" data-dir="1">+</button>
+              <span class="row-resize-handle" id="rowPadHandle" title="Sürükleyerek ayarla">↕</span>
+            </div>
+          </div>
+          <div class="prow">
+            <label>Başlık Yazı Boyutu</label>
+            <div class="stepper">
+              <button type="button" class="btn ghost mini" data-fmt-step="headerSize" data-dir="-1">−</button>
+              <span class="stepper-val" id="fmtHeaderSizeVal">11px</span>
+              <button type="button" class="btn ghost mini" data-fmt-step="headerSize" data-dir="1">+</button>
+            </div>
+          </div>
+          <div class="prow">
+            <label>Başlık Kalın</label>
+            <button type="button" class="btn ghost mini" id="fmtHeaderBoldToggle">Açık</button>
+          </div>
+          <div class="prow">
+            <label>Hücre Yazı Boyutu</label>
+            <div class="stepper">
+              <button type="button" class="btn ghost mini" data-fmt-step="cellSize" data-dir="-1">−</button>
+              <span class="stepper-val" id="fmtCellSizeVal">12px</span>
+              <button type="button" class="btn ghost mini" data-fmt-step="cellSize" data-dir="1">+</button>
+            </div>
+          </div>
+          <div class="prow">
+            <label>Hücre Kalın</label>
+            <button type="button" class="btn ghost mini" id="fmtCellBoldToggle">Kapalı</button>
+          </div>
+        </div>
         <div style="max-height:520px;overflow:auto">
         <table id="grid">
           <colgroup>

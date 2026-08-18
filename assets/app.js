@@ -644,6 +644,125 @@
     }
   }
 
+  // --- Görünüm araç çubuğu: satır yüksekliği + başlık/hücre yazı boyutu-kalınlık (SADECE #grid) ---
+  // Bu GERÇEK bir web uygulaması (GitHub Pages), Claude "artifact" ortamı DEĞİL — localStorage kullanılır.
+  const GRID_FORMAT_KEY = "arpaz_grid_format";
+  const FORMAT_DEFAULTS = { rowPad: 7, headerSize: 11, headerBold: true, cellSize: 12, cellBold: false };
+  const FORMAT_LIMITS = { rowPad: [4, 20], headerSize: [9, 16], cellSize: [9, 14] };
+  let gridFormat = { ...FORMAT_DEFAULTS };
+
+  function clamp(v, [min, max]) { return Math.max(min, Math.min(max, v)); }
+
+  function applyGridFormat() {
+    const grid = $("grid");
+    if (!grid) return;
+    grid.style.setProperty("--grid-row-pad", gridFormat.rowPad + "px");
+    grid.style.setProperty("--grid-h-size", gridFormat.headerSize + "px");
+    grid.style.setProperty("--grid-h-weight", gridFormat.headerBold ? "700" : "400");
+    grid.style.setProperty("--grid-c-size", gridFormat.cellSize + "px");
+    grid.style.setProperty("--grid-c-weight", gridFormat.cellBold ? "700" : "400");
+    updateFormatUI();
+  }
+  function updateFormatUI() {
+    const rowPadEl = $("fmtRowPadVal"); if (rowPadEl) rowPadEl.textContent = gridFormat.rowPad + "px";
+    const hSizeEl = $("fmtHeaderSizeVal"); if (hSizeEl) hSizeEl.textContent = gridFormat.headerSize + "px";
+    const cSizeEl = $("fmtCellSizeVal"); if (cSizeEl) cSizeEl.textContent = gridFormat.cellSize + "px";
+    const hBoldBtn = $("fmtHeaderBoldToggle");
+    if (hBoldBtn) { hBoldBtn.textContent = gridFormat.headerBold ? "Açık" : "Kapalı"; hBoldBtn.classList.toggle("is-on", gridFormat.headerBold); }
+    const cBoldBtn = $("fmtCellBoldToggle");
+    if (cBoldBtn) { cBoldBtn.textContent = gridFormat.cellBold ? "Açık" : "Kapalı"; cBoldBtn.classList.toggle("is-on", gridFormat.cellBold); }
+  }
+  function loadSavedGridFormat() {
+    try {
+      const raw = localStorage.getItem(GRID_FORMAT_KEY);
+      if (!raw) return null;
+      const obj = JSON.parse(raw);
+      if (!obj || typeof obj !== "object") return null;
+      const rowPad = clamp(Number(obj.rowPad), FORMAT_LIMITS.rowPad);
+      const headerSize = clamp(Number(obj.headerSize), FORMAT_LIMITS.headerSize);
+      const cellSize = clamp(Number(obj.cellSize), FORMAT_LIMITS.cellSize);
+      if (!isFinite(rowPad) || !isFinite(headerSize) || !isFinite(cellSize)) return null;
+      return {
+        rowPad, headerSize, cellSize,
+        headerBold: typeof obj.headerBold === "boolean" ? obj.headerBold : FORMAT_DEFAULTS.headerBold,
+        cellBold: typeof obj.cellBold === "boolean" ? obj.cellBold : FORMAT_DEFAULTS.cellBold,
+      };
+    } catch (e) {
+      return null; // bozuk veri: sessizce varsayılana dön
+    }
+  }
+  function saveGridFormat() {
+    try { localStorage.setItem(GRID_FORMAT_KEY, JSON.stringify(gridFormat)); } catch (e) { /* geç */ }
+  }
+  function initGridFormat() {
+    gridFormat = loadSavedGridFormat() || { ...FORMAT_DEFAULTS };
+    applyGridFormat();
+
+    const toggleBtn = $("gridFormatToggle");
+    const panel = $("gridFormatPanel");
+    if (toggleBtn && panel) {
+      toggleBtn.addEventListener("click", () => {
+        panel.style.display = panel.style.display === "none" ? "block" : "none";
+      });
+    }
+
+    document.querySelectorAll("[data-fmt-step]").forEach((btn) => {
+      btn.addEventListener("click", () => {
+        const key = btn.dataset.fmtStep;
+        const dir = parseInt(btn.dataset.dir, 10);
+        gridFormat[key] = clamp(gridFormat[key] + dir, FORMAT_LIMITS[key]);
+        applyGridFormat();
+        saveGridFormat();
+      });
+    });
+
+    const hBoldBtn = $("fmtHeaderBoldToggle");
+    if (hBoldBtn) hBoldBtn.addEventListener("click", () => {
+      gridFormat.headerBold = !gridFormat.headerBold;
+      applyGridFormat();
+      saveGridFormat();
+    });
+    const cBoldBtn = $("fmtCellBoldToggle");
+    if (cBoldBtn) cBoldBtn.addEventListener("click", () => {
+      gridFormat.cellBold = !gridFormat.cellBold;
+      applyGridFormat();
+      saveGridFormat();
+    });
+
+    const rowPadHandle = $("rowPadHandle");
+    if (rowPadHandle) {
+      rowPadHandle.addEventListener("mousedown", (e) => {
+        e.preventDefault();
+        const startY = e.clientY;
+        const startPad = gridFormat.rowPad;
+        function onMove(ev) {
+          const delta = Math.round((ev.clientY - startY) / 2); // ~2px sürükleme = 1px yükseklik
+          gridFormat.rowPad = clamp(startPad + delta, FORMAT_LIMITS.rowPad);
+          applyGridFormat();
+        }
+        function onUp() {
+          document.removeEventListener("mousemove", onMove);
+          document.removeEventListener("mouseup", onUp);
+          saveGridFormat();
+        }
+        document.addEventListener("mousemove", onMove);
+        document.addEventListener("mouseup", onUp);
+      });
+    }
+
+    // "↺ Görünümü sıfırla" — mevcut gridColReset butonuna İKİNCİ bir dinleyici (sütun
+    // genişliği sıfırlama initColResize()'da zaten bağlı, ona dokunmadan ekleniyor)
+    const resetBtn = $("gridColReset");
+    if (resetBtn) {
+      resetBtn.addEventListener("click", (e) => {
+        e.preventDefault();
+        try { localStorage.removeItem(GRID_FORMAT_KEY); } catch (err) { /* geç */ }
+        gridFormat = { ...FORMAT_DEFAULTS };
+        applyGridFormat();
+      });
+    }
+  }
+
   document.addEventListener("DOMContentLoaded", () => {
     initHierarchy();
     DataService._cur = { sel: state.sel, level: state.level };
@@ -652,6 +771,7 @@
     bind();
     initFormulaToggle();
     initColResize();
+    initGridFormat();
     updateAll();
     updateSelInfo();
     renderCalendar();
