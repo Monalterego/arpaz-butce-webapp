@@ -107,9 +107,13 @@ Küçük ev aletleri/kişisel bakım %30-45 · Aksesuar/yedek parça ~%48.
   (eski hiyerarşide GRUPSUZ›GRUPSUZ›GRUPSUZ vardı, seçilince tablo boş kalıyordu) bu
   yüzden düştü.
 - Sidebar kaskad: ÜH1 seç → ÜH2 dolar → ÜH3 dolar ("Tümü (ÜH3)" seçeneği var).
-- "Çalışma Seviyesi" seçici KALDIRILDI; `state.level` sabit `"uh4"`. (Not: app.js'te ÜH3
-  drill-down için `level==='uh3'` dalları hâlâ var; ÜH3 görünümünde ana satır + gizli ÜH4
-  child satırlar açılıp kapanır.)
+- "Çalışma Seviyesi" seçici (ayrı bir dropdown) KALDIRILDI, ama `state.level` artık
+  **`h_uh3` seçimine göre otomatik türetiliyor**: `syncLevel()` — `state.sel.uh3` doluysa
+  (belirli bir ÜH3 seçiliyse) `"uh3"`, boşsa ("Tümü (ÜH3)") `"uh4"`. Üç yerde çağrılır:
+  `initHierarchy()` başında ve h_uh1/h_uh2/h_uh3 change handler'larının hepsinde,
+  `state.sel.uh3` değiştikten hemen sonra (tek doğruluk kaynağı, kopyalanmaz).
+  ÜH3 görünümünde ana satır + gizli ÜH4 child satırlar (expander ▶/▼ ile açılıp kapanır)
+  gösterilir; bu dallar zaten kodda tamdı, önceden hiç tetiklenmiyordu (bkz. Bölüm 10).
 
 ---
 
@@ -288,6 +292,10 @@ Sol menü sırası: **TEŞKİLAT → ÜRÜN HİYERARŞİSİ → PERİYOT**.
   - R-LFL kolonu ve Durum Dağılımı KPI şeridi (bkz. Bölüm 5.1 ve 7).
   - Ölü stok işaretleme — KARAR VERİLDİ ve UYGULANDI (bkz. Bölüm 5.2): göreli eşik
     (çarpan × görünen satırların medyanı, min 12 ay), SADECE görsel rozet, bütçeye etkisi yok.
+  - BUG FIX — ÜH3 drill-down artık gerçekten tetikleniyor: `state.level` önceden hiçbir
+    yerde güncellenmiyordu (`"uh4"`'te sabit kalıyordu), bu yüzden kodda tam yazılı ÜH3
+    ana satır + ÜH4 child satır (expander) mantığı hiç çalışmıyordu. `syncLevel()` ile
+    düzeltildi (bkz. Bölüm 4).
 - DİKKAT NOTU — Hedef Cover tavanı tartışıldı, TAVAN UYGULANMAYACAK: Varsayılan (org/bölge
   Tümü) görünümde 328 ÜH4 yaprağının LY cover'ı ölçüldü — medyan ≈11,4 ay, ~153'ü 12 ayın
   üzerinde, en uçta satışı sıfıra yakın kalemlerde 3.687 aya kadar çıkıyor. Yine de tavan

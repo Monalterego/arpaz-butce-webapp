@@ -28,8 +28,13 @@
     el.innerHTML = (placeholder ? `<option value="">${placeholder}</option>` : "") +
       items.map((i) => `<option value="${i.replace(/"/g, "&quot;")}">${i}</option>`).join("");
   }
+  // state.level'ı state.sel.uh3'ün dolu olup olmamasına göre türetir (tek yer, tek doğruluk kaynağı)
+  function syncLevel() {
+    state.level = state.sel.uh3 ? "uh3" : "uh4";
+  }
   function initHierarchy() {
     state.sel = DataService.firstSelection();
+    syncLevel();
 
     // --- Teşkilat select'lerini doldur (DataService.orgs / regions)
     if (document.getElementById('h_org')) {
@@ -49,14 +54,18 @@
     refreshUh2(); refreshUh3();
     $("h_uh1").addEventListener("change", () => {
       state.sel.uh1 = $("h_uh1").value; state.sel.uh3 = "";
+      syncLevel();
       refreshUh2(); refreshUh3(); rebuild();
     });
     $("h_uh2").addEventListener("change", () => {
       state.sel.uh2 = $("h_uh2").value; state.sel.uh3 = "";
+      syncLevel();
       refreshUh3(); rebuild();
     });
     $("h_uh3").addEventListener("change", () => {
-      state.sel.uh3 = $("h_uh3").value; rebuild();
+      state.sel.uh3 = $("h_uh3").value;
+      syncLevel();
+      rebuild();
     });
   }
   function refreshUh2() {
