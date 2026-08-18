@@ -82,8 +82,15 @@ tfoot td{background:#eef3f8;font-weight:700;border-top:2px solid var(--navy)}
 #grid th.grp-plan{background:#0b6e4f;text-align:center}
 /* uzun metrik başlıkları 2-3 satıra sarılıp sıkışsın; grup satırı (GERÇEKLEŞEN/
    GELECEK YIL PLANI/ÜH4/Durum/Aksiyon) bundan muaf */
-#grid th{max-width:90px}
+#grid th{max-width:120px}
 #grid thead tr:first-child th{max-width:none}
+/* çok satırlı metrik başlıkları ortalı görünsün (sağa yaslı kalırsa merdiven gibi
+   dağınık dururlar); grup banner'ları ve rowspan'lı ÜH4/Durum/Aksiyon etkilenmesin */
+#grid thead tr:last-child th{text-align:center}
+/* max-width tek başına sütun genişliğini artırmıyor — asıl darboğaz dar sayı
+   hücreleri (td); sütunları gerçekten genişletmek için min-width gerekiyor.
+   Sadece metrik başlıkları (satır 2), grup satırı yine muaf */
+#grid thead tr:last-child th{min-width:120px}
 /* düzenlenebilir Hedef Cover hücresi */
 .covcell{background:#fff8e6;text-align:center}
 .covin{width:56px;padding:4px 6px;border:1px solid var(--amber);border-radius:6px;text-align:right;font-weight:700;color:var(--amber);background:#fffdf6}
