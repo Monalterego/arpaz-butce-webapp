@@ -162,7 +162,11 @@ Bir ÜH4 kalemi ölü stok sayılır ancak ve ancak:
 ```
 LY Cover > (Ölü Stok Çarpanı × görünen satırların LY Cover MEDYANI)   VE   LY Cover >= 12 ay
 ```
-- Çarpan varsayılanı **3,0**, parametre panelinden (`#p_olucarpan`) ayarlanabilir.
+- Çarpan **SABİTTİR: 3,0** (`OLU_STOK_CARPANI`, app.js başında). **Kullanıcı parametresi
+  DEĞİL** — panelde ayrı bir "Ölü Stok" kartı YOK, rozet LY Cover hücresinde otomatik
+  görünür. (Önceden `#p_olucarpan` input'u vardı, kaldırıldı: soyut bir çarpan girdisi,
+  ekranda karşılık gelen somut bir "eşik = X ay" göstergesi olmadan kullanıcı için
+  anlamsız kaldı. Basitlik için sabitlendi; talep gelirse yeniden parametreleştirilebilir.)
 - **Medyan** kullanılır, ortalama DEĞİL (uç değerler — bazı kalemlerde 3.000+ ay — ortalamayı
   şişirip eşiği anlamsızlaştırır).
 - Medyan tabanı `computeFromData`'ya gelen `data`, yani **o an ekranda görünen satırlar**

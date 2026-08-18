@@ -20,6 +20,7 @@
   const fmtD2 = (n) => n.toFixed(2).replace(".", ",");
 
   const CAMP = ["paro", "bundle", "event", "gam", "kota"];
+  const OLU_STOK_CARPANI = 3; // sabit: grup medyanının 3 katı (kullanıcı ayarlamıyor)
   const state = { covers: null, sel: null, level: "uh4" };  // seçim + Hedef Cover
 
   // --- Hiyerarşi kaskad seçimleri ---
@@ -95,7 +96,6 @@
       stokBuyume: num("p_stokbuyume", 0),
       pazar: num("p_pazar", 0),
       wKar: num("w_kar", 40), wSatis: num("w_satis", 30), wStok: num("w_stok", 20),
-      oluCarpan: num("p_olucarpan", 3),
       camp,
     };
   }
@@ -154,7 +154,7 @@
 
     // --- Ölü stok işaretleme (SADECE görsel — bütçe hesabına etkisi yok) ---
     // Kural: LY Cover > (oluCarpan × görünen satırların LY Cover medyanı) VE LY Cover >= 12 ay
-    const oluCarpan = (typeof p.oluCarpan === "number" && !isNaN(p.oluCarpan)) ? p.oluCarpan : 3;
+    const oluCarpan = OLU_STOK_CARPANI;
     const coverMedian = median(rows.map((r) => r.lyCover));
     const oluEsik = oluCarpan * coverMedian;
     rows.forEach((r) => {
@@ -384,7 +384,6 @@
       <td class="${footRlfl === null ? "" : (footRlfl >= 0 ? "up" : "down")}">${footRlfl === null ? "—" : fmtP0(footRlfl)}</td>
       <td class="${m.rows.length ? (footStockGrowth >= 0 ? "up" : "down") : ""}">${m.rows.length ? fmtP0(footStockGrowth) : "—"}</td>
       <td></td><td></td>`;
-    $("oluCount").textContent = m.T.oluAdet ? `${m.T.oluAdet} kalem işaretlendi` : "—";
 
     renderKpis(m);
     renderDurumKpis(m);
@@ -514,7 +513,7 @@
 
   // --- Olaylar ---
   function bind() {
-    ["p_stokbuyume","p_pazar","w_kar","w_satis","w_stok","p_olucarpan",...CAMP.map(k=>"m_"+k)]
+    ["p_stokbuyume","p_pazar","w_kar","w_satis","w_stok",...CAMP.map(k=>"m_"+k)]
       .forEach((id) => $(id).addEventListener("input", updateAll));
     $("fcMethod").addEventListener("change", () => renderForecast());
     document.querySelectorAll(".tabs button").forEach((b) => {
