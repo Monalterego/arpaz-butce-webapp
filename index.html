@@ -8,7 +8,7 @@
 </head>
 <body>
 <header>
-  <h1>📊 Arpaz — Bütçe &amp; Stok Miks Çalışma Ekranı</h1>
+  <h1>Arpaz — Bütçe &amp; Stok Miks Çalışma Ekranı</h1>
   <span class="tag">Web App · Prototip v0.3</span>
   <div class="right">
     <span>Veri Kaynağı</span>
@@ -57,7 +57,7 @@
 
       <!-- FORMÜL AÇIKLAMA -->
       <div class="panel formula">
-        <h2>🧠 Bütçe Kurgusu — Nasıl Hesaplanıyor? <span class="pill">LC → Arpaz Uyarlaması</span><span class="toggle-ico" id="formulaToggle">▸</span></h2>
+        <h2>Bütçe Kurgusu — Nasıl Hesaplanıyor? <span class="pill">LC → Arpaz Uyarlaması</span><span class="toggle-ico" id="formulaToggle">▸</span></h2>
         <div class="fbox" id="formulaBox" style="display:none">
           <div><b>1) Plan Stok %</b> = ( <span class="wK">Kâr%×W</span> + <span class="wS">Satış%×W</span> + <span class="wSt">Stok%×W</span> ) → 100'e normalize</div>
           <div><b>2) Plan Stok Adet</b> = ( Toplam Stok × Hedef Stok Büyümesi ) × Plan Stok %</div>
@@ -68,7 +68,7 @@
 
       <!-- PARAMETRELER -->
       <div class="panel">
-        <h2>⚙️ Planlama Parametreleri <span class="pill">Kullanıcı Girişi</span></h2>
+        <h2>Planlama Parametreleri <span class="pill">Kullanıcı Girişi</span></h2>
         <div class="params">
           <div class="pgroup">
             <div class="ptitle">Global Hedefler</div>
@@ -98,7 +98,7 @@
 
       <!-- SENARYO -->
       <div class="panel" style="padding:12px 16px">
-        <h2>💾 Senaryo Yönetimi <span class="pill">Kaydet &amp; Karşılaştır</span></h2>
+        <h2>Senaryo Yönetimi <span class="pill">Kaydet &amp; Karşılaştır</span></h2>
         <div class="scenario-bar">
           <input id="scName" placeholder="Senaryo adı (ör. Karlı-Agresif)">
           <button id="saveSc" class="btn">➕ Senaryo kaydet</button>
@@ -115,9 +115,9 @@
 
       <!-- ANA MIKS TABLOSU -->
       <div class="panel">
-        <h2>🧮 Bütçe &amp; Stok Miks Tablosu <span class="pill">Hedef Cover elle girilir</span>
+        <h2>Bütçe &amp; Stok Miks Tablosu <span class="pill">Hedef Cover elle girilir</span>
           <div class="grid-format-wrap">
-            <button type="button" class="btn ghost mini" id="gridFormatToggle" style="margin-left:auto">🎨 Görünüm</button>
+            <button type="button" class="btn ghost mini" id="gridFormatToggle" style="margin-left:auto">Görünüm</button>
             <div class="pgroup" id="gridFormatPanel" style="display:none">
               <div class="ptitle">Görünüm — Sadece Bu Tablo</div>
               <div class="fmt-grid">
@@ -253,7 +253,7 @@
     <!-- ========== TAB: TAKVIM ========== -->
     <div class="tabpane" data-pane="takvim" style="display:none">
       <div class="panel">
-        <h2>📅 Kampanya &amp; Özel Gün Takvimi (2021+) <span class="pill">Prototip Metadata</span></h2>
+        <h2>Kampanya &amp; Özel Gün Takvimi (2021+) <span class="pill">Prototip Metadata</span></h2>
         <table id="calTable"><thead><tr>
           <th>Ay</th><th>Özel Gün / Event</th><th>Tip</th><th>Kampanya</th><th>Çarpan Önerisi</th><th>Geçmiş Uplift*</th>
         </tr></thead><tbody id="calRows"></tbody></table>
@@ -264,7 +264,7 @@
     <!-- ========== TAB: RASYO ========== -->
     <div class="tabpane" data-pane="rasyo" style="display:none">
       <div class="panel">
-        <h2>⚖️ Perakende / Toptan Satış Rasyosu <span class="pill">Pandemi Sonrası</span></h2>
+        <h2>Perakende / Toptan Satış Rasyosu <span class="pill">Pandemi Sonrası</span></h2>
         <table id="ratioTable"><thead><tr>
           <th>Yıl</th><th>Perakende %</th><th>Toptan %</th><th>Rasyo (Per/Top)</th><th>Yorum</th>
         </tr></thead><tbody id="ratioRows"></tbody></table>
@@ -275,7 +275,7 @@
     <!-- ========== TAB: FORECAST ========== -->
     <div class="tabpane" data-pane="forecast" style="display:none">
       <div class="panel">
-        <h2>🔮 Tahmin (Forecast) <span class="pill">Yöntem Seçimi</span></h2>
+        <h2>Tahmin (Forecast) <span class="pill">Yöntem Seçimi</span></h2>
         <div class="fc-controls">
           <label>Yöntem</label>
           <select id="fcMethod">

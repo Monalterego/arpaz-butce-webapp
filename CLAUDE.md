@@ -225,6 +225,17 @@ UI'da geçmemeli.
 ---
 
 ## 7) Arayüz (index.html) — Bölümler
+- **Tasarım tutarlılığı ("AI slop" geçişi, SADECE kabuk katmanı):** Başlık emoji'leri
+  (📊🧠⚙️💾🧮📅⚖️🔮🎨) tamamen kaldırıldı — başlık metni direkt kelimeyle başlar (bazı
+  buton emoji'leri, ör. ➕/🗑️/↺, kasıtlı olarak dokunulmadan bırakıldı, kapsam dışıydı).
+  `:root`'a ortak tasarım token'ları eklendi: `--radius-sm/--radius-md/--radius-pill`,
+  `--shadow-sm/--shadow-md` (bkz. Bölüm 9 kuralı). `.kpi/.panel/.pgroup/.pill/.badge/.tag/
+  .stepper/.btn` gibi kabuk elemanları bu token'lara geçirildi (mevcut görünüm korunarak,
+  saf kaynak birleştirme). `.segmented button.is-on` gradyanı düz `var(--navy)` rengine
+  çevrildi (KPI/badge/panel'lerle tutarlı olsun diye); ana header'daki navy→navy2 gradyanı
+  kasıtlı marka vurgusu olarak KORUNDU. `#grid` içindeki tablo-özel mantığa (colgroup,
+  `--grid-row-pad` vb.) bu turda dokunulmadı.
+
 Sol menü sırası: **TEŞKİLAT → ÜRÜN HİYERARŞİSİ → PERİYOT**.
 - **Teşkilat:** `#h_org` (Satış Teşkilatı: Tümü/Arçelik/Beko), `#h_region` (Şube/Bölge:
   Tümü + 5 bölge). app.js bunları `DataService.orgs()/regions()` ile doldurur; change →
@@ -243,6 +254,13 @@ Sol menü sırası: **TEŞKİLAT → ÜRÜN HİYERARŞİSİ → PERİYOT**.
   dört durumun (Hızlı&Kârlı/Kârsız, Yavaş&Kârlı/Kârsız) grup sayısı ve toplam içindeki payı
   — rozet renkleri `.badge b-green/b-amber/b-blue/b-red` ile aynı.
 - Senaryo Yönetimi: parametre + hedef cover setini kaydet/karşılaştır; en iyi LFL yeşil.
+- **Ana tablo (`#grid`) — Görünüm araç çubuğu** ("Görünüm" butonu, `#gridFormatPanel`):
+  PowerBI tarzı, SADECE bu tabloyu etkiler. Satır yüksekliği (sürükle veya +/-), başlık/
+  hücre yazı boyutu + kalın, başlık/hücre hizalama (Sol/Orta/Sağ). Ayrıca sütun genişlikleri
+  başlık kenarından sürüklenerek ayarlanabilir (Power BI tarzı). Tüm ayarlar localStorage'a
+  yazılır (bkz. Bölüm 8). "Kayıtlı Görünüm" alt-bölümü bu ayar setini isimle kaydedip
+  sonra tekrar uygulamaya izin verir. "↺ Görünümü sıfırla" hem sütun genişliğini hem
+  format ayarlarını (kayıtlı görünüm dahil değil) varsayılana döndürür.
 
 ---
 
@@ -258,6 +276,33 @@ Sol menü sırası: **TEŞKİLAT → ÜRÜN HİYERARŞİSİ → PERİYOT**.
 - `renderKpis / renderScenarios / renderCalendar / renderRatio / renderForecast`.
 - Biçimleyiciler: `fmtN` (tr-TR tam sayı), `fmtP`/`fmtP0` (yüzde), `fmtX` (çarpan),
   `fmtD`/`fmtD2` (ondalık). Türkçe locale ZORUNLU.
+- **`initColResize()`** — `#grid` başlık hücrelerine sürüklenebilir kenar tutamacı
+  (`.col-resize-handle`) ekler; sütun genişliğini `<colgroup>`'taki ilgili `<col>`'a yazar.
+  `GRID_COLS_KEY` ("arpaz_grid_col_widths") ile localStorage'a kaydedilir. Sütun bazlı
+  minimum genişlik `COL_MIN_WIDTHS` sabitinde (ÜH4/Hedef Cover/Durum/Aksiyon için özel,
+  diğerleri 36px). `rebuild()` `grpColHead`'in içeriğini ezdiği için ÜH4 tutamacı ayrıca
+  `attachUh4ResizeHandle()` ile yeniden takılır.
+- **`initGridFormat()` / `applyGridFormat()`** — Görünüm araç çubuğunun motoru. Ayarlar
+  (`rowPad, headerSize, headerBold, cellSize, cellBold, headerAlign, cellAlign`) CSS
+  custom property olarak `#grid` öğesine yazılır (`--grid-row-pad`, `--grid-h-size`,
+  `--grid-h-weight`, `--grid-c-size`, `--grid-c-weight`, `--grid-h-align`, `--grid-c-align`);
+  `styles.css`'teki `#grid` kuralları bu değişkenleri güvenli fallback'lerle (`var(--x,eski
+  değer)`) okur — böylece `#grid` DIŞINDAki hiçbir öğe (aynı sınıfları paylaşsa bile,
+  ör. `.badge`/`.heat`) etkilenmez. `GRID_FORMAT_KEY` ("arpaz_grid_format") ile
+  localStorage'a kaydedilir; `loadSavedGridFormat()` bozuk/eksik veriye karşı her alanı
+  ayrı ayrı doğrular (aralık dışıysa veya tipi yanlışsa varsayılana döner).
+- **`syncHeaderStickyOffset()`** — iki satırlı sticky başlığın (rowspan=2 ÜH4/Durum/Aksiyon
+  + 15 metrik başlıklı 2. satır) çakışmasını önler. 2. satırın `top`'u sabit 0 DEĞİL,
+  1. satırın `getBoundingClientRect().height` ile ÖLÇÜLEN gerçek yüksekliğidir (Başlık
+  Yazı Boyutu değiştikçe bu yükseklik değişir). Sayfa yüklendiğinde, `applyGridFormat()`
+  her çalıştığında ve pencere resize'ında yeniden çağrılır.
+- **Kayıtlı Görünüm (saved views)** — `saveCurrentView()/applySavedView()/deleteSavedView()/
+  renderSavedViews()`: kullanıcının o anki tüm Görünüm ayarlarını (`gridFormat` objesinin
+  tamamı) isimle `VIEW_STORAGE_KEY` ("arpaz_table_views") altında bir obje olarak saklar
+  (`{ isim: gridFormat }`). `LAST_VIEW_KEY` ("arpaz_last_view") en son uygulanan/kaydedilen
+  görünümün adını tutar — sayfa yeniden açıldığında (`initGridFormat()`) önce bu isimdeki
+  kayıtlı görünüm varsa o yüklenir, yoksa düz `GRID_FORMAT_KEY`'e döner. `normalizeViewConfig`
+  hem tekil ayarı hem kayıtlı görünüm setini aynı doğrulama mantığından geçirir.
 
 ---
 
@@ -276,6 +321,11 @@ Sol menü sırası: **TEŞKİLAT → ÜRÜN HİYERARŞİSİ → PERİYOT**.
   (Grup 1 + GERÇEKLEŞEN 8 + GELECEK YIL PLANI 7 + Durum 1 + Aksiyon 1).
 - **Cerrahi düzenleme yap** (mümkünse tüm dosyayı değil ilgili bloğu değiştir).
 - Küçük, sık commit al. Geri dönülebilir olsun.
+- **Yeni border-radius/box-shadow/spacing değeri eklerken önce `:root`'taki mevcut
+  token'ları kullan** (`--radius-sm/--radius-md/--radius-pill`, `--shadow-sm/--shadow-md`),
+  yeni ham değer YAZMA. Kabuk (panel/kart/badge/buton) katmanı bu token'lardan besleniyor;
+  `#grid` içindeki tablo-özel değerler (`--grid-row-pad` vb., bkz. Bölüm 8) bu token'lardan
+  AYRI ve kasıtlı olarak farklı bir mekanizma — birbirine karıştırılmasın.
 
 ---
 
