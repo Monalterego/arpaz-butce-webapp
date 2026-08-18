@@ -11,6 +11,7 @@ header h1{font-size:17px;margin:0;font-weight:600;letter-spacing:.2px}
 header .tag{background:rgba(255,255,255,.15);padding:3px 10px;border-radius:20px;font-size:11px}
 header .right{margin-left:auto;display:flex;gap:10px;align-items:center;font-size:12px}
 header select{background:#fff;border:none;border-radius:6px;padding:5px 8px;font-size:12px;color:var(--ink)}
+select[disabled]{opacity:.5;cursor:not-allowed}
 .wrap{display:flex;min-height:calc(100vh - 52px)}
 .side{width:210px;background:#fff;border-right:1px solid var(--line);padding:14px;flex-shrink:0}
 .side h3{font-size:11px;text-transform:uppercase;letter-spacing:.6px;color:var(--grey);margin:16px 0 8px}

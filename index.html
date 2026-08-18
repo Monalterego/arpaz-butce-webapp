@@ -12,9 +12,9 @@
   <span class="tag">Web App · Prototip v0.3</span>
   <div class="right">
     <span>Veri Kaynağı</span>
-    <select id="src"><option>Birleşik (Peradb+TPM)</option><option>TPM (Yeni)</option><option>Peradb (Eski)</option></select>
+    <select id="src" disabled title="Yakında — şu an tek veri kaynağı ve tek periyot aktif"><option>Birleşik (Peradb+TPM)</option><option>TPM (Yeni)</option><option>Peradb (Eski)</option></select>
     <span>Bütçe Yılı</span>
-    <select id="year"><option>2027</option><option>2026</option></select>
+    <select id="year" disabled title="Yakında — şu an tek veri kaynağı ve tek periyot aktif"><option>2027</option><option>2026</option></select>
   </div>
 </header>
 
@@ -141,14 +141,14 @@
         </table>
         </div>
         <div class="legend">
-          <span><span class="dot" style="background:var(--green)"></span> Stok Payını Artır (karlı/hızlı)</span>
-          <span><span class="dot" style="background:var(--red)"></span> Stok Payını Azalt</span>
-          <span><span class="dot" style="background:var(--amber)"></span> Cover düşük → satış kaçırma riski</span>
-          <span><span class="dot" style="background:var(--grey)"></span> Koru / Dengeli</span>
+          <span class="badge b-green">Hızlı &amp; Kârlı</span>
+          <span class="badge b-amber">Hızlı &amp; Kârsız</span>
+          <span class="badge b-blue">Yavaş &amp; Kârlı</span>
+          <span class="badge b-red">Yavaş &amp; Kârsız</span>
         </div>
         <div class="note">Kâr % = grup kârının alt-toplamdaki payı (Kâr = Satış Tutarı × Marj). Hedef Cover hücresi bütçe sahibinin uzman yargısıdır — değeri değiştir, Satış Bütçe/LFL anında güncellenir.</div>
       </div>
-      <div class="foot">Kaynak: prototip veri (assets/data.js). Gerçek veri geldiğinde yalnızca bu katman değişir.</div>
+      <div class="foot">Kaynak: gerçek demo veri (2025-07…2026-07, aylık ortalama). Brüt kâr sentetiktir. IT tam veri verdiğinde yalnızca bu katman API'ye bağlanacak.</div>
     </div>
 
     <!-- ========== TAB: TAKVIM ========== -->
