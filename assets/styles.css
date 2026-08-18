@@ -31,10 +31,15 @@ select[disabled]{opacity:.5;cursor:not-allowed}
 .panel h2 .pill{font-size:10px;background:var(--bluebg);color:var(--blue);padding:2px 8px;border-radius:20px;font-weight:600}
 .panel.formula h2{cursor:pointer}
 .toggle-ico{margin-left:auto;font-size:11px;color:var(--grey)}
-.params{display:grid;grid-template-columns:repeat(4,1fr);gap:14px}
-.grid-format-wrap{position:relative;margin-left:auto}
-.pgroup{background:#fff;border:1px solid rgba(11,37,69,.12);border-radius:12px;padding:12px 14px;box-shadow:0 16px 40px rgba(11,37,69,.12);position:absolute;top:calc(100% + 10px);right:0;width:min(560px,calc(100vw - 48px));z-index:30}
-.pgroup .ptitle{font-size:11px;color:var(--grey);margin-bottom:10px;font-weight:700;text-transform:uppercase;letter-spacing:.5px}
+.params{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:14px;align-items:start}
+.params > .pgroup{background:#f8fafc;border:1px solid var(--line);border-radius:8px;padding:10px 12px;box-shadow:none;position:static;width:auto;z-index:auto;min-width:0}
+.params .pgroup .ptitle{font-size:11px;color:var(--grey);margin-bottom:6px;font-weight:600;text-transform:uppercase;letter-spacing:.4px}
+.params + .action-row,
+.action-row{display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:12px;margin-top:12px}
+.action-row > .action-card{background:#f8fafc;border:1px solid var(--line);border-radius:8px;padding:10px 12px;min-width:0}
+.grid-format-wrap{position:relative;margin-left:auto;display:inline-block}
+#gridFormatPanel{background:#fff;border:1px solid rgba(11,37,69,.12);border-radius:12px;padding:12px 14px;box-shadow:0 16px 40px rgba(11,37,69,.12);position:absolute;top:calc(100% + 10px);right:0;width:min(560px,calc(100vw - 48px));z-index:30}
+#gridFormatPanel .ptitle{font-size:11px;color:var(--grey);margin-bottom:10px;font-weight:700;text-transform:uppercase;letter-spacing:.5px}
 .fmt-grid{display:grid;grid-template-columns:1fr;gap:0;border-top:1px solid var(--line);margin-top:6px}
 .fmt-row{display:grid;grid-template-columns:1fr auto;align-items:center;gap:12px;min-height:44px;padding:8px 0;border-bottom:1px solid var(--line)}
 .fmt-row:last-child{border-bottom:none}
