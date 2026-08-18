@@ -28,9 +28,9 @@
     el.innerHTML = (placeholder ? `<option value="">${placeholder}</option>` : "") +
       items.map((i) => `<option value="${i.replace(/"/g, "&quot;")}">${i}</option>`).join("");
   }
-  // state.level'ı state.sel.uh3'ün dolu olup olmamasına göre türetir (tek yer, tek doğruluk kaynağı)
+  // Sabit, tek seviyeli görünüm: her zaman ÜH4 satırları düz listelenir.
   function syncLevel() {
-    state.level = state.sel.uh3 ? "uh3" : "uh4";
+    state.level = "uh4";
   }
   function initHierarchy() {
     state.sel = DataService.firstSelection();
@@ -87,8 +87,7 @@
     updateAll();
     updateSelInfo();
     // başlık kolon adı
-    const head = state.level === "uh2" ? "Klasman (ÜH2)" : state.level === "uh3" ? "Alt Grup (ÜH3)" : "ÜH4";
-    $("grpColHead").textContent = head;
+    $("grpColHead").textContent = "Alt Grup (ÜH4)";
     attachUh4ResizeHandle(); // textContent ataması ÜH4 hücresindeki resize tutamacını sildi, yeniden ekle
   }
   function updateSelInfo() {
@@ -196,137 +195,57 @@
     if (!data.length) {
       $("rows").innerHTML = `<tr><td colspan="18" style="text-align:center;color:var(--grey);padding:18px">Bu seçim için veri bulunamadı.</td></tr>`;
       state.covers = [];
-      state.childCovers = {};
       return;
     }
-    // main covers = ÜH3 veya ÜH4 satırlarına göre set edilir
-    if (!state.covers)
+    if (!state.covers || state.covers.length !== data.length)
       state.covers = data.map((d) => Math.max(1, Math.round(d[1] / (d[2] || 1)))); // default = LY cover
-    state.childCovers = state.childCovers || {}; // key: `${i}_${j}` for ÜH4 children under ÜH3 index i
 
     const tb = $("rows");
     tb.innerHTML = "";
+    const grpHead = $("grpColHead");
+    if (grpHead) grpHead.textContent = "Alt Grup (ÜH4)";
 
-    if (state.level !== 'uh3') {
-      // existing behavior for ÜH4 or ÜH2 views
-      data.forEach((d, i) => {
-        const tr = document.createElement("tr");
-        tr.innerHTML = `
-          <td>${d[0]}</td>
-          <td class="num-cell" id="st_${i}"></td><td class="pct" id="stp_${i}"></td>
-          <td class="num-cell" id="sa_${i}"></td><td class="pct" id="sap_${i}"></td>
-          <td class="num-cell" id="bk_${i}"></td>
-          <td id="ktp_${i}"></td>
-          <td id="cov_${i}"></td><td id="tov_${i}"></td>
-          <td class="pct" id="psp_${i}"></td><td class="num-cell" id="psa_${i}"></td>
-          <td class="covcell"><input type="number" class="covin" id="hcov_${i}" min="1" step="0.5" value="${state.covers[i]}"></td>
-          <td class="num-cell" id="sb_${i}"></td>
-          <td id="lfl_${i}"></td><td id="rlfl_${i}"></td><td id="sg_${i}"></td>
-          <td id="tag_${i}"></td>
-          <td id="act_${i}"></td>`;
-        tb.appendChild(tr);
-      });
-      // Hedef Cover input dinleyicileri
-      data.forEach((d, i) => {
-        $("hcov_" + i).addEventListener("input", (e) => {
-          const v = parseFloat(e.target.value);
-          state.covers[i] = isNaN(v) || v <= 0 ? state.covers[i] : v;
-          updateAll();
-        });
-      });
-      return;
-    }
-
-    // --- UH3 görünümü: ÜH3 satırı + gizli ÜH4 alt satırlar ---
     data.forEach((d, i) => {
-      // ÜH3 ana satır
       const tr = document.createElement("tr");
       tr.innerHTML = `
-        <td><span class="expander" data-i="${i}">▶</span>${d[0]}</td>
+        <td>${d[0]}</td>
         <td class="num-cell" id="st_${i}"></td><td class="pct" id="stp_${i}"></td>
         <td class="num-cell" id="sa_${i}"></td><td class="pct" id="sap_${i}"></td>
-      <td class="num-cell" id="bk_${i}"></td>
-      <td id="ktp_${i}"></td>
-      <td id="cov_${i}"></td><td id="tov_${i}"></td>
-      <td class="pct" id="psp_${i}"></td><td class="num-cell" id="psa_${i}"></td>
-      <td class="covcell"><input type="number" class="covin" id="hcov_${i}" min="1" step="0.5" value="${state.covers[i]}"></td>
-      <td class="num-cell" id="sb_${i}"></td>
-      <td id="lfl_${i}"></td><td id="rlfl_${i}"></td><td id="sg_${i}"></td>
-      <td id="tag_${i}"></td>
-      <td id="act_${i}"></td>`;
+        <td class="num-cell" id="bk_${i}"></td>
+        <td id="ktp_${i}"></td>
+        <td id="cov_${i}"></td><td id="tov_${i}"></td>
+        <td class="pct" id="psp_${i}"></td><td class="num-cell" id="psa_${i}"></td>
+        <td class="covcell"><input type="number" class="covin" id="hcov_${i}" min="1" step="0.5" value="${state.covers[i]}"></td>
+        <td class="num-cell" id="sb_${i}"></td>
+        <td id="lfl_${i}"></td><td id="rlfl_${i}"></td><td id="sg_${i}"></td>
+        <td id="tag_${i}"></td>
+        <td id="act_${i}"></td>`;
       tb.appendChild(tr);
-
-      // ÜH4 alt satırlar (gizli başlat)
-      const uh3name = d[0];
-      const uh4data = DataService.loadMixFor({ uh1: state.sel.uh1, uh2: state.sel.uh2, uh3: uh3name }, 'uh4');
-      uh4data.forEach((c, j) => {
-        const key = `${i}_${j}`;
-        if (typeof state.childCovers[key] === 'undefined')
-          state.childCovers[key] = Math.max(1, Math.round(c[1] / (c[2] || 1)));
-        const ctr = document.createElement("tr");
-        ctr.className = `child-row parent-${i}`;
-        ctr.style.display = 'none';
-        ctr.innerHTML = `
-          <td style="padding-left:18px">${c[0]}</td>
-          <td class="num-cell" id="st_${i}_c${j}"></td><td class="pct" id="stp_${i}_c${j}"></td>
-          <td class="num-cell" id="sa_${i}_c${j}"></td><td class="pct" id="sap_${i}_c${j}"></td>
-          <td class="num-cell" id="bk_${i}_c${j}"></td>
-          <td id="ktp_${i}_c${j}"></td>
-          <td id="cov_${i}_c${j}"></td><td id="tov_${i}_c${j}"></td>
-          <td class="pct" id="psp_${i}_c${j}"></td><td class="num-cell" id="psa_${i}_c${j}"></td>
-          <td class="covcell"><input type="number" class="covin" id="hcov_${i}_c${j}" min="1" step="0.5" value="${state.childCovers[key]}"></td>
-          <td class="num-cell" id="sb_${i}_c${j}"></td>
-          <td id="lfl_${i}_c${j}"></td><td id="rlfl_${i}_c${j}"></td><td id="sg_${i}_c${j}"></td>
-          <td id="tag_${i}_c${j}"></td>
-          <td id="act_${i}_c${j}"></td>`;
-        tb.appendChild(ctr);
-      });
     });
 
-    // Expander click handler
-    document.querySelectorAll('.expander').forEach((el) => {
-      el.addEventListener('click', (e) => {
-        const i = el.dataset.i;
-        const opened = el.textContent === '▼';
-        const list = document.querySelectorAll('.parent-' + i);
-        list.forEach((r) => r.style.display = opened ? 'none' : 'table-row');
-        el.textContent = opened ? '▶' : '▼';
-      });
-    });
-
-    // Hedef Cover input dinleyicileri (ana + child)
     data.forEach((d, i) => {
-      $("hcov_" + i).addEventListener("input", (e) => {
+      const covInput = $("hcov_" + i);
+      if (!covInput) return;
+      covInput.addEventListener("input", (e) => {
         const v = parseFloat(e.target.value);
         state.covers[i] = isNaN(v) || v <= 0 ? state.covers[i] : v;
         updateAll();
-      });
-      const uh3name = d[0];
-      const uh4data = DataService.loadMixFor({ uh1: state.sel.uh1, uh2: state.sel.uh2, uh3: uh3name }, 'uh4');
-      uh4data.forEach((c, j) => {
-        const key = `${i}_${j}`;
-        $("hcov_" + i + "_c" + j).addEventListener('input', (e) => {
-          const v = parseFloat(e.target.value);
-          state.childCovers[key] = isNaN(v) || v <= 0 ? state.childCovers[key] : v;
-          updateAll();
-        });
       });
     });
   }
 
   // --- Hücreleri güncelle (DOM'u yeniden kurmadan) ---
-  function updateAll() {
-    const p = readParams();
-    CAMP.forEach((k) => ($("v_" + k).textContent = $("m_" + k).value + "%"));
-    const m = computeModel(p, state.covers);
-    $("mult_total").textContent = fmtX(m.pazarF * m.campF);
+function updateAll() {
+  const p = readParams();
+  CAMP.forEach((k) => ($("v_" + k).textContent = $("m_" + k).value + "%"));
+  const m = computeModel(p, state.covers);
+  $("mult_total").textContent = fmtX(m.pazarF * m.campF);
 
-    // Ana satırlar (ÜH4 veya ÜH3 aggregate)
-    m.rows.forEach((r, i) => {
-      $("st_" + i).textContent = fmtN(r.stock);
-      $("stp_" + i).textContent = fmtP(r.stockShare);
-      $("sa_" + i).textContent = fmtN(r.sales);
-      $("sap_" + i).textContent = fmtP(r.salesShare);
+  m.rows.forEach((r, i) => {
+    $("st_" + i).textContent = fmtN(r.stock);
+    $("stp_" + i).textContent = fmtP(r.stockShare);
+    $("sa_" + i).textContent = fmtN(r.sales);
+    $("sap_" + i).textContent = fmtP(r.salesShare);
     $("bk_" + i).textContent = fmtN(r.profit);
     $("ktp_" + i).innerHTML = `<span class="heat" style="background:${heat(r.profitShare, 0, 0.3)}">${fmtP(r.profitShare)}</span>`;
     $("cov_" + i).innerHTML = coverCellHtml(r);
@@ -334,71 +253,36 @@
     $("psp_" + i).textContent = fmtP(r.planPct);
     $("psa_" + i).textContent = fmtN(r.planStock);
     $("sb_" + i).textContent = fmtN(r.salesBudget);
-    const lflEl = $("lfl_" + i); lflEl.textContent = fmtP0(r.lfl); lflEl.className = r.lfl >= 0 ? "up" : "down";
-    const rlflEl = $("rlfl_" + i); rlflEl.textContent = fmtP0(r.rlfl); rlflEl.className = r.rlfl >= 0 ? "up" : "down";
-    const sgEl = $("sg_" + i); sgEl.textContent = fmtP0(r.stockGrowth); sgEl.className = r.stockGrowth >= 0 ? "up" : "down";
+    const lflEl = $("lfl_" + i); if (lflEl) { lflEl.textContent = fmtP0(r.lfl); lflEl.className = r.lfl >= 0 ? "up" : "down"; }
+    const rlflEl = $("rlfl_" + i); if (rlflEl) { rlflEl.textContent = fmtP0(r.rlfl); rlflEl.className = r.rlfl >= 0 ? "up" : "down"; }
+    const sgEl = $("sg_" + i); if (sgEl) { sgEl.textContent = fmtP0(r.stockGrowth); sgEl.className = r.stockGrowth >= 0 ? "up" : "down"; }
     $("tag_" + i).innerHTML = `<span class="badge ${r.tag.eCls}">${r.tag.etiket}</span>`;
     $("act_" + i).innerHTML = `<span class="badge ${r.tag.aCls}">${r.tag.aksiyon}</span>`;
-    // ensure Hedef Cover input value shown
     const covEl = $("hcov_" + i);
     if (covEl && document.activeElement !== covEl) covEl.value = r.hedefCover;
-    });
+  });
 
-    // Eğer ÜH3 görünümündeyse, her ÜH3 için altındaki ÜH4'leri hesaplayıp doldur
-    if (state.level === 'uh3') {
-      const data = DataService.loadMix(); // ÜH3 list
-      data.forEach((d, i) => {
-        const uh3name = d[0];
-        const uh4data = DataService.loadMixFor({ uh1: state.sel.uh1, uh2: state.sel.uh2, uh3: uh3name }, 'uh4');
-        // child covers sıralı dizi
-        const childCovers = uh4data.map((c, j) => state.childCovers[`${i}_${j}`]);
-        const childModel = computeFromData(uh4data, p, childCovers);
-        childModel.rows.forEach((r, j) => {
-          const prefix = `${i}_c${j}`;
-          const set = (id, v) => { const el = document.getElementById(id); if (el) el.textContent = v; };
-          set('st_' + prefix, fmtN(r.stock)); set('stp_' + prefix, fmtP(r.stockShare));
-          set('sa_' + prefix, fmtN(r.sales)); set('sap_' + prefix, fmtP(r.salesShare));
-          set('bk_' + prefix, fmtN(r.profit));
-          set('ktp_' + prefix, `<span class="heat" style="background:${heat(r.profitShare, 0, 0.3)}">${fmtP(r.profitShare)}</span>`);
-          const covEl = document.getElementById('cov_' + prefix); if (covEl) covEl.innerHTML = coverCellHtml(r);
-          set('tov_' + prefix, fmtD2(r.turnover));
-          set('psp_' + prefix, fmtP(r.planPct)); set('psa_' + prefix, fmtN(r.planStock));
-          set('sb_' + prefix, fmtN(r.salesBudget));
-          const lflEl = document.getElementById('lfl_' + prefix); if (lflEl) { lflEl.textContent = fmtP0(r.lfl); lflEl.className = r.lfl >= 0 ? 'up' : 'down'; }
-          const rlflEl = document.getElementById('rlfl_' + prefix); if (rlflEl) { rlflEl.textContent = fmtP0(r.rlfl); rlflEl.className = r.rlfl >= 0 ? 'up' : 'down'; }
-          const sgEl = document.getElementById('sg_' + prefix); if (sgEl) { sgEl.textContent = fmtP0(r.stockGrowth); sgEl.className = r.stockGrowth >= 0 ? 'up' : 'down'; }
-          const tEl = document.getElementById('tag_' + prefix); if (tEl) tEl.innerHTML = `<span class="badge ${r.tag.eCls}">${r.tag.etiket}</span>`;
-          const aEl = document.getElementById('act_' + prefix); if (aEl) aEl.innerHTML = `<span class="badge ${r.tag.aCls}">${r.tag.aksiyon}</span>`;
-          // ensure child cov input shows current value
-          const covInput = document.getElementById('hcov_' + prefix);
-          if (covInput && document.activeElement !== covInput) covInput.value = state.childCovers[`${i}_${j}`];
-        });
-      });
-    }
+  const footCover = m.T.sales ? m.T.stock / m.T.sales : 0;
+  const footTurnover = m.T.stock ? m.T.sales / m.T.stock : 0;
+  const footStockGrowth = m.T.stock ? m.T.planStock / m.T.stock - 1 : 0;
+  const footRlfl = (m.T.planStock && m.T.sales && m.T.stock)
+    ? (m.T.salesBudget / m.T.planStock) / (m.T.sales / m.T.stock) - 1 : null;
+  $("tfoot").innerHTML = `
+    <td>TOPLAM</td>
+    <td>${fmtN(m.T.stock)}</td><td>${m.rows.length ? "100%" : "—"}</td>
+    <td>${fmtN(m.T.sales)}</td><td>${m.rows.length ? "100%" : "—"}</td>
+    <td class="num-cell">${fmtN(m.T.profit)}</td><td>${m.rows.length ? "100%" : "—"}</td>
+    <td>${fmtD(footCover)}</td><td>${fmtD2(footTurnover)}</td>
+    <td>${m.rows.length ? "100%" : "—"}</td><td>${fmtN(m.T.planStock)}</td>
+    <td>—</td><td>${fmtN(m.T.salesBudget)}</td>
+    <td class="${m.rows.length ? (m.T.lfl >= 0 ? "up" : "down") : ""}">${m.rows.length ? fmtP0(m.T.lfl) : "—"}</td>
+    <td class="${footRlfl === null ? "" : (footRlfl >= 0 ? "up" : "down")}">${footRlfl === null ? "—" : fmtP0(footRlfl)}</td>
+    <td class="${m.rows.length ? (footStockGrowth >= 0 ? "up" : "down") : ""}">${m.rows.length ? fmtP0(footStockGrowth) : "—"}</td>
+    <td></td><td></td>`;
 
-    // footer, kpis ve forecast
-    const footCover = m.T.sales ? m.T.stock / m.T.sales : 0;
-    const footTurnover = m.T.stock ? m.T.sales / m.T.stock : 0;
-    const footStockGrowth = m.T.stock ? m.T.planStock / m.T.stock - 1 : 0;
-    const footRlfl = (m.T.planStock && m.T.sales && m.T.stock)
-      ? (m.T.salesBudget / m.T.planStock) / (m.T.sales / m.T.stock) - 1 : null;
-    $("tfoot").innerHTML = `
-      <td>TOPLAM</td>
-      <td>${fmtN(m.T.stock)}</td><td>${m.rows.length ? "100%" : "—"}</td>
-      <td>${fmtN(m.T.sales)}</td><td>${m.rows.length ? "100%" : "—"}</td>
-      <td class="num-cell">${fmtN(m.T.profit)}</td><td>${m.rows.length ? "100%" : "—"}</td>
-      <td>${fmtD(footCover)}</td><td>${fmtD2(footTurnover)}</td>
-      <td>${m.rows.length ? "100%" : "—"}</td><td>${fmtN(m.T.planStock)}</td>
-      <td>—</td><td>${fmtN(m.T.salesBudget)}</td>
-      <td class="${m.rows.length ? (m.T.lfl >= 0 ? "up" : "down") : ""}">${m.rows.length ? fmtP0(m.T.lfl) : "—"}</td>
-      <td class="${footRlfl === null ? "" : (footRlfl >= 0 ? "up" : "down")}">${footRlfl === null ? "—" : fmtP0(footRlfl)}</td>
-      <td class="${m.rows.length ? (footStockGrowth >= 0 ? "up" : "down") : ""}">${m.rows.length ? fmtP0(footStockGrowth) : "—"}</td>
-      <td></td><td></td>`;
-
-    renderKpis(m);
-    renderDurumKpis(m);
-    renderForecast(m);
-
+  renderKpis(m);
+  renderDurumKpis(m);
+  renderForecast(m);
 }
 
   function heat(v, lo, hi) {
