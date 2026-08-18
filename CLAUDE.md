@@ -106,14 +106,16 @@ Küçük ev aletleri/kişisel bakım %30-45 · Aksesuar/yedek parça ~%48.
   değişirse hiyerarşi de yeniden üretilmeli. Veride hiç karşılığı olmayan **GRUPSUZ** dalı
   (eski hiyerarşide GRUPSUZ›GRUPSUZ›GRUPSUZ vardı, seçilince tablo boş kalıyordu) bu
   yüzden düştü.
-- Sidebar kaskad: ÜH1 seç → ÜH2 dolar → ÜH3 dolar ("Tümü (ÜH3)" seçeneği var).
-- "Çalışma Seviyesi" seçici (ayrı bir dropdown) KALDIRILDI, ama `state.level` artık
-  **`h_uh3` seçimine göre otomatik türetiliyor**: `syncLevel()` — `state.sel.uh3` doluysa
-  (belirli bir ÜH3 seçiliyse) `"uh3"`, boşsa ("Tümü (ÜH3)") `"uh4"`. Üç yerde çağrılır:
-  `initHierarchy()` başında ve h_uh1/h_uh2/h_uh3 change handler'larının hepsinde,
-  `state.sel.uh3` değiştikten hemen sonra (tek doğruluk kaynağı, kopyalanmaz).
-  ÜH3 görünümünde ana satır + gizli ÜH4 child satırlar (expander ▶/▼ ile açılıp kapanır)
-  gösterilir; bu dallar zaten kodda tamdı, önceden hiç tetiklenmiyordu (bkz. Bölüm 10).
+- Sidebar kaskad: ÜH1 seç → ÜH2 dolar → ÜH3 dolar. **ÜH3 seçimi ZORUNLUDUR** —
+  **"Tümü (ÜH3)" seçeneği YOKTUR**, bilinçli bir tasarım kararıdır (bkz. Bölüm 10):
+  `refreshUh3()` her zaman ilgili ÜH2'nin ilk ÜH3'ünü (`keys[0]`) otomatik seçili
+  getirir, boş/placeholder option üretmez. Kullanıcı her zaman belirli bir ÜH3
+  seçili durumdadır; tablo o ÜH3'ün ÜH4 kırılımını gösterir.
+- "Çalışma Seviyesi" seçici (ayrı bir dropdown) KALDIRILDI. `state.level` **HER ZAMAN
+  `"uh4"`** — `syncLevel()` koşulsuz sabit atama yapar, ÜH3 seçimine göre DALLANMAZ.
+  Eski "ÜH3 seçiliyse drill-down (ana satır + gizli ÜH4 child satırlar, expander
+  ▶/▼)" davranışı ve buna ait render mantığı kod tabanından TAMAMEN kaldırılmıştır;
+  `buildTable()`/`updateAll()` tek dallı, düz ÜH4 listesi üretir (bkz. Bölüm 8, 10).
 
 ---
 
@@ -220,7 +222,8 @@ bayi kampanya/iskonto, fiyat/marj ve gam kararı üzerinden olur. "iade"/"transf
 UI'da geçmemeli.
 
 `actionTag(stockShare, salesShare, profitShare)` → `{ etiket, eCls, aksiyon, aCls }` döndürür;
-`computeFromData` çağırır; `updateAll` iki hücreye (tag_/act_) basar (ana + ÜH3 child satırlar).
+`computeFromData` çağırır; `updateAll` iki hücreye (tag_/act_) basar (düz ÜH4 satırları,
+bkz. Bölüm 4/8 — ÜH3 child satır render'ı yoktur).
 
 ---
 
@@ -268,7 +271,12 @@ Sol menü sırası: **TEŞKİLAT → ÜRÜN HİYERARŞİSİ → PERİYOT**.
 - `initHierarchy()` — org/region + ÜH1/ÜH2/ÜH3 select'lerini kurar, event bağlar.
 - `readParams()` — stokBuyume, pazar, wKar/wSatis/wStok, camp{paro,bundle,event,gam,kota}.
 - `computeFromData(data, p, covers)` — SAF hesap; `computeModel` = loadMix wrapper.
-- `buildTable()` — DOM'u bir kez kurar (input focus korunur). uh4/uh2 düz; uh3 drill-down.
+- `buildTable()` — DOM'u bir kez kurar (input focus korunur). Tek dallı, düz ÜH4 listesi
+  üretir; `state.level` HER ZAMAN `"uh4"` olduğundan (bkz. Bölüm 4, 10) `level`'e göre
+  bir dallanma YOKTUR (eski uh3 drill-down dalı kaldırılmıştır).
+- `syncLevel()` — `state.level`'i koşulsuz `"uh4"`'e sabitler (kasıtlı, bkz. Bölüm 10).
+  `refreshUh3()` — ÜH2 değişince ÜH3 select'ini doldurur, HER ZAMAN ilk ÜH3'ü
+  (`keys[0]`) otomatik seçer; boş/"Tümü" option'ı YOKTUR, ÜH3 seçimi zorunludur.
 - `updateAll()` — hücreleri yeniden hesaplayıp yazar; tfoot TOPLAM; KPI; forecast.
 - `actionTag(...)` — 2×2 matris (bkz. Bölüm 6).
 - `renderDurumKpis(m)` — actionTag'in ürettiği 4 duruma göre grup sayısını ve payını
@@ -342,10 +350,28 @@ Sol menü sırası: **TEŞKİLAT → ÜRÜN HİYERARŞİSİ → PERİYOT**.
   - R-LFL kolonu ve Durum Dağılımı KPI şeridi (bkz. Bölüm 5.1 ve 7).
   - Ölü stok işaretleme — KARAR VERİLDİ ve UYGULANDI (bkz. Bölüm 5.2): göreli eşik
     (çarpan × görünen satırların medyanı, min 12 ay), SADECE görsel rozet, bütçeye etkisi yok.
-  - BUG FIX — ÜH3 drill-down artık gerçekten tetikleniyor: `state.level` önceden hiçbir
-    yerde güncellenmiyordu (`"uh4"`'te sabit kalıyordu), bu yüzden kodda tam yazılı ÜH3
-    ana satır + ÜH4 child satır (expander) mantığı hiç çalışmıyordu. `syncLevel()` ile
-    düzeltildi (bkz. Bölüm 4).
+  - TARİHÇE (artık geçersiz) — bir ara dönemde `syncLevel()` `state.sel.uh3`'e göre
+    `"uh3"`/`"uh4"` arasında dallanıyordu ve buna eşlik eden bir ÜH3 drill-down
+    (ana satır + gizli ÜH4 child satır, expander ▶/▼) UI'ı vardı. Bu UI daha sonra
+    tamamen kod tabanından kaldırıldı; `refreshUh3()` da aynı dönemde "Tümü (ÜH3)"
+    placeholder'ını üretmeyi bıraktı. Bu ikisi birbirinden bağımsız gibi görünse de
+    birlikte ele alınmalı — bkz. DİKKAT NOTU aşağıda.
+- **DİKKAT NOTU — ÜH3 seçimi ZORUNLU, `state.level` HER ZAMAN "uh4": BİLİNÇLİ TASARIM
+  KARARI, eksik/regresyon DEĞİL.** `refreshUh3()` boş/"Tümü (ÜH3)" option'ı üretmiyor
+  (kullanıcı her zaman belirli bir ÜH3 seçili durumda); `syncLevel()` koşulsuz
+  `"uh4"` atar. Bir düzeltme talebi üzerine `state.level = state.sel.uh3 ? "uh3" :
+  "uh4"` mantığı test edildi ve GERÇEK bir regresyona yol açtığı doğrulandı:
+  `state.sel.uh3` hiçbir zaman boş olamadığından koşul her zaman `"uh3"`e düşüyor,
+  `DataService.loadMixFor` da bu durumda ÜH4 detay satırlarını TEK bir ÜH3 toplam
+  satırına indirgiyor — tablo her seçimde 1 satıra düşüyordu (test edildi). Ayrıca
+  eski ÜH3 drill-down/expander UI'ı da kod tabanından kaldırılmış durumda; düzeltilse
+  bile sonuç "roll-up" olurdu, "drill-down" değil. Kullanıcı üç seçenek arasından
+  ("Tümü (ÜH3)"yü geri getir / `state.level`'i `"uh4"`'te sabit bırak / talimatı
+  harfiyen uygula) **`"uh4"`'te sabit bırakmayı seçti** — mevcut çok satırlı, detaylı
+  tablo davranışı bilinçli olarak korunuyor. **İleride biri bunu "düzeltmeye"
+  kalkışmasın: "Tümü (ÜH3)" placeholder'ı geri getirilmeden `syncLevel()`'deki
+  koşulu DEĞİŞTİRME** (bkz. Bölüm 4, 8; `app.js`'te `syncLevel()` üzerindeki yorum
+  aynı gerekçeyi taşır).
 - DİKKAT NOTU — Hedef Cover tavanı tartışıldı, TAVAN UYGULANMAYACAK: Varsayılan (org/bölge
   Tümü) görünümde 328 ÜH4 yaprağının LY cover'ı ölçüldü — medyan ≈11,4 ay, ~153'ü 12 ayın
   üzerinde, en uçta satışı sıfıra yakın kalemlerde 3.687 aya kadar çıkıyor. Yine de tavan
