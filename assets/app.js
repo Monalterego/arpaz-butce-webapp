@@ -89,6 +89,7 @@
     // başlık kolon adı
     const head = state.level === "uh2" ? "Klasman (ÜH2)" : state.level === "uh3" ? "Alt Grup (ÜH3)" : "ÜH4";
     $("grpColHead").textContent = head;
+    attachUh4ResizeHandle(); // textContent ataması ÜH4 hücresindeki resize tutamacını sildi, yeniden ekle
   }
   function updateSelInfo() {
     const path = [state.sel.uh1, state.sel.uh2, state.sel.uh3].filter(Boolean).join(" › ");
@@ -554,6 +555,95 @@
     });
   }
 
+  // --- Sürüklenebilir sütun genişliği (SADECE #grid) + localStorage kalıcılık ---
+  // Bu GERÇEK bir web uygulaması (GitHub Pages), Claude "artifact" ortamı DEĞİL — localStorage kullanılır.
+  const GRID_COLS_KEY = "arpaz_grid_col_widths";
+  const COL_MIN_WIDTHS = { 0: 80, 11: 76, 16: 90, 17: 120 }; // ÜH4, Hedef Cover, Durum, Aksiyon
+  const colMinWidth = (idx) => COL_MIN_WIDTHS[idx] || 36;
+  let gridCols = [];
+  let gridDefaultWidths = [];
+
+  function syncGridWidth() {
+    const total = gridCols.reduce((a, c) => a + parseFloat(c.style.width), 0);
+    $("grid").style.width = total + "px";
+  }
+  function applyColWidths(widths) {
+    gridCols.forEach((c, i) => { c.style.width = widths[i] + "px"; });
+    syncGridWidth();
+  }
+  function loadSavedColWidths() {
+    try {
+      const raw = localStorage.getItem(GRID_COLS_KEY);
+      if (!raw) return null;
+      const arr = JSON.parse(raw);
+      if (!Array.isArray(arr) || arr.length !== gridDefaultWidths.length) return null;
+      if (arr.some((n) => typeof n !== "number" || !isFinite(n) || n <= 0)) return null;
+      return arr;
+    } catch (e) {
+      return null; // bozuk veri: sessizce varsayılana dön
+    }
+  }
+  function saveColWidths() {
+    try {
+      localStorage.setItem(GRID_COLS_KEY, JSON.stringify(gridCols.map((c) => parseFloat(c.style.width))));
+    } catch (e) { /* localStorage kullanılamıyorsa sessizce geç */ }
+  }
+  function makeResizeHandle(colIdx) {
+    const handle = document.createElement("span");
+    handle.className = "col-resize-handle";
+    handle.addEventListener("mousedown", (e) => {
+      e.preventDefault();
+      e.stopPropagation();
+      const col = gridCols[colIdx];
+      const startX = e.clientX;
+      const startWidth = parseFloat(col.style.width);
+      const min = colMinWidth(colIdx);
+      handle.classList.add("dragging");
+      function onMove(ev) {
+        const newWidth = Math.max(min, Math.round(startWidth + (ev.clientX - startX)));
+        col.style.width = newWidth + "px";
+        syncGridWidth();
+      }
+      function onUp() {
+        document.removeEventListener("mousemove", onMove);
+        document.removeEventListener("mouseup", onUp);
+        handle.classList.remove("dragging");
+        saveColWidths();
+      }
+      document.addEventListener("mousemove", onMove);
+      document.addEventListener("mouseup", onUp);
+    });
+    return handle;
+  }
+  function attachUh4ResizeHandle() {
+    const th = $("grpColHead");
+    if (th && !th.querySelector(".col-resize-handle")) th.appendChild(makeResizeHandle(0));
+  }
+  function initColResize() {
+    gridCols = Array.from(document.querySelectorAll("#grid colgroup col"));
+    if (!gridCols.length) return;
+    gridDefaultWidths = gridCols.map((c) => parseFloat(c.style.width));
+
+    const saved = loadSavedColWidths();
+    if (saved) applyColWidths(saved); else syncGridWidth();
+
+    const row1Ths = document.querySelectorAll("#grid thead tr")[0].querySelectorAll("th"); // [ÜH4, GERÇEKLEŞEN, GELECEK YIL, Durum, Aksiyon]
+    const row2Ths = document.querySelectorAll("#grid thead tr")[1].querySelectorAll("th"); // 15 metrik başlık
+    attachUh4ResizeHandle();
+    row1Ths[3].appendChild(makeResizeHandle(16)); // Durum
+    row1Ths[4].appendChild(makeResizeHandle(17)); // Aksiyon
+    row2Ths.forEach((th, i) => th.appendChild(makeResizeHandle(i + 1)));
+
+    const resetBtn = $("gridColReset");
+    if (resetBtn) {
+      resetBtn.addEventListener("click", (e) => {
+        e.preventDefault();
+        try { localStorage.removeItem(GRID_COLS_KEY); } catch (err) { /* geç */ }
+        applyColWidths(gridDefaultWidths);
+      });
+    }
+  }
+
   document.addEventListener("DOMContentLoaded", () => {
     initHierarchy();
     DataService._cur = { sel: state.sel, level: state.level };
@@ -561,6 +651,7 @@
     buildTable();
     bind();
     initFormulaToggle();
+    initColResize();
     updateAll();
     updateSelInfo();
     renderCalendar();

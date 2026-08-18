@@ -105,6 +105,9 @@ tfoot td{background:#eef3f8;font-weight:700;border-top:2px solid var(--navy)}
 /* Aksiyon metni uzun (ör. "İndirim/kampanya ile hızlandır · stok payını azalt");
    son kolon (Aksiyon) rozeti sarılsın, tek satıra zorlanmasın */
 #grid td:last-child .badge{white-space:normal;text-align:left}
+/* Sürüklenebilir sütun genişliği tutamacı — sadece #grid başlık hücrelerine JS ile eklenir */
+.col-resize-handle{position:absolute;top:0;right:-3px;bottom:0;width:6px;cursor:col-resize;z-index:6}
+.col-resize-handle:hover,.col-resize-handle.dragging{background:rgba(255,255,255,.3)}
 /* düzenlenebilir Hedef Cover hücresi */
 .covcell{background:#fff8e6;text-align:center}
 .covin{width:56px;padding:4px 6px;border:1px solid var(--amber);border-radius:6px;text-align:right;font-weight:700;color:var(--amber);background:#fffdf6}
