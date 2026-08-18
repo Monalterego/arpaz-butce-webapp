@@ -541,12 +541,26 @@
     $("clearSc").onclick = () => { scenarios = []; renderScenarios(); };
   }
 
+  // --- Formül kutusu aç/kapa (sadece görünürlük, hesaba etkisi yok) ---
+  function initFormulaToggle() {
+    const box = $("formulaBox");
+    const ico = $("formulaToggle");
+    const head = box && box.previousElementSibling; // .fbox'tan önceki <h2>
+    if (!box || !ico || !head) return;
+    head.addEventListener("click", () => {
+      const opening = box.style.display === "none";
+      box.style.display = opening ? "flex" : "none";
+      ico.textContent = opening ? "▾" : "▸";
+    });
+  }
+
   document.addEventListener("DOMContentLoaded", () => {
     initHierarchy();
     DataService._cur = { sel: state.sel, level: state.level };
     DataService.loadMix = function () { return this.loadMixFor(this._cur.sel, this._cur.level); };
     buildTable();
     bind();
+    initFormulaToggle();
     updateAll();
     updateSelInfo();
     renderCalendar();

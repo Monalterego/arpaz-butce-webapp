@@ -57,8 +57,8 @@
 
       <!-- FORMÜL AÇIKLAMA -->
       <div class="panel formula">
-        <h2>🧠 Bütçe Kurgusu — Nasıl Hesaplanıyor? <span class="pill">LC → Arpaz Uyarlaması</span></h2>
-        <div class="fbox">
+        <h2>🧠 Bütçe Kurgusu — Nasıl Hesaplanıyor? <span class="pill">LC → Arpaz Uyarlaması</span><span class="toggle-ico" id="formulaToggle">▸</span></h2>
+        <div class="fbox" id="formulaBox" style="display:none">
           <div><b>1) Plan Stok %</b> = ( <span class="wK">Kâr%×W</span> + <span class="wS">Satış%×W</span> + <span class="wSt">Stok%×W</span> ) → 100'e normalize</div>
           <div><b>2) Plan Stok Adet</b> = ( Toplam Stok × Hedef Stok Büyümesi ) × Plan Stok %</div>
           <div><b>3) Satış Bütçe</b> = ( Plan Stok Adet ÷ <span class="wH">Hedef Cover [elle]</span> ) × Pazarlama Büyümesi × Çarpanlar</div>
