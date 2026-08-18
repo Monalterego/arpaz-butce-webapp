@@ -115,59 +115,86 @@
 
       <!-- ANA MIKS TABLOSU -->
       <div class="panel">
-        <h2>🧮 Bütçe &amp; Stok Miks Tablosu <span class="pill">Hedef Cover elle girilir</span><button type="button" class="btn ghost mini" id="gridFormatToggle" style="margin-left:auto">🎨 Görünüm</button><button type="button" class="btn ghost mini" id="gridColReset">↺ Görünümü sıfırla</button></h2>
-        <div class="pgroup" id="gridFormatPanel" style="display:none;margin-bottom:10px">
-          <div class="ptitle">Görünüm — Sadece Bu Tablo</div>
-          <div class="prow">
-            <label>Satır Yüksekliği</label>
-            <div class="stepper">
-              <button type="button" class="btn ghost mini" data-fmt-step="rowPad" data-dir="-1">−</button>
-              <span class="stepper-val" id="fmtRowPadVal">7px</span>
-              <button type="button" class="btn ghost mini" data-fmt-step="rowPad" data-dir="1">+</button>
-              <span class="row-resize-handle" id="rowPadHandle" title="Sürükleyerek ayarla">↕</span>
+        <h2>🧮 Bütçe &amp; Stok Miks Tablosu <span class="pill">Hedef Cover elle girilir</span>
+          <div class="grid-format-wrap">
+            <button type="button" class="btn ghost mini" id="gridFormatToggle" style="margin-left:auto">🎨 Görünüm</button>
+            <div class="pgroup" id="gridFormatPanel" style="display:none">
+              <div class="ptitle">Görünüm — Sadece Bu Tablo</div>
+              <div class="fmt-grid">
+                <div class="fmt-row">
+                  <label>Satır Yüksekliği</label>
+                  <div class="stepper">
+                    <button type="button" class="btn ghost mini" data-fmt-step="rowPad" data-dir="-1">−</button>
+                    <span class="stepper-val" id="fmtRowPadVal">7px</span>
+                    <button type="button" class="btn ghost mini" data-fmt-step="rowPad" data-dir="1">+</button>
+                    <span class="row-resize-handle" id="rowPadHandle" title="Sürükleyerek ayarla">↕</span>
+                  </div>
+                </div>
+                <div class="fmt-row">
+                  <label>Başlık Yazı Boyutu</label>
+                  <div class="stepper">
+                    <button type="button" class="btn ghost mini" data-fmt-step="headerSize" data-dir="-1">−</button>
+                    <span class="stepper-val" id="fmtHeaderSizeVal">11px</span>
+                    <button type="button" class="btn ghost mini" data-fmt-step="headerSize" data-dir="1">+</button>
+                  </div>
+                </div>
+                <div class="fmt-row">
+                  <label>Başlık Kalın</label>
+                  <label class="switch" aria-label="Başlık kalınlık">
+                    <input type="checkbox" id="fmtHeaderBoldToggle">
+                    <span class="slider"></span>
+                  </label>
+                </div>
+                <div class="fmt-row">
+                  <label>Hücre Yazı Boyutu</label>
+                  <div class="stepper">
+                    <button type="button" class="btn ghost mini" data-fmt-step="cellSize" data-dir="-1">−</button>
+                    <span class="stepper-val" id="fmtCellSizeVal">12px</span>
+                    <button type="button" class="btn ghost mini" data-fmt-step="cellSize" data-dir="1">+</button>
+                  </div>
+                </div>
+                <div class="fmt-row">
+                  <label>Hücre Kalın</label>
+                  <label class="switch" aria-label="Hücre kalınlık">
+                    <input type="checkbox" id="fmtCellBoldToggle">
+                    <span class="slider"></span>
+                  </label>
+                </div>
+                <div class="fmt-row">
+                  <label>Başlık Hizalama</label>
+                  <div class="segmented" data-fmt-align="header">
+                    <button type="button" class="mini" data-fmt-align="header" data-val="left">Sol</button>
+                    <button type="button" class="mini" data-fmt-align="header" data-val="center">Orta</button>
+                    <button type="button" class="mini" data-fmt-align="header" data-val="right">Sağ</button>
+                  </div>
+                </div>
+                <div class="fmt-row">
+                  <label>Hücre Hizalama</label>
+                  <div class="segmented" data-fmt-align="cell">
+                    <button type="button" class="mini" data-fmt-align="cell" data-val="left">Sol</button>
+                    <button type="button" class="mini" data-fmt-align="cell" data-val="center">Orta</button>
+                    <button type="button" class="mini" data-fmt-align="cell" data-val="right">Sağ</button>
+                  </div>
+                </div>
+              </div>
+              <div class="saved-views">
+                <div class="saved-head">Görünümlerim</div>
+                <div class="saved-form">
+                  <input id="viewNameInput" type="text" placeholder="Görünüm adı" maxlength="40">
+                  <button type="button" class="btn ghost mini" id="saveViewBtn">Kaydet</button>
+                </div>
+                <div class="saved-actions">
+                  <select id="savedViewSelect">
+                    <option value="">Kayıtlı görünüm</option>
+                  </select>
+                  <button type="button" class="btn ghost mini" id="applySavedViewBtn">Uygula</button>
+                  <button type="button" class="btn ghost mini" id="deleteSavedViewBtn">Sil</button>
+                </div>
+              </div>
             </div>
           </div>
-          <div class="prow">
-            <label>Başlık Yazı Boyutu</label>
-            <div class="stepper">
-              <button type="button" class="btn ghost mini" data-fmt-step="headerSize" data-dir="-1">−</button>
-              <span class="stepper-val" id="fmtHeaderSizeVal">11px</span>
-              <button type="button" class="btn ghost mini" data-fmt-step="headerSize" data-dir="1">+</button>
-            </div>
-          </div>
-          <div class="prow">
-            <label>Başlık Kalın</label>
-            <button type="button" class="btn ghost mini" id="fmtHeaderBoldToggle">Açık</button>
-          </div>
-          <div class="prow">
-            <label>Hücre Yazı Boyutu</label>
-            <div class="stepper">
-              <button type="button" class="btn ghost mini" data-fmt-step="cellSize" data-dir="-1">−</button>
-              <span class="stepper-val" id="fmtCellSizeVal">12px</span>
-              <button type="button" class="btn ghost mini" data-fmt-step="cellSize" data-dir="1">+</button>
-            </div>
-          </div>
-          <div class="prow">
-            <label>Hücre Kalın</label>
-            <button type="button" class="btn ghost mini" id="fmtCellBoldToggle">Kapalı</button>
-          </div>
-          <div class="prow">
-            <label>Başlık Hizalama</label>
-            <div class="stepper">
-              <button type="button" class="btn ghost mini" data-fmt-align="header" data-val="left">Sol</button>
-              <button type="button" class="btn ghost mini" data-fmt-align="header" data-val="center">Orta</button>
-              <button type="button" class="btn ghost mini" data-fmt-align="header" data-val="right">Sağ</button>
-            </div>
-          </div>
-          <div class="prow">
-            <label>Hücre Hizalama</label>
-            <div class="stepper">
-              <button type="button" class="btn ghost mini" data-fmt-align="cell" data-val="left">Sol</button>
-              <button type="button" class="btn ghost mini" data-fmt-align="cell" data-val="center">Orta</button>
-              <button type="button" class="btn ghost mini" data-fmt-align="cell" data-val="right">Sağ</button>
-            </div>
-          </div>
-        </div>
+          <button type="button" class="btn ghost mini" id="gridColReset">↺ Görünümü sıfırla</button>
+        </h2>
         <div style="max-height:520px;overflow:auto">
         <table id="grid">
           <colgroup>

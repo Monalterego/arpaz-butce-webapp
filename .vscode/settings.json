@@ -1,0 +1,8 @@
+{
+    "chat.tools.terminal.autoApprove": {
+        "/^D:\\\\node\\\\node-v22\\.11\\.0-win-x64\\\\node\\.exe --check 'd:\\\\users\\\\26101538\\\\OneDrive - ARÇELİK A\\.Ş\\\\Desktop\\\\Budget Stock Mix Project\\\\arpaz-butce-webapp\\\\assets\\\\app\\.js'$/": {
+            "approve": true,
+            "matchCommandLine": true
+        }
+    }
+}

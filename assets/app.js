@@ -51,16 +51,20 @@
     const uh1s = Object.keys(HIERARCHY);
     fillSelect($("h_uh1"), uh1s);
     $("h_uh1").value = state.sel.uh1;
-    refreshUh2(); refreshUh3();
+    refreshUh2();
+    refreshUh3();
     $("h_uh1").addEventListener("change", () => {
-      state.sel.uh1 = $("h_uh1").value; state.sel.uh3 = "";
+      state.sel.uh1 = $("h_uh1").value;
       syncLevel();
-      refreshUh2(); refreshUh3(); rebuild();
+      refreshUh2();
+      refreshUh3();
+      rebuild();
     });
     $("h_uh2").addEventListener("change", () => {
-      state.sel.uh2 = $("h_uh2").value; state.sel.uh3 = "";
+      state.sel.uh2 = $("h_uh2").value;
       syncLevel();
-      refreshUh3(); rebuild();
+      refreshUh3();
+      rebuild();
     });
     $("h_uh3").addEventListener("change", () => {
       state.sel.uh3 = $("h_uh3").value;
@@ -76,8 +80,10 @@
   }
   function refreshUh3() {
     const node = (HIERARCHY[state.sel.uh1] || {})[state.sel.uh2] || {};
-    fillSelect($("h_uh3"), Object.keys(node), "Tümü (ÜH3)");
-    $("h_uh3").value = state.sel.uh3 || "";
+    const keys = Object.keys(node);
+    state.sel.uh3 = keys[0] || "";
+    fillSelect($("h_uh3"), keys);
+    $("h_uh3").value = state.sel.uh3;
   }
   function rebuild() {
     // DataService güncel seçimi kullansın
@@ -87,7 +93,7 @@
     updateAll();
     updateSelInfo();
     // başlık kolon adı
-    $("grpColHead").textContent = "Alt Grup (ÜH4)";
+    $("grpColHead").textContent = "ÜH4";
     attachUh4ResizeHandle(); // textContent ataması ÜH4 hücresindeki resize tutamacını sildi, yeniden ekle
   }
   function updateSelInfo() {
@@ -202,8 +208,6 @@
 
     const tb = $("rows");
     tb.innerHTML = "";
-    const grpHead = $("grpColHead");
-    if (grpHead) grpHead.textContent = "Alt Grup (ÜH4)";
 
     data.forEach((d, i) => {
       const tr = document.createElement("tr");
@@ -531,12 +535,29 @@ function updateAll() {
   // --- Görünüm araç çubuğu: satır yüksekliği + başlık/hücre yazı boyutu-kalınlık (SADECE #grid) ---
   // Bu GERÇEK bir web uygulaması (GitHub Pages), Claude "artifact" ortamı DEĞİL — localStorage kullanılır.
   const GRID_FORMAT_KEY = "arpaz_grid_format";
+  const VIEW_STORAGE_KEY = "arpaz_table_views";
+  const LAST_VIEW_KEY = "arpaz_last_view";
   const FORMAT_DEFAULTS = { rowPad: 7, headerSize: 11, headerBold: true, cellSize: 12, cellBold: false, headerAlign: "center", cellAlign: "right" };
   const FORMAT_LIMITS = { rowPad: [4, 20], headerSize: [9, 16], cellSize: [9, 14] };
   const VALID_ALIGNS = ["left", "center", "right"];
   let gridFormat = { ...FORMAT_DEFAULTS };
 
   function clamp(v, [min, max]) { return Math.max(min, Math.min(max, v)); }
+
+  function normalizeViewConfig(obj) {
+    if (!obj || typeof obj !== "object") return null;
+    const rowPad = clamp(Number(obj.rowPad), FORMAT_LIMITS.rowPad);
+    const headerSize = clamp(Number(obj.headerSize), FORMAT_LIMITS.headerSize);
+    const cellSize = clamp(Number(obj.cellSize), FORMAT_LIMITS.cellSize);
+    if (!isFinite(rowPad) || !isFinite(headerSize) || !isFinite(cellSize)) return null;
+    return {
+      rowPad, headerSize, cellSize,
+      headerBold: typeof obj.headerBold === "boolean" ? obj.headerBold : FORMAT_DEFAULTS.headerBold,
+      cellBold: typeof obj.cellBold === "boolean" ? obj.cellBold : FORMAT_DEFAULTS.cellBold,
+      headerAlign: VALID_ALIGNS.includes(obj.headerAlign) ? obj.headerAlign : FORMAT_DEFAULTS.headerAlign,
+      cellAlign: VALID_ALIGNS.includes(obj.cellAlign) ? obj.cellAlign : FORMAT_DEFAULTS.cellAlign,
+    };
+  }
 
   // İkinci thead satırının sticky "top"u birinci satırın GERÇEK yüksekliği kadar olmalı
   // (0 değil) — yoksa aşağı kaydırınca ikinci satır birincinin üstüne biniyor. Birinci
@@ -567,10 +588,12 @@ function updateAll() {
     const rowPadEl = $("fmtRowPadVal"); if (rowPadEl) rowPadEl.textContent = gridFormat.rowPad + "px";
     const hSizeEl = $("fmtHeaderSizeVal"); if (hSizeEl) hSizeEl.textContent = gridFormat.headerSize + "px";
     const cSizeEl = $("fmtCellSizeVal"); if (cSizeEl) cSizeEl.textContent = gridFormat.cellSize + "px";
-    const hBoldBtn = $("fmtHeaderBoldToggle");
-    if (hBoldBtn) { hBoldBtn.textContent = gridFormat.headerBold ? "Açık" : "Kapalı"; hBoldBtn.classList.toggle("is-on", gridFormat.headerBold); }
-    const cBoldBtn = $("fmtCellBoldToggle");
-    if (cBoldBtn) { cBoldBtn.textContent = gridFormat.cellBold ? "Açık" : "Kapalı"; cBoldBtn.classList.toggle("is-on", gridFormat.cellBold); }
+
+    const hBoldInput = $("fmtHeaderBoldToggle");
+    if (hBoldInput) hBoldInput.checked = !!gridFormat.headerBold;
+    const cBoldInput = $("fmtCellBoldToggle");
+    if (cBoldInput) cBoldInput.checked = !!gridFormat.cellBold;
+
     document.querySelectorAll('[data-fmt-align="header"]').forEach((btn) => {
       btn.classList.toggle("is-on", btn.dataset.val === gridFormat.headerAlign);
     });
@@ -582,19 +605,7 @@ function updateAll() {
     try {
       const raw = localStorage.getItem(GRID_FORMAT_KEY);
       if (!raw) return null;
-      const obj = JSON.parse(raw);
-      if (!obj || typeof obj !== "object") return null;
-      const rowPad = clamp(Number(obj.rowPad), FORMAT_LIMITS.rowPad);
-      const headerSize = clamp(Number(obj.headerSize), FORMAT_LIMITS.headerSize);
-      const cellSize = clamp(Number(obj.cellSize), FORMAT_LIMITS.cellSize);
-      if (!isFinite(rowPad) || !isFinite(headerSize) || !isFinite(cellSize)) return null;
-      return {
-        rowPad, headerSize, cellSize,
-        headerBold: typeof obj.headerBold === "boolean" ? obj.headerBold : FORMAT_DEFAULTS.headerBold,
-        cellBold: typeof obj.cellBold === "boolean" ? obj.cellBold : FORMAT_DEFAULTS.cellBold,
-        headerAlign: VALID_ALIGNS.includes(obj.headerAlign) ? obj.headerAlign : FORMAT_DEFAULTS.headerAlign,
-        cellAlign: VALID_ALIGNS.includes(obj.cellAlign) ? obj.cellAlign : FORMAT_DEFAULTS.cellAlign,
-      };
+      return normalizeViewConfig(JSON.parse(raw));
     } catch (e) {
       return null; // bozuk veri: sessizce varsayılana dön
     }
@@ -602,16 +613,95 @@ function updateAll() {
   function saveGridFormat() {
     try { localStorage.setItem(GRID_FORMAT_KEY, JSON.stringify(gridFormat)); } catch (e) { /* geç */ }
   }
-  function initGridFormat() {
-    gridFormat = loadSavedGridFormat() || { ...FORMAT_DEFAULTS };
+  function loadSavedViews() {
+    try {
+      const raw = localStorage.getItem(VIEW_STORAGE_KEY);
+      if (!raw) return {};
+      const parsed = JSON.parse(raw);
+      if (!parsed || typeof parsed !== "object") return {};
+      const clean = {};
+      Object.keys(parsed).forEach((name) => {
+        const view = normalizeViewConfig(parsed[name]);
+        if (view && name && name.trim()) clean[name.trim()] = view;
+      });
+      return clean;
+    } catch (e) {
+      return {};
+    }
+  }
+  function saveSavedViews(views) {
+    try { localStorage.setItem(VIEW_STORAGE_KEY, JSON.stringify(views)); } catch (e) { /* geç */ }
+  }
+  function renderSavedViews() {
+    const select = $("savedViewSelect");
+    if (!select) return;
+    const views = loadSavedViews();
+    const names = Object.keys(views);
+    const lastUsed = localStorage.getItem(LAST_VIEW_KEY);
+    select.innerHTML = '<option value="">Kayıtlı görünüm</option>' + names.map((name) => `<option value="${name}">${name}</option>`).join("");
+    if (lastUsed && views[lastUsed]) select.value = lastUsed;
+  }
+  function applySavedView(name) {
+    const views = loadSavedViews();
+    const saved = views[name];
+    if (!saved) return;
+    gridFormat = { ...FORMAT_DEFAULTS, ...saved };
     applyGridFormat();
+    saveGridFormat();
+    localStorage.setItem(LAST_VIEW_KEY, name);
+    renderSavedViews();
+  }
+  function saveCurrentView() {
+    const input = $("viewNameInput");
+    const name = input ? input.value.trim() : "";
+    if (!name) return;
+    const views = loadSavedViews();
+    views[name] = { ...gridFormat };
+    saveSavedViews(views);
+    localStorage.setItem(LAST_VIEW_KEY, name);
+    renderSavedViews();
+    if (input) input.value = "";
+  }
+  function deleteSavedView() {
+    const select = $("savedViewSelect");
+    const selected = select ? select.value : "";
+    if (!selected) return;
+    const views = loadSavedViews();
+    delete views[selected];
+    saveSavedViews(views);
+    const lastUsed = localStorage.getItem(LAST_VIEW_KEY);
+    if (lastUsed === selected) localStorage.removeItem(LAST_VIEW_KEY);
+    renderSavedViews();
+  }
+  function initGridFormat() {
+    const savedViews = loadSavedViews();
+    const lastView = localStorage.getItem(LAST_VIEW_KEY);
+    const currentPreset = lastView && savedViews[lastView] ? savedViews[lastView] : loadSavedGridFormat();
+    gridFormat = currentPreset ? { ...FORMAT_DEFAULTS, ...currentPreset } : { ...FORMAT_DEFAULTS };
+    applyGridFormat();
+    renderSavedViews();
 
     const toggleBtn = $("gridFormatToggle");
     const panel = $("gridFormatPanel");
     if (toggleBtn && panel) {
-      toggleBtn.addEventListener("click", () => {
-        panel.style.display = panel.style.display === "none" ? "block" : "none";
+      const syncToggleState = () => {
+        const open = panel.style.display !== "none";
+        toggleBtn.setAttribute("aria-expanded", String(open));
+        toggleBtn.classList.toggle("is-on", open);
+      };
+      toggleBtn.addEventListener("click", (e) => {
+        e.stopPropagation();
+        const open = panel.style.display === "none";
+        panel.style.display = open ? "block" : "none";
+        syncToggleState();
       });
+      document.addEventListener("click", (event) => {
+        if (!panel.contains(event.target) && !toggleBtn.contains(event.target)) {
+          panel.style.display = "none";
+          syncToggleState();
+        }
+      });
+      syncToggleState();
     }
 
     document.querySelectorAll("[data-fmt-step]").forEach((btn) => {
@@ -625,14 +715,14 @@ function updateAll() {
     });
 
     const hBoldBtn = $("fmtHeaderBoldToggle");
-    if (hBoldBtn) hBoldBtn.addEventListener("click", () => {
-      gridFormat.headerBold = !gridFormat.headerBold;
+    if (hBoldBtn) hBoldBtn.addEventListener("change", () => {
+      gridFormat.headerBold = hBoldBtn.checked;
       applyGridFormat();
       saveGridFormat();
     });
     const cBoldBtn = $("fmtCellBoldToggle");
-    if (cBoldBtn) cBoldBtn.addEventListener("click", () => {
-      gridFormat.cellBold = !gridFormat.cellBold;
+    if (cBoldBtn) cBoldBtn.addEventListener("change", () => {
+      gridFormat.cellBold = cBoldBtn.checked;
       applyGridFormat();
       saveGridFormat();
     });
@@ -669,6 +759,18 @@ function updateAll() {
       });
     }
 
+    const saveViewBtn = $("saveViewBtn");
+    if (saveViewBtn) saveViewBtn.addEventListener("click", saveCurrentView);
+    const input = $("viewNameInput");
+    if (input) input.addEventListener("keydown", (e) => { if (e.key === "Enter") saveCurrentView(); });
+    const applySavedBtn = $("applySavedViewBtn");
+    if (applySavedBtn) applySavedBtn.addEventListener("click", () => {
+      const select = $("savedViewSelect");
+      if (select && select.value) applySavedView(select.value);
+    });
+    const deleteSavedBtn = $("deleteSavedViewBtn");
+    if (deleteSavedBtn) deleteSavedBtn.addEventListener("click", deleteSavedView);
+
     // "↺ Görünümü sıfırla" — mevcut gridColReset butonuna İKİNCİ bir dinleyici (sütun
     // genişliği sıfırlama initColResize()'da zaten bağlı, ona dokunmadan ekleniyor)
     const resetBtn = $("gridColReset");
@@ -676,8 +778,10 @@ function updateAll() {
       resetBtn.addEventListener("click", (e) => {
         e.preventDefault();
         try { localStorage.removeItem(GRID_FORMAT_KEY); } catch (err) { /* geç */ }
+        localStorage.removeItem(LAST_VIEW_KEY);
         gridFormat = { ...FORMAT_DEFAULTS };
         applyGridFormat();
+        saveGridFormat();
       });
     }
 

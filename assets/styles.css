@@ -32,8 +32,14 @@ select[disabled]{opacity:.5;cursor:not-allowed}
 .panel.formula h2{cursor:pointer}
 .toggle-ico{margin-left:auto;font-size:11px;color:var(--grey)}
 .params{display:grid;grid-template-columns:repeat(4,1fr);gap:14px}
-.pgroup{background:#f8fafc;border:1px solid var(--line);border-radius:8px;padding:10px 12px}
-.pgroup .ptitle{font-size:11px;color:var(--grey);margin-bottom:6px;font-weight:600;text-transform:uppercase;letter-spacing:.4px}
+.grid-format-wrap{position:relative;margin-left:auto}
+.pgroup{background:#fff;border:1px solid rgba(11,37,69,.12);border-radius:12px;padding:12px 14px;box-shadow:0 16px 40px rgba(11,37,69,.12);position:absolute;top:calc(100% + 10px);right:0;width:min(560px,calc(100vw - 48px));z-index:30}
+.pgroup .ptitle{font-size:11px;color:var(--grey);margin-bottom:10px;font-weight:700;text-transform:uppercase;letter-spacing:.5px}
+.fmt-grid{display:grid;grid-template-columns:1fr;gap:0;border-top:1px solid var(--line);margin-top:6px}
+.fmt-row{display:grid;grid-template-columns:1fr auto;align-items:center;gap:12px;min-height:44px;padding:8px 0;border-bottom:1px solid var(--line)}
+.fmt-row:last-child{border-bottom:none}
+.fmt-row label{font-size:12px;color:#33475b;display:flex;align-items:center;line-height:1.3}
+.fmt-row .stepper,.fmt-row .segmented,.fmt-row .switch{justify-self:end}
 .prow{display:flex;align-items:center;justify-content:space-between;gap:8px;margin:6px 0}
 .prow label{font-size:12px;color:#33475b}
 .prow input[type=range]{flex:1;accent-color:var(--accent2)}
@@ -114,11 +120,29 @@ tfoot td{background:#eef3f8;font-weight:700;border-top:2px solid var(--navy)}
    de --grid-row-pad'den türetilir (yatay padding sabit, pill/kutu şekli bozulmaz);
    .heat'in font-size'ı artık --grid-c-size'a bağlı (kasıtlı — hücre metniyle birlikte
    büyüsün/küçülsün). .badge kendi font-size'ını (11px) hâlâ sabit taşıyor. */
-.stepper{display:flex;align-items:center;gap:4px}
-.stepper-val{width:34px;text-align:center;font-variant-numeric:tabular-nums;font-weight:600;color:var(--blue)}
+.stepper{display:inline-flex;align-items:center;gap:4px;padding:2px;border:1px solid rgba(11,37,69,.12);background:#f7f9fc;border-radius:999px;box-shadow:inset 0 1px 1px rgba(11,37,69,.04)}
+.stepper .btn{padding:4px 7px;min-width:20px;border-radius:999px;border:none;background:transparent;color:var(--navy);font-weight:700}
+.stepper .btn:hover{background:rgba(11,37,69,.04)}
+.stepper-val{min-width:52px;padding:2px 6px;text-align:center;font-variant-numeric:tabular-nums;font-weight:700;color:var(--navy);background:#fff;border-radius:999px;border:1px solid rgba(11,37,69,.08)}
 .row-resize-handle{cursor:row-resize;color:var(--grey);padding:0 4px;user-select:none;font-weight:700;border-radius:3px}
 .row-resize-handle:hover,.row-resize-handle.dragging{background:rgba(0,0,0,.08);color:var(--ink)}
 .btn.ghost.is-on{background:var(--bluebg);color:var(--blue);border-color:var(--bluebg)}
+.switch{position:relative;display:inline-block;width:42px;height:24px}
+.switch input{opacity:0;width:0;height:0}
+.slider{position:absolute;cursor:pointer;inset:0;background-color:#dfe7ef;border-radius:999px;transition:.2s ease}
+.slider:before{content:"";position:absolute;height:18px;width:18px;left:3px;top:3px;background:#fff;border-radius:50%;box-shadow:0 2px 4px rgba(11,37,69,.2);transition:.2s ease}
+.switch input:checked + .slider{background:linear-gradient(90deg,var(--navy),var(--accent2))}
+.switch input:checked + .slider:before{transform:translateX(18px)}
+.segmented{display:inline-flex;align-items:center;padding:2px;border-radius:10px;background:#eef4fb;border:1px solid rgba(11,37,69,.08)}
+.segmented button{border:none;background:transparent;color:var(--grey);padding:5px 10px;border-radius:8px;font-size:11px;font-weight:600;cursor:pointer;min-width:44px}
+.segmented button.is-on{background:linear-gradient(90deg,var(--navy),var(--accent2));color:#fff;box-shadow:0 3px 8px rgba(11,37,69,.15)}
+.saved-views{margin-top:12px;padding-top:12px;border-top:1px solid var(--line)}
+.saved-head{font-size:11px;color:var(--grey);font-weight:700;text-transform:uppercase;letter-spacing:.5px;margin-bottom:8px}
+.saved-form,.saved-actions{display:grid;grid-template-columns:1fr auto auto;gap:8px;align-items:center}
+.saved-form{margin-bottom:8px}
+.saved-form input,.saved-actions select{width:100%;padding:7px 10px;border:1px solid rgba(11,37,69,.14);border-radius:8px;background:#f8fafc;color:var(--ink);font-size:12px}
+.saved-form input:focus,.saved-actions select:focus{outline:2px solid rgba(0,119,182,.18);border-color:var(--accent2)}
+.saved-actions{grid-template-columns:minmax(150px,1fr) auto auto}
 /* Görünüm araç çubuğu — başlık/hücre hizalama. Grup banner'ları (GERÇEKLEŞEN/GELECEK
    YIL PLANI) ve ÜH4/Durum/Aksiyon body hücreleri (ürün adı hep sola, rozetler kendi
    düzeninde) bu kontrolün DIŞINDA tutulur. */
