@@ -727,7 +727,10 @@ function updateAll() {
       saveGridFormat();
     });
 
-    document.querySelectorAll("[data-fmt-align]").forEach((btn) => {
+    // [data-val] şart: sarmalayıcı .segmented div'i de data-fmt-align taşıyor (stil
+    // gruplaması için), onu da eşleştirseydik click bubbling'de div'in dinleyicisi
+    // dataset.val=undefined ile ikinci kez çalışıp doğru seçimi ezerdi.
+    document.querySelectorAll("[data-fmt-align][data-val]").forEach((btn) => {
       btn.addEventListener("click", () => {
         const field = btn.dataset.fmtAlign === "header" ? "headerAlign" : "cellAlign";
         gridFormat[field] = btn.dataset.val;
