@@ -647,11 +647,24 @@
   // --- Görünüm araç çubuğu: satır yüksekliği + başlık/hücre yazı boyutu-kalınlık (SADECE #grid) ---
   // Bu GERÇEK bir web uygulaması (GitHub Pages), Claude "artifact" ortamı DEĞİL — localStorage kullanılır.
   const GRID_FORMAT_KEY = "arpaz_grid_format";
-  const FORMAT_DEFAULTS = { rowPad: 7, headerSize: 11, headerBold: true, cellSize: 12, cellBold: false };
+  const FORMAT_DEFAULTS = { rowPad: 7, headerSize: 11, headerBold: true, cellSize: 12, cellBold: false, headerAlign: "center", cellAlign: "right" };
   const FORMAT_LIMITS = { rowPad: [4, 20], headerSize: [9, 16], cellSize: [9, 14] };
+  const VALID_ALIGNS = ["left", "center", "right"];
   let gridFormat = { ...FORMAT_DEFAULTS };
 
   function clamp(v, [min, max]) { return Math.max(min, Math.min(max, v)); }
+
+  // İkinci thead satırının sticky "top"u birinci satırın GERÇEK yüksekliği kadar olmalı
+  // (0 değil) — yoksa aşağı kaydırınca ikinci satır birincinin üstüne biniyor. Birinci
+  // satırın yüksekliği sabit değil (Başlık Yazı Boyutu kontrolüyle değişir), bu yüzden
+  // dinamik hesaplanır.
+  function syncHeaderStickyOffset() {
+    const row1 = document.querySelector("#grid thead tr:first-child");
+    const row2Ths = document.querySelectorAll("#grid thead tr:last-child th");
+    if (!row1 || !row2Ths.length) return;
+    const h = row1.getBoundingClientRect().height;
+    row2Ths.forEach((th) => { th.style.top = h + "px"; });
+  }
 
   function applyGridFormat() {
     const grid = $("grid");
@@ -661,7 +674,10 @@
     grid.style.setProperty("--grid-h-weight", gridFormat.headerBold ? "700" : "400");
     grid.style.setProperty("--grid-c-size", gridFormat.cellSize + "px");
     grid.style.setProperty("--grid-c-weight", gridFormat.cellBold ? "700" : "400");
+    grid.style.setProperty("--grid-h-align", gridFormat.headerAlign);
+    grid.style.setProperty("--grid-c-align", gridFormat.cellAlign);
     updateFormatUI();
+    syncHeaderStickyOffset(); // satır yüksekliği/başlık boyutu değiştiği için 2. satırın sticky top'u yeniden hesaplanmalı
   }
   function updateFormatUI() {
     const rowPadEl = $("fmtRowPadVal"); if (rowPadEl) rowPadEl.textContent = gridFormat.rowPad + "px";
@@ -671,6 +687,12 @@
     if (hBoldBtn) { hBoldBtn.textContent = gridFormat.headerBold ? "Açık" : "Kapalı"; hBoldBtn.classList.toggle("is-on", gridFormat.headerBold); }
     const cBoldBtn = $("fmtCellBoldToggle");
     if (cBoldBtn) { cBoldBtn.textContent = gridFormat.cellBold ? "Açık" : "Kapalı"; cBoldBtn.classList.toggle("is-on", gridFormat.cellBold); }
+    document.querySelectorAll('[data-fmt-align="header"]').forEach((btn) => {
+      btn.classList.toggle("is-on", btn.dataset.val === gridFormat.headerAlign);
+    });
+    document.querySelectorAll('[data-fmt-align="cell"]').forEach((btn) => {
+      btn.classList.toggle("is-on", btn.dataset.val === gridFormat.cellAlign);
+    });
   }
   function loadSavedGridFormat() {
     try {
@@ -686,6 +708,8 @@
         rowPad, headerSize, cellSize,
         headerBold: typeof obj.headerBold === "boolean" ? obj.headerBold : FORMAT_DEFAULTS.headerBold,
         cellBold: typeof obj.cellBold === "boolean" ? obj.cellBold : FORMAT_DEFAULTS.cellBold,
+        headerAlign: VALID_ALIGNS.includes(obj.headerAlign) ? obj.headerAlign : FORMAT_DEFAULTS.headerAlign,
+        cellAlign: VALID_ALIGNS.includes(obj.cellAlign) ? obj.cellAlign : FORMAT_DEFAULTS.cellAlign,
       };
     } catch (e) {
       return null; // bozuk veri: sessizce varsayılana dön
@@ -729,12 +753,22 @@
       saveGridFormat();
     });
 
+    document.querySelectorAll("[data-fmt-align]").forEach((btn) => {
+      btn.addEventListener("click", () => {
+        const field = btn.dataset.fmtAlign === "header" ? "headerAlign" : "cellAlign";
+        gridFormat[field] = btn.dataset.val;
+        applyGridFormat();
+        saveGridFormat();
+      });
+    });
+
     const rowPadHandle = $("rowPadHandle");
     if (rowPadHandle) {
       rowPadHandle.addEventListener("mousedown", (e) => {
         e.preventDefault();
         const startY = e.clientY;
         const startPad = gridFormat.rowPad;
+        rowPadHandle.classList.add("dragging");
         function onMove(ev) {
           const delta = Math.round((ev.clientY - startY) / 2); // ~2px sürükleme = 1px yükseklik
           gridFormat.rowPad = clamp(startPad + delta, FORMAT_LIMITS.rowPad);
@@ -743,6 +777,7 @@
         function onUp() {
           document.removeEventListener("mousemove", onMove);
           document.removeEventListener("mouseup", onUp);
+          rowPadHandle.classList.remove("dragging");
           saveGridFormat();
         }
         document.addEventListener("mousemove", onMove);
@@ -761,6 +796,9 @@
         applyGridFormat();
       });
     }
+
+    // başlık metni farklı satıra bölünüp yüksekliği değişebilir (pencere yeniden boyutlanınca)
+    window.addEventListener("resize", syncHeaderStickyOffset);
   }
 
   document.addEventListener("DOMContentLoaded", () => {

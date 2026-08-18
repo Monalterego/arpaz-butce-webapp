@@ -48,14 +48,14 @@ th:first-child,td:first-child{text-align:left}
 tbody tr:hover{background:#f0f7fb}
 .num-cell{font-weight:600}
 .pct{color:var(--grey)}
-.badge{display:inline-block;padding:3px 9px;border-radius:20px;font-size:11px;font-weight:600;white-space:nowrap}
+.badge{display:inline-block;padding-inline:9px;padding-block:max(0px,calc(var(--grid-row-pad,7px) - 4px));border-radius:20px;font-size:11px;font-weight:600;white-space:nowrap}
 .b-red{background:var(--redbg);color:var(--red)}
 .b-green{background:var(--greenbg);color:var(--green)}
 .b-amber{background:var(--amberbg);color:var(--amber)}
 .b-blue{background:var(--bluebg);color:var(--blue)}
 .b-grey{background:#eef1f5;color:var(--grey)}
 tfoot td{background:#eef3f8;font-weight:700;border-top:2px solid var(--navy)}
-.heat{border-radius:4px;padding:2px 6px;font-weight:600}
+.heat{border-radius:4px;padding-inline:6px;padding-block:max(0px,calc(var(--grid-row-pad,7px) - 5px));font-weight:600;font-size:var(--grid-c-size,12px)}
 .legend{display:flex;gap:14px;flex-wrap:wrap;font-size:11px;color:var(--grey);margin-top:10px}
 .legend span{display:inline-flex;align-items:center;gap:5px}
 .dot{width:10px;height:10px;border-radius:50%;display:inline-block}
@@ -94,9 +94,6 @@ tfoot td{background:#eef3f8;font-weight:700;border-top:2px solid var(--navy)}
    "Perakende" (52px) gibi bölünemeyen kelimeler önceki turda kesiliyordu. index.html'deki
    colgroup değiştirilirse bu sayı da BİRLİKTE güncellenmeli. */
 #grid{table-layout:fixed;width:1584px}
-/* çok satırlı metrik başlıkları ortalı görünsün (sağa yaslı kalırsa merdiven gibi
-   dağınık dururlar); grup banner'ları ve rowspan'lı ÜH4/Durum/Aksiyon etkilenmesin */
-#grid thead tr:last-child th{text-align:center}
 /* güvenlik ağı: ölçüm yine de yetersiz kalırsa kelime KESILMEK yerine satır içinde
    zorla bölünsün (sessizce harf kaybından çok daha iyi bir sonuç) */
 #grid th{overflow-wrap:break-word}
@@ -113,16 +110,24 @@ tfoot td{background:#eef3f8;font-weight:700;border-top:2px solid var(--navy)}
 #grid tbody td,#grid tbody th{padding-top:var(--grid-row-pad,7px);padding-bottom:var(--grid-row-pad,7px)}
 #grid thead th{font-size:var(--grid-h-size,11px);font-weight:var(--grid-h-weight,600)}
 #grid tbody td{font-size:var(--grid-c-size,12px);font-weight:var(--grid-c-weight,400)}
-/* .badge zaten kendi font-size'ını sabitliyor (11px, aşağıda); .heat miras almasın
-   diye burada AYRICA sabitlendi — hücre yazı boyutu/kalınlık kontrolünden muaf */
-.heat{font-size:12px}
+/* satır yüksekliği GERÇEKTEN küçülebilsin diye .badge/.heat/.covin'in dikey padding'i
+   de --grid-row-pad'den türetilir (yatay padding sabit, pill/kutu şekli bozulmaz);
+   .heat'in font-size'ı artık --grid-c-size'a bağlı (kasıtlı — hücre metniyle birlikte
+   büyüsün/küçülsün). .badge kendi font-size'ını (11px) hâlâ sabit taşıyor. */
 .stepper{display:flex;align-items:center;gap:4px}
 .stepper-val{width:34px;text-align:center;font-variant-numeric:tabular-nums;font-weight:600;color:var(--blue)}
-.row-resize-handle{cursor:row-resize;color:var(--grey);padding:0 4px;user-select:none;font-weight:700}
+.row-resize-handle{cursor:row-resize;color:var(--grey);padding:0 4px;user-select:none;font-weight:700;border-radius:3px}
+.row-resize-handle:hover,.row-resize-handle.dragging{background:rgba(0,0,0,.08);color:var(--ink)}
 .btn.ghost.is-on{background:var(--bluebg);color:var(--blue);border-color:var(--bluebg)}
+/* Görünüm araç çubuğu — başlık/hücre hizalama. Grup banner'ları (GERÇEKLEŞEN/GELECEK
+   YIL PLANI) ve ÜH4/Durum/Aksiyon body hücreleri (ürün adı hep sola, rozetler kendi
+   düzeninde) bu kontrolün DIŞINDA tutulur. */
+#grid thead tr:first-child th:not(.grp-real):not(.grp-plan),
+#grid thead tr:last-child th{text-align:var(--grid-h-align,center)}
+#grid tbody td:not(:first-child):not(:nth-last-child(-n+2)){text-align:var(--grid-c-align,right)}
 /* düzenlenebilir Hedef Cover hücresi */
 .covcell{background:#fff8e6;text-align:center}
-.covin{width:56px;padding:4px 6px;border:1px solid var(--amber);border-radius:6px;text-align:right;font-weight:700;color:var(--amber);background:#fffdf6}
+.covin{width:56px;padding-inline:6px;padding-block:max(0px,calc(var(--grid-row-pad,7px) - 3px));border:1px solid var(--amber);border-radius:6px;text-align:right;font-weight:700;font-size:var(--grid-c-size,12px);color:var(--amber);background:#fffdf6}
 .covin:focus{outline:2px solid var(--amber);background:#fff}
 #grid th:first-child{position:sticky;left:0;z-index:3}
 #grid td:first-child{position:sticky;left:0;background:#fff;z-index:1}
