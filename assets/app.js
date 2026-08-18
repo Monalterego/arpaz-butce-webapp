@@ -87,7 +87,7 @@
     updateAll();
     updateSelInfo();
     // başlık kolon adı
-    const head = state.level === "uh2" ? "Klasman (ÜH2)" : state.level === "uh3" ? "Alt Grup (ÜH3)" : "Grup (ÜH4)";
+    const head = state.level === "uh2" ? "Klasman (ÜH2)" : state.level === "uh3" ? "Alt Grup (ÜH3)" : "ÜH4";
     $("grpColHead").textContent = head;
   }
   function updateSelInfo() {
