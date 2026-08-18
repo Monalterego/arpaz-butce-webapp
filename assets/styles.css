@@ -86,15 +86,20 @@ tfoot td{background:#eef3f8;font-weight:700;border-top:2px solid var(--navy)}
    width:auto ölçüldü — sütun genişliklerini colgroup'taki değerlerle BİREBİR
    eşleştirmiyordu (tarayıcı hâlâ kendi payını hesaplıyordu). width'i colgroup
    toplamına eşit sabit bir piksele çekince her sütun tam istenen genişliğe oturdu.
-   1415 = colgroup'taki 18 <col> genişliğinin toplamı (150+70+55+65+55+90+61+60+
-   50+55+75+76+75+50+50+58+110+210) — Brüt Kâr %/Cover/Stok Büyümesi 558 org×bölge×
-   ÜH1×ÜH2 kombinasyonu taranarak ölçülen taşmaya göre (heat rozeti + uç değerler,
-   ör. "127292%", "3687,0") büyütüldü. index.html'deki colgroup değiştirilirse bu
-   sayı da BİRLİKTE güncellenmeli. */
-#grid{table-layout:fixed;width:1415px}
+   1584 = colgroup'taki 18 <col> genişliğinin toplamı (150+77+77+77+77+90+77+60+69+
+   77+77+76+77+65+65+73+110+210). Kolon genişlikleri iki ayrı taşma kaynağına göre
+   ölçüldü: (1) 558 org×bölge×ÜH1×ÜH2 kombinasyonu taranarak DATA taşması (Brüt Kâr %/
+   Cover/Stok Büyümesi), (2) Canvas 2D measureText() ile th'in gerçek fontuyla (600
+   11px "Segoe UI") her başlıktaki EN UZUN KELİME ölçülüp (+16px padding +8px pay) —
+   "Perakende" (52px) gibi bölünemeyen kelimeler önceki turda kesiliyordu. index.html'deki
+   colgroup değiştirilirse bu sayı da BİRLİKTE güncellenmeli. */
+#grid{table-layout:fixed;width:1584px}
 /* çok satırlı metrik başlıkları ortalı görünsün (sağa yaslı kalırsa merdiven gibi
    dağınık dururlar); grup banner'ları ve rowspan'lı ÜH4/Durum/Aksiyon etkilenmesin */
 #grid thead tr:last-child th{text-align:center}
+/* güvenlik ağı: ölçüm yine de yetersiz kalırsa kelime KESILMEK yerine satır içinde
+   zorla bölünsün (sessizce harf kaybından çok daha iyi bir sonuç) */
+#grid th{overflow-wrap:break-word}
 /* ÜH4 ürün adları (ilk kolon) uzun olabilir, sarılabilsin — kırpılmasın */
 #grid td:first-child{white-space:normal}
 /* Aksiyon metni uzun (ör. "İndirim/kampanya ile hızlandır · stok payını azalt");
