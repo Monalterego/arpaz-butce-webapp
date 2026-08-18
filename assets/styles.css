@@ -58,8 +58,11 @@ select[disabled]{opacity:.5;cursor:not-allowed}
    Stok % Ağırlıkları) satırlarında etiket genişliği panel bazında sabitlenir, böylece
    aynı gruptaki tüm kontroller aynı x noktasından başlar. Genişlikler gerçek fontla
    ölçülen en uzun etikete (sırasıyla "Gam değişimi" ve "Hedef Stok Büyümesi %") göre
-   belirlendi. */
-.prow:has(input[type=range]) label{flex:0 0 62px}
+   belirlendi. "Gam değişimi" Canvas measureText + DOM prob ile ÇİFT DOĞRULANDI:
+   72,52px (önceki 62px değeri yetersizdi, metin 2 satıra bölünüp satırlar arasında
+   GÖRSEL bir hiza kayması hissi veriyordu — inputlar aslında pikselde hizalıydı,
+   getBoundingClientRect ile doğrulandı; kök neden sadece 2 satıra bölünmekti). */
+.prow:has(input[type=range]) label{flex:0 0 80px}
 .prow:has(input[type=number]) label{flex:0 0 136px}
 .prow input[type=range]{flex:1;accent-color:var(--accent2)}
 .prow .num{width:52px;text-align:right;font-weight:600;color:var(--blue);font-variant-numeric:tabular-nums}
@@ -125,6 +128,20 @@ tfoot td{background:#eef3f8;font-weight:700;border-top:2px solid var(--navy)}
    "Perakende" (52px) gibi bölünemeyen kelimeler önceki turda kesiliyordu. index.html'deki
    colgroup değiştirilirse bu sayı da BİRLİKTE güncellenmeli. */
 #grid{table-layout:fixed;width:1584px}
+/* Sütunlar arası dikey ayırıcı — önceden sadece border-bottom (satır ayırıcı) vardı,
+   sütunlar arasında hiç çizgi yoktu. İlk sütun (donmuş ÜH4) HARİÇ: o zaten kendi
+   box-shadow ayırıcısını taşıyor (bkz. Freeze pane bloğu aşağıda) — ikisi üst üste
+   binerse çift çizgi görünür. Son sütun (Aksiyon) da hariç: sağında zaten scroll
+   edilecek başka bir sütun yok, gereksiz taşma/kenarlık yaratmasın.
+   DİKKAT: `:first-child`/`:last-child` her <tr>'nin KENDİ çocukları arasında
+   değerlendirilir — 2 satırlı thead'de 2. satırın (15 metrik başlık) hiçbir
+   hücresi tablonun GERÇEK ilk/son sütunu DEĞİL (ÜH4/Durum/Aksiyon rowspan=2
+   olduğundan 2. satırda hiç yer almaz), bu yüzden ona :not(:first-child) ASLA
+   uygulanmaz — tümü sınırsız border-right alır (İş 3'teki freeze pane hatasıyla
+   AYNI kök neden, gerçek scroll testiyle doğrulandı). */
+#grid td:not(:first-child):not(:last-child),
+#grid thead tr:first-child th:not(:first-child):not(:last-child),
+#grid thead tr:last-child th{border-right:1px solid var(--line)}
 /* güvenlik ağı: ölçüm yine de yetersiz kalırsa kelime KESILMEK yerine satır içinde
    zorla bölünsün (sessizce harf kaybından çok daha iyi bir sonuç) */
 #grid th{overflow-wrap:break-word}
@@ -183,10 +200,18 @@ tfoot td{background:#eef3f8;font-weight:700;border-top:2px solid var(--navy)}
    üst üste biniyor hissi veriyordu (aynı renk, ayırıcı çizgi yok). thead th'lerin
    HEPSİ (2. satırın dinamik sticky top offseti dahil, bkz. syncHeaderStickyOffset)
    z-index:2 alır; ilk sütun başlığı hem sağa hem aşağı kaydırmada en üstte kalsın
-   diye 4'e çıkarılır (tbody'deki ilk sütun 1'de kalır, hepsinin altında). */
+   diye 4'e çıkarılır (tbody'deki ilk sütun 1'de kalır, hepsinin altında).
+   KRİTİK: `#grid th:first-child` (tr kapsamı olmadan) İKİ satırlı thead'de SADECE
+   1. satırın (rowspan=2 ÜH4) ilk hücresini DEĞİL, 2. satırın (15 metrik başlık)
+   ilk hücresini ("Perakende Stok Adet") de eşleştiriyordu — çünkü :first-child
+   kendi ebeveyni olan <tr>'ye göre değerlendirilir, tabloya göre değil. Bu yüzden
+   2. satırın ilk başlığı da yanlışlıkla sticky+left:0 oluyor, sağa kaydırınca
+   kendi veri sütunundan 175px kopup gerçek donmuş ÜH4 sütununun üstüne biniyordu
+   (gerçek scroll testiyle doğrulandı). `tr:first-child` ekleyerek SADECE ÜH4
+   hücresine daraltıldı. */
 #grid thead th{z-index:2}
-#grid th:first-child,#grid td:first-child{box-shadow:2px 0 4px rgba(0,0,0,.08)}
-#grid th:first-child{position:sticky;left:0;z-index:4}
+#grid thead tr:first-child th:first-child,#grid td:first-child{box-shadow:2px 0 4px rgba(0,0,0,.08)}
+#grid thead tr:first-child th:first-child{position:sticky;left:0;z-index:4}
 #grid td:first-child{position:sticky;left:0;background:#fff;z-index:1}
 #grid tbody tr:hover td:first-child{background:#f0f7fb}
 

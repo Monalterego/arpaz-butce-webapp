@@ -8,14 +8,8 @@
 </head>
 <body>
 <header>
-  <h1>Arpaz — Bütçe &amp; Stok Miks Çalışma Ekranı</h1>
+  <h1>Arpaz — Bütçe &amp; Stok Karışımı Planlama</h1>
   <span class="tag">Web App · Prototip v0.3</span>
-  <div class="right">
-    <span>Veri Kaynağı</span>
-    <select id="src" disabled title="Yakında — şu an tek veri kaynağı ve tek periyot aktif"><option>Birleşik (Peradb+TPM)</option><option>TPM (Yeni)</option><option>Peradb (Eski)</option></select>
-    <span>Bütçe Yılı</span>
-    <select id="year" disabled title="Yakında — şu an tek veri kaynağı ve tek periyot aktif"><option>2027</option><option>2026</option></select>
-  </div>
 </header>
 
 <div class="wrap">
@@ -57,7 +51,7 @@
 
       <!-- FORMÜL AÇIKLAMA -->
       <div class="panel formula">
-        <h2>Bütçe Kurgusu — Nasıl Hesaplanıyor? <span class="pill">LC → Arpaz Uyarlaması</span><span class="toggle-ico" id="formulaToggle">▸</span></h2>
+        <h2>Bütçe Kurgusu — Nasıl Hesaplanıyor? <span class="toggle-ico" id="formulaToggle">▸</span></h2>
         <div class="fbox" id="formulaBox" style="display:none">
           <div><b>1) Plan Stok %</b> = ( <span class="wK">Kâr%×W</span> + <span class="wS">Satış%×W</span> + <span class="wSt">Stok%×W</span> ) → 100'e normalize</div>
           <div><b>2) Plan Stok Adet</b> = ( Toplam Stok × Hedef Stok Büyümesi ) × Plan Stok %</div>
@@ -115,7 +109,7 @@
 
       <!-- ANA MIKS TABLOSU -->
       <div class="panel">
-        <h2>Bütçe &amp; Stok Miks Tablosu <span class="pill">Hedef Cover elle girilir</span>
+        <h2>Bütçe &amp; Stok Karışım Tablosu <span class="pill">Hedef Cover elle girilir</span>
           <div class="grid-format-wrap">
             <button type="button" class="btn ghost mini" id="gridFormatToggle" style="margin-left:auto">Görünüm</button>
             <div class="pgroup" id="gridFormatPanel" style="display:none">
