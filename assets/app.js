@@ -31,10 +31,11 @@
   // Sidebar select'leri (h_org/h_region/h_uh1/h_uh2/h_uh3) uzun seçenek metinlerinde
   // (ör. "ASPIRATÖR - DAVLUMBAZ") taşabiliyordu. Tablo başlıklarında kullanılan Canvas
   // measureText yöntemiyle (026c436) aynı mantık: seçili option'ın GERÇEK genişliğini
-  // ölç, sığmıyorsa font-size'ı 12px'ten 9px'e kadar 1px adımlarla küçült. 9px'te de
-  // sığmazsa native tarayıcı kırpmasına bırak (zorlama).
+  // ölç, sığmıyorsa font-size'ı 12px'ten 8px'e kadar 1px adımlarla küçült. En uzun
+  // ÜH2/ÜH3 adları (34-41 karakter) 8px'te bile sığmayabilir — bu bir sınır, bug
+  // değil; CSS ellipsis güvenlik ağı + title tooltip'i devreye girer (zorlama yok).
   const SELECT_FONT_MAX = 12;
-  const SELECT_FONT_MIN = 9;
+  const SELECT_FONT_MIN = 8;
   const SELECT_ARROW_RESERVE = 22; // native dropdown ok ikonu için pay (padding'e dahil değil)
   let _measureCanvas = null;
   function measureTextWidth(text, font) {
@@ -48,6 +49,7 @@
     const opt = el.options[el.selectedIndex];
     const text = opt ? opt.textContent : "";
     el.style.fontSize = "";
+    el.title = text; // taban boyutta bile sığmayan uzun ÜH2/ÜH3 adları için tam metin tooltip'i
     if (!text) return;
     const cs = getComputedStyle(el);
     const available = el.clientWidth - parseFloat(cs.paddingLeft) - parseFloat(cs.paddingRight) - SELECT_ARROW_RESERVE;
@@ -59,7 +61,15 @@
     }
     if (size < SELECT_FONT_MAX) el.style.fontSize = size + "px";
   }
-  // Sabit, tek seviyeli görünüm: her zaman ÜH4 satırları düz listelenir.
+  // KASITLI SABİT "uh4": state.sel.uh3 → state.level ? "uh3" : "uh4" mantığı doğru
+  // GÖRÜNSE de burada UYGULANMAMALI. Sebep: refreshUh3() artık "Tümü (ÜH3)"
+  // placeholder'ı üretmiyor (bkz. 445fa36) — h_uh3.value HİÇBİR ZAMAN boş olamıyor,
+  // bu yüzden o koşul her zaman "uh3"e düşer ve DataService.loadMixFor ÜH4 detay
+  // satırlarını TEK bir ÜH3 toplam satırına indirger (tablo her seçimde 1 satıra
+  // düşer — test edildi, doğrulandı). Ayrıca eski "uh3 drill-down" (ana satır +
+  // gizli ÜH4 child satırlar, expander ▶/▼) UI'ı da başka bir refactor'da tamamen
+  // kaldırıldı; buildTable() artık tek dallı, düz liste üretiyor. "Tümü (ÜH3)"
+  // placeholder'ı geri getirilmeden bu koşulu değiştirme.
   function syncLevel() {
     state.level = "uh4";
   }
