@@ -28,6 +28,37 @@
     el.innerHTML = (placeholder ? `<option value="">${placeholder}</option>` : "") +
       items.map((i) => `<option value="${i.replace(/"/g, "&quot;")}">${i}</option>`).join("");
   }
+  // Sidebar select'leri (h_org/h_region/h_uh1/h_uh2/h_uh3) uzun seçenek metinlerinde
+  // (ör. "ASPIRATÖR - DAVLUMBAZ") taşabiliyordu. Tablo başlıklarında kullanılan Canvas
+  // measureText yöntemiyle (026c436) aynı mantık: seçili option'ın GERÇEK genişliğini
+  // ölç, sığmıyorsa font-size'ı 12px'ten 9px'e kadar 1px adımlarla küçült. 9px'te de
+  // sığmazsa native tarayıcı kırpmasına bırak (zorlama).
+  const SELECT_FONT_MAX = 12;
+  const SELECT_FONT_MIN = 9;
+  const SELECT_ARROW_RESERVE = 22; // native dropdown ok ikonu için pay (padding'e dahil değil)
+  let _measureCanvas = null;
+  function measureTextWidth(text, font) {
+    if (!_measureCanvas) _measureCanvas = document.createElement("canvas");
+    const ctx = _measureCanvas.getContext("2d");
+    ctx.font = font;
+    return ctx.measureText(text).width;
+  }
+  function autoFitSelectFont(el) {
+    if (!el) return;
+    const opt = el.options[el.selectedIndex];
+    const text = opt ? opt.textContent : "";
+    el.style.fontSize = "";
+    if (!text) return;
+    const cs = getComputedStyle(el);
+    const available = el.clientWidth - parseFloat(cs.paddingLeft) - parseFloat(cs.paddingRight) - SELECT_ARROW_RESERVE;
+    let size = SELECT_FONT_MAX;
+    if (available > 0) {
+      while (size > SELECT_FONT_MIN && measureTextWidth(text, `${cs.fontWeight} ${size}px ${cs.fontFamily}`) > available) {
+        size -= 1;
+      }
+    }
+    if (size < SELECT_FONT_MAX) el.style.fontSize = size + "px";
+  }
   // Sabit, tek seviyeli görünüm: her zaman ÜH4 satırları düz listelenir.
   function syncLevel() {
     state.level = "uh4";
@@ -40,21 +71,25 @@
     if (document.getElementById('h_org')) {
       fillSelect($("h_org"), DataService.orgs(), "Tümü");
       $("h_org").value = "";
-      $("h_org").addEventListener("change", () => { DataService.setOrg($("h_org").value); rebuild(); });
+      autoFitSelectFont($("h_org"));
+      $("h_org").addEventListener("change", () => { DataService.setOrg($("h_org").value); autoFitSelectFont($("h_org")); rebuild(); });
     }
     if (document.getElementById('h_region')) {
       fillSelect($("h_region"), DataService.regions(), "Tümü");
       $("h_region").value = "";
-      $("h_region").addEventListener("change", () => { DataService.setRegion($("h_region").value); rebuild(); });
+      autoFitSelectFont($("h_region"));
+      $("h_region").addEventListener("change", () => { DataService.setRegion($("h_region").value); autoFitSelectFont($("h_region")); rebuild(); });
     }
 
     const uh1s = Object.keys(HIERARCHY);
     fillSelect($("h_uh1"), uh1s);
     $("h_uh1").value = state.sel.uh1;
+    autoFitSelectFont($("h_uh1"));
     refreshUh2();
     refreshUh3();
     $("h_uh1").addEventListener("change", () => {
       state.sel.uh1 = $("h_uh1").value;
+      autoFitSelectFont($("h_uh1"));
       syncLevel();
       refreshUh2();
       refreshUh3();
@@ -62,12 +97,14 @@
     });
     $("h_uh2").addEventListener("change", () => {
       state.sel.uh2 = $("h_uh2").value;
+      autoFitSelectFont($("h_uh2"));
       syncLevel();
       refreshUh3();
       rebuild();
     });
     $("h_uh3").addEventListener("change", () => {
       state.sel.uh3 = $("h_uh3").value;
+      autoFitSelectFont($("h_uh3"));
       syncLevel();
       rebuild();
     });
@@ -77,6 +114,7 @@
     fillSelect($("h_uh2"), uh2s);
     state.sel.uh2 = uh2s[0] || "";
     $("h_uh2").value = state.sel.uh2;
+    autoFitSelectFont($("h_uh2"));
   }
   function refreshUh3() {
     const node = (HIERARCHY[state.sel.uh1] || {})[state.sel.uh2] || {};
@@ -84,6 +122,7 @@
     state.sel.uh3 = keys[0] || "";
     fillSelect($("h_uh3"), keys);
     $("h_uh3").value = state.sel.uh3;
+    autoFitSelectFont($("h_uh3"));
   }
   function rebuild() {
     // DataService güncel seçimi kullansın
@@ -689,10 +728,24 @@ function updateAll() {
         toggleBtn.setAttribute("aria-expanded", String(open));
         toggleBtn.classList.toggle("is-on", open);
       };
+      // Viewport altına yakın açılırsa panel ekran dışına taşıyordu (sabit top:calc(100%+10px)).
+      // Her açılışta gerçek boyutlarla ölç, alta sığmıyorsa panel YUKARI açılsın.
+      const positionPanel = () => {
+        panel.style.top = "calc(100% + 10px)";
+        panel.style.bottom = "auto";
+        const btnRect = toggleBtn.getBoundingClientRect();
+        const panelRect = panel.getBoundingClientRect();
+        const overflowsBottom = btnRect.bottom + panelRect.height + 10 > window.innerHeight;
+        if (overflowsBottom) {
+          panel.style.top = "auto";
+          panel.style.bottom = "calc(100% + 10px)";
+        }
+      };
       toggleBtn.addEventListener("click", (e) => {
         e.stopPropagation();
         const open = panel.style.display === "none";
         panel.style.display = open ? "block" : "none";
+        if (open) positionPanel();
         syncToggleState();
       });
       document.addEventListener("click", (event) => {
