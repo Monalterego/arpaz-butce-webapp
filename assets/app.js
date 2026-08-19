@@ -567,10 +567,47 @@ function updateAll() {
       })),
     };
   }
+  // key -> Set (o kolonda DIŞLANAN/işareti kaldırılmış GÖRÜNTÜLENEN değerler).
+  // Boş/eksik Set = filtre yok, hepsi görünür (Excel AutoFilter ile aynı mantık).
   let savedMixFilterState = {};
 
   function normalizeSavedMixValue(value) {
     return String(value ?? "").trim().toLocaleLowerCase("tr-TR");
+  }
+
+  // Excel AutoFilter GÖRÜNTÜLENEN değere göre filtreler/gruplar, ham sayıya göre
+  // değil (ör. iki farklı LFL değeri ikisi de "%5"e yuvarlanıyorsa checkbox
+  // listesinde TEK satır olarak görünüp birlikte filtrelenmeli) — bu yüzden
+  // tabloda hücrede GÖSTERİLEN metni üreten formatlayıcıyla eşleştirildi.
+  const SAVED_MIX_VALUE_FORMATTERS = {
+    stock: fmtN, stockShare: fmtP, sales: fmtN, salesShare: fmtP, profit: fmtN, profitShare: fmtP,
+    lyCover: fmtD, turnover: fmtD2, lyRevenue: fmtN, lyFiyat: fmtN, planPct: fmtP, planStock: fmtN,
+    hedefCover: fmtD, salesBudget: fmtN, tyFiyat: fmtN, tyRevenue: fmtN,
+    lfl: fmtP0, rlfl: fmtP0, stockGrowth: fmtP0,
+  };
+  function savedMixDisplayValue(row, key) {
+    const raw = row[key];
+    const fmt = SAVED_MIX_VALUE_FORMATTERS[key];
+    if (fmt) return fmt(typeof raw === "number" ? raw : 0);
+    return String(raw ?? "—");
+  }
+  // Bir kolonun TÜM olası (görüntülenen) değerlerini bulur — mevcut diğer
+  // filtrelerden BAĞIMSIZ, buildFlatRows() HİÇ filtrelenmeden taranır (Excel'de
+  // her kolonun kendi dropdown'ı hep tüm değerleri gösterir).
+  function savedMixUniqueValues(key) {
+    const set = new Set();
+    buildFlatRows().forEach((row) => set.add(savedMixDisplayValue(row, key)));
+    const values = Array.from(set);
+    values.sort((a, b) => {
+      const na = parseTRNumberLike(a);
+      const nb = parseTRNumberLike(b);
+      if (!isNaN(na) && !isNaN(nb)) return na - nb;
+      return a.localeCompare(b, "tr-TR");
+    });
+    return values;
+  }
+  function parseTRNumberLike(s) {
+    return parseFloat(String(s).replace(/[%\s]/g, "").replace(/\./g, "").replace(",", "."));
   }
 
   // Tüm kayıtlı set'lerin tüm satırlarını TEK bir düz diziye indirger — her satır
@@ -621,13 +658,13 @@ function updateAll() {
     return flat;
   }
 
-  // Satır bazlı filtre — her sütun için ayrı bir metin girişi, satırın kendi
-  // alanına karşı doğrudan eşleşir (set içindeki satırları dolaşan eski karmaşık
-  // mantığa gerek kalmadı, her satır zaten bağımsız/düz).
+  // Satır geçer eğer HER kolonda kendi (görüntülenen) değeri o kolonun
+  // dışlanan (unchecked) Set'inde DEĞİLSE. Boş/eksik Set = filtre yok.
   function rowPassesFilters(row) {
-    return Object.entries(savedMixFilterState).every(([key, value]) => {
-      const needle = normalizeSavedMixValue(value);
-      return !needle || normalizeSavedMixValue(row[key]).includes(needle);
+    return Object.keys(savedMixFilterState).every((key) => {
+      const excluded = savedMixFilterState[key];
+      if (!excluded || !excluded.size) return true;
+      return !excluded.has(savedMixDisplayValue(row, key));
     });
   }
 
@@ -669,6 +706,115 @@ function updateAll() {
     { key: "action", label: "Aksiyon", width: 210 },
   ];
   const SAVED_MIX_DELETE_COL_WIDTH = 60;
+
+  // --- Excel AutoFilter tarzı checkbox dropdown (tek/paylaşılan panel) ---
+  // document.body'ye BİR KEZ eklenir, hangi kolonun tıklandığına göre yeniden
+  // doldurulup konumlanır — #savedMixList'in innerHTML rebuild'lerinden (ekleme/
+  // silme) BAĞIMSIZ yaşar, bu yüzden thead/tbody yeniden kurulumu onu etkilemez.
+  let savedMixDropdownEl = null;
+  let savedMixDropdownKey = null;
+
+  function updateSavedMixFilterIconState(key, btnEl) {
+    const btn = btnEl || document.querySelector(`.saved-mix-filter-btn[data-filter-key="${key}"]`);
+    if (!btn) return;
+    const excluded = savedMixFilterState[key];
+    btn.classList.toggle("is-active", !!(excluded && excluded.size));
+  }
+
+  function closeSavedMixDropdown() {
+    if (savedMixDropdownEl) savedMixDropdownEl.style.display = "none";
+    savedMixDropdownKey = null;
+  }
+
+  function positionSavedMixDropdown(panel, btnEl) {
+    const btnRect = btnEl.getBoundingClientRect();
+    panel.style.left = btnRect.left + "px";
+    panel.style.top = (btnRect.bottom + 4) + "px";
+    const panelRect = panel.getBoundingClientRect();
+    if (panelRect.bottom > window.innerHeight) {
+      panel.style.top = Math.max(4, btnRect.top - panelRect.height - 4) + "px";
+    }
+    if (panelRect.right > window.innerWidth) {
+      panel.style.left = Math.max(4, window.innerWidth - panelRect.width - 4) + "px";
+    }
+  }
+
+  function ensureSavedMixDropdown() {
+    if (savedMixDropdownEl) return savedMixDropdownEl;
+    const el = document.createElement("div");
+    el.className = "saved-mix-filter-dropdown";
+    el.style.display = "none";
+    el.innerHTML = `
+      <input type="text" class="saved-mix-filter-search" placeholder="Ara...">
+      <div class="saved-mix-filter-actions">
+        <button type="button" data-action="all">Tümünü Seç</button>
+        <button type="button" data-action="none">Tümünü Kaldır</button>
+      </div>
+      <div class="saved-mix-filter-options"></div>
+    `;
+    document.body.appendChild(el);
+    savedMixDropdownEl = el;
+
+    // Arama SADECE checkbox listesindeki satırları görsel olarak daraltır —
+    // tabloyu filtrelemez, dropdown'ı kapatmaz (odak kaybı hatasına düşmez,
+    // çünkü checkbox'lar/inputlar yeniden kurulmuyor, sadece gizleniyor).
+    el.querySelector(".saved-mix-filter-search").addEventListener("input", (e) => {
+      const needle = normalizeSavedMixValue(e.target.value);
+      el.querySelectorAll(".saved-mix-filter-option").forEach((opt) => {
+        const match = !needle || normalizeSavedMixValue(opt.dataset.value).includes(needle);
+        opt.style.display = match ? "" : "none";
+      });
+    });
+
+    el.querySelector('[data-action="all"]').addEventListener("click", () => {
+      if (!savedMixDropdownKey) return;
+      savedMixFilterState[savedMixDropdownKey] = new Set();
+      el.querySelectorAll('.saved-mix-filter-options input[type="checkbox"]').forEach((cb) => { cb.checked = true; });
+      updateSavedMixFilterIconState(savedMixDropdownKey);
+      renderSavedMixRows();
+    });
+    el.querySelector('[data-action="none"]').addEventListener("click", () => {
+      if (!savedMixDropdownKey) return;
+      savedMixFilterState[savedMixDropdownKey] = new Set(savedMixUniqueValues(savedMixDropdownKey));
+      el.querySelectorAll('.saved-mix-filter-options input[type="checkbox"]').forEach((cb) => { cb.checked = false; });
+      updateSavedMixFilterIconState(savedMixDropdownKey);
+      renderSavedMixRows();
+    });
+
+    el.addEventListener("click", (e) => e.stopPropagation()); // dropdown içine tıklama dışarı sızıp kapatmasın
+    document.addEventListener("click", () => closeSavedMixDropdown());
+    document.addEventListener("keydown", (e) => { if (e.key === "Escape") closeSavedMixDropdown(); });
+
+    return el;
+  }
+
+  function openSavedMixDropdown(key, btnEl) {
+    const el = ensureSavedMixDropdown();
+    savedMixDropdownKey = key;
+    const excluded = savedMixFilterState[key] instanceof Set ? savedMixFilterState[key] : new Set();
+    const values = savedMixUniqueValues(key);
+
+    el.querySelector(".saved-mix-filter-search").value = "";
+    const optionsWrap = el.querySelector(".saved-mix-filter-options");
+    optionsWrap.innerHTML = values.map((v) => `
+      <label class="saved-mix-filter-option" data-value="${escapeAttribute(v)}">
+        <input type="checkbox" value="${escapeAttribute(v)}" ${excluded.has(v) ? "" : "checked"}>
+        <span>${escapeHtml(v)}</span>
+      </label>
+    `).join("");
+    optionsWrap.querySelectorAll('input[type="checkbox"]').forEach((cb) => {
+      cb.addEventListener("change", () => {
+        const cur = savedMixFilterState[key] instanceof Set ? savedMixFilterState[key] : new Set();
+        if (cb.checked) cur.delete(cb.value); else cur.add(cb.value);
+        savedMixFilterState[key] = cur;
+        updateSavedMixFilterIconState(key);
+        renderSavedMixRows();
+      });
+    });
+
+    el.style.display = "flex";
+    positionSavedMixDropdown(el, btnEl);
+  }
 
   function savedMixRowHtml(r) {
     return `
@@ -736,12 +882,15 @@ function updateAll() {
     bindSavedMixDeleteButtons(tbody);
   }
 
-  // TABLO YAPISINI (colgroup, thead — başlık satırı + filtre input'ları) kurar.
+  // TABLO YAPISINI (colgroup, thead — başlık satırı + filtre ikon/butonları) kurar.
   // Sadece ilk açılışta ve kayıt ekleme/silme sonrası çağrılır (satır SAYISI
-  // değişebilir); filtrelemede ÇAĞRILMAZ (bkz. renderSavedMixRows).
+  // değişebilir); filtrelemede ÇAĞRILMAZ (bkz. renderSavedMixRows) — dropdown
+  // içindeki checkbox'lar SADECE renderSavedMixRows()'u tetikler, thead bu
+  // yüzden hiç yeniden kurulmaz, odak kaybı riski yok.
   function renderSavedMixTable() {
     const list = $("savedMixList");
     if (!list) return;
+    closeSavedMixDropdown(); // olası açık dropdown eski th referansına yapışıp kalmasın
     const flat = buildFlatRows().filter(rowPassesFilters);
 
     if (!flat.length) {
@@ -754,7 +903,7 @@ function updateAll() {
 
     const filterControls = SAVED_MIX_COLUMNS.map((col) => `
       <th>
-        <input class="saved-mix-filter-input" data-filter-key="${col.key}" type="text" value="${escapeAttribute(savedMixFilterState[col.key] || "")}" placeholder="Filtre et">
+        <button type="button" class="saved-mix-filter-btn" data-filter-key="${col.key}" title="Filtrele">▾</button>
       </th>
     `).join("") + "<th></th>";
 
@@ -776,12 +925,17 @@ function updateAll() {
       </div>
     `;
 
-    list.querySelectorAll(".saved-mix-filter-input").forEach((input) => {
-      input.addEventListener("input", (e) => {
-        const key = e.target.dataset.filterKey;
-        savedMixFilterState[key] = e.target.value;
-        renderSavedMixRows();
+    list.querySelectorAll(".saved-mix-filter-btn").forEach((btn) => {
+      const key = btn.dataset.filterKey;
+      btn.addEventListener("click", (e) => {
+        e.stopPropagation();
+        if (savedMixDropdownKey === key && savedMixDropdownEl && savedMixDropdownEl.style.display !== "none") {
+          closeSavedMixDropdown();
+        } else {
+          openSavedMixDropdown(key, btn);
+        }
       });
+      updateSavedMixFilterIconState(key, btn);
     });
 
     renderSavedMixRows();
