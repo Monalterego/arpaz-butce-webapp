@@ -198,20 +198,30 @@ tfoot td{background:#eef3f8;font-weight:700;border-top:2px solid var(--navy)}
 .saved-form input,.saved-actions select{width:100%;padding:7px 10px;border:1px solid rgba(11,37,69,.14);border-radius:8px;background:#f8fafc;color:var(--ink);font-size:12px}
 .saved-form input:focus,.saved-actions select:focus{outline:2px solid rgba(0,119,182,.18);border-color:var(--accent2)}
 .saved-actions{grid-template-columns:minmax(150px,1fr) auto auto}
-.saved-mix-list{display:grid;grid-template-columns:1fr;gap:12px}
+.saved-mix-list{display:grid;grid-template-columns:1fr;gap:14px}
 .saved-mix-empty{padding:18px;border:1px dashed var(--line);border-radius:10px;color:var(--grey);background:#f8fafc}
-.saved-mix-card{border:1px solid var(--line);border-radius:12px;padding:12px;background:#fff;box-shadow:0 2px 8px rgba(11,37,69,.04)}
-.saved-mix-head{display:flex;justify-content:space-between;align-items:center;gap:12px;margin-bottom:10px;padding-bottom:8px;border-bottom:1px solid var(--line)}
+.saved-mix-block{border:1px solid var(--line);border-radius:12px;background:#fff;padding:0;box-shadow:var(--shadow-sm)}
+.saved-mix-head{display:flex;justify-content:space-between;align-items:center;gap:12px;padding:10px 12px;border-bottom:1px solid var(--line);background:#f8fafc}
+.saved-mix-title{font-size:12px;color:var(--navy);font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .saved-mix-meta{font-size:11px;color:var(--grey)}
-.saved-mix-kpis{display:grid;grid-template-columns:repeat(4,minmax(120px,1fr));gap:10px;margin-bottom:10px}
-.saved-mix-kpi{background:#f8fafc;border:1px solid var(--line);border-radius:8px;padding:8px 10px}
-.saved-mix-kpi .lbl{font-size:11px;color:var(--grey)}
-.saved-mix-kpi .val{font-size:15px;font-weight:700;color:var(--navy);margin-top:3px}
-.saved-mix-table{width:100%;border-collapse:collapse;table-layout:fixed;font-size:12px;margin-bottom:10px}
-.saved-mix-table th,.saved-mix-table td{padding:7px 8px;border:1px solid var(--line);text-align:right}
+.saved-mix-table-wrap{overflow-x:auto;overflow-y:hidden;border:none;margin-bottom:10px;background:#fff;border-radius:0 0 12px 12px}
+.saved-mix-table{width:100%;min-width:1600px;border-collapse:collapse;table-layout:fixed;font-size:11px}
+.saved-mix-table th,.saved-mix-table td{padding:6px 7px;border:1px solid rgba(11,37,69,.12);text-align:right;vertical-align:middle;line-height:1.25;white-space:normal;overflow-wrap:anywhere;word-break:break-word}
+.saved-mix-table th{background:var(--navy);color:#fff;font-size:10px;font-weight:700;position:sticky;top:0;z-index:3;letter-spacing:.15px}
+.saved-mix-table td{font-size:11px;color:var(--ink)}
 .saved-mix-table th:first-child,.saved-mix-table td:first-child{text-align:left}
-.saved-mix-table th{background:#f3f7fb;color:var(--navy);font-size:11px}
-.saved-mix-actions{display:flex;justify-content:flex-end}
+.saved-mix-table td:first-child{white-space:normal}
+.saved-mix-header-row th{background:var(--navy);color:#fff;position:sticky;top:0;z-index:3;vertical-align:middle}
+.saved-mix-filter-row th{background:#edf3fb;color:var(--navy);padding:6px 5px}
+.saved-mix-filter-input{width:100%;padding:5px 6px;border:1px solid rgba(11,37,69,.12);border-radius:6px;background:#fff;font-size:10px;color:var(--ink)}
+.saved-mix-filter-input:focus{outline:2px solid rgba(0,119,182,.18);border-color:var(--accent2)}
+.saved-mix-table tbody tr:nth-child(even){background:#f8fafc}
+.saved-mix-table tbody tr:hover{background:#edf5ff}
+.saved-mix-actions{display:flex;justify-content:flex-end;padding:0 12px 12px}
+@media (max-width: 1200px){
+  .saved-mix-table{min-width:1400px;font-size:10px}
+  .saved-mix-table th,.saved-mix-table td{padding:5px 4px}
+}
 /* Görünüm araç çubuğu — başlık/hücre hizalama. Grup banner'ları (GERÇEKLEŞEN/GELECEK
    YIL PLANI) ve ÜH4/Durum/Aksiyon body hücreleri (ürün adı hep sola, rozetler kendi
    düzeninde) bu kontrolün DIŞINDA tutulur. */

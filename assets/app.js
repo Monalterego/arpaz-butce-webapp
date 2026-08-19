@@ -475,6 +475,9 @@ function updateAll() {
   function escapeHtml(str) {
     return String(str || "").replace(/[&<>\"']/g, (ch) => ({"&":"&amp;","<":"&lt;",">":"&gt;","\"":"&quot;","'":"&#039;"}[ch]));
   }
+  function escapeAttribute(str) {
+    return escapeHtml(str);
+  }
   function loadSavedMixSets() {
     try {
       const raw = localStorage.getItem(MIX_SAVE_KEY);
@@ -491,12 +494,40 @@ function updateAll() {
   function buildCurrentMixRecord() {
     const p = readParams();
     const model = computeModel(p, state.covers, state.tyFiyat);
+    const salesOrg = ($("h_org") && $("h_org").value) || "";
+    const region = ($("h_region") && $("h_region").value) || "";
     return {
       id: (Date.now() + Math.random().toString(16).slice(2)),
       savedAt: new Date().toLocaleString("tr-TR"),
+      salesOrg,
+      region,
       uh1: state.sel.uh1,
       uh2: state.sel.uh2,
       uh3: state.sel.uh3,
+      dimensions: {
+        salesOrg,
+        region,
+        uh1: state.sel.uh1,
+        uh2: state.sel.uh2,
+        uh3: state.sel.uh3,
+      },
+      filterText: [salesOrg, region, state.sel.uh1, state.sel.uh2, state.sel.uh3].filter(Boolean).join(" / "),
+      filters: {
+        salesOrg,
+        region,
+        uh1: state.sel.uh1,
+        uh2: state.sel.uh2,
+        uh3: state.sel.uh3,
+      },
+      keyFigures: {
+        stock: model.T.stock,
+        salesLy: model.T.sales,
+        profitLy: model.T.profit,
+        cover: model.T.cover,
+        salesBudgetTy: model.T.salesBudget,
+        lfl: model.T.lfl,
+        tyRevenue: model.T.tyRevenue,
+      },
       total: {
         planStock: model.T.planStock,
         salesBudget: model.T.salesBudget,
@@ -505,62 +536,235 @@ function updateAll() {
       },
       rows: model.rows.map((r) => ({
         name: r.name,
+        stock: r.stock,
+        sales: r.sales,
+        profit: r.profit,
+        stockShare: r.stockShare,
+        salesShare: r.salesShare,
+        profitShare: r.profitShare,
+        lyCover: r.lyCover,
+        turnover: r.turnover,
+        lyRevenue: r.sales * r.lyFiyat,
+        lyFiyat: r.lyFiyat,
         planPct: r.planPct,
         planStock: r.planStock,
-        salesBudget: r.salesBudget,
-        tyFiyat: r.tyFiyat,
-        tyRevenue: r.tyRevenue,
         hedefCover: r.hedefCover,
-        lyFiyat: r.lyFiyat,
+        salesBudget: r.salesBudget,
         lfl: r.lfl,
         rlfl: r.rlfl,
         stockGrowth: r.stockGrowth,
+        tyFiyat: r.tyFiyat,
+        tyRevenue: r.tyRevenue,
         tag: r.tag.etiket,
+        action: r.tag.aksiyon,
       })),
     };
   }
+  const SAVED_MIX_FILTER_KEYS = [
+    "salesOrg", "region", "uh1", "uh2", "uh3", "name", "stock", "stockShare", "sales", "salesShare", "profit", "profitShare", "lyCover", "turnover", "lyRevenue", "lyFiyat", "planPct", "planStock", "hedefCover", "salesBudget", "tyFiyat", "tyRevenue", "lfl", "rlfl", "stockGrowth", "tag", "action"
+  ];
+
+  let savedMixFilterState = {};
+
+  function normalizeSavedMixValue(value) {
+    return String(value ?? "").trim().toLocaleLowerCase("tr-TR");
+  }
+
+  function getSavedMixFilterMatch(set, key, needle) {
+    if (!needle) return true;
+    const dims = set.dimensions || set.filters || { salesOrg: set.salesOrg, region: set.region, uh1: set.uh1, uh2: set.uh2, uh3: set.uh3 };
+    const rowValues = (set.rows || []).map((r) => ({
+      salesOrg: dims.salesOrg || set.salesOrg || "",
+      region: dims.region || set.region || "",
+      uh1: dims.uh1 || set.uh1 || "",
+      uh2: dims.uh2 || set.uh2 || "",
+      uh3: dims.uh3 || set.uh3 || "",
+      name: r.name || "",
+      stock: String(r.stock ?? ""),
+      stockShare: String(r.stockShare ?? ""),
+      sales: String(r.sales ?? ""),
+      salesShare: String(r.salesShare ?? ""),
+      profit: String(r.profit ?? ""),
+      profitShare: String(r.profitShare ?? ""),
+      lyCover: String(r.lyCover ?? ""),
+      turnover: String(r.turnover ?? ""),
+      lyRevenue: String(r.lyRevenue ?? ""),
+      lyFiyat: String(r.lyFiyat ?? ""),
+      planPct: String(r.planPct ?? ""),
+      planStock: String(r.planStock ?? ""),
+      hedefCover: String(r.hedefCover ?? ""),
+      salesBudget: String(r.salesBudget ?? ""),
+      tyFiyat: String(r.tyFiyat ?? ""),
+      tyRevenue: String(r.tyRevenue ?? ""),
+      lfl: String(r.lfl ?? ""),
+      rlfl: String(r.rlfl ?? ""),
+      stockGrowth: String(r.stockGrowth ?? ""),
+      tag: String(r.tag || ""),
+      action: String(r.action || "")
+    }));
+
+    if (key === "salesOrg") return normalizeSavedMixValue(dims.salesOrg || set.salesOrg).includes(needle);
+    if (key === "region") return normalizeSavedMixValue(dims.region || set.region).includes(needle);
+    if (key === "uh1") return normalizeSavedMixValue(dims.uh1 || set.uh1).includes(needle);
+    if (key === "uh2") return normalizeSavedMixValue(dims.uh2 || set.uh2).includes(needle);
+    if (key === "uh3") return normalizeSavedMixValue(dims.uh3 || set.uh3).includes(needle);
+    if (key === "name") return rowValues.some((r) => normalizeSavedMixValue(r.name).includes(needle));
+    return rowValues.some((r) => normalizeSavedMixValue(r[key]).includes(needle));
+  }
+
+  function savedMixPassesFilters(set) {
+    return Object.entries(savedMixFilterState).every(([key, value]) => {
+      const needle = normalizeSavedMixValue(value);
+      return !needle || getSavedMixFilterMatch(set, key, needle);
+    });
+  }
+
   function renderSavedMixRecords() {
     const list = $("savedMixList");
     if (!list) return;
     const saved = loadSavedMixSets();
-    if (!saved.length) {
-      list.innerHTML = '<div class="saved-mix-empty">Henüz kaydedilmiş ÜH3/ÜH4 miks bulunmuyor.</div>';
+    const filtered = saved.filter((set) => savedMixPassesFilters(set));
+
+    if (!filtered.length) {
+      list.innerHTML = '<div class="saved-mix-empty">Henüz kaydedilmiş çalışma bulunmuyor.</div>';
       return;
     }
-    list.innerHTML = saved.map((set) => `
-      <div class="saved-mix-card">
-        <div class="saved-mix-head">
-          <div><strong>${escapeHtml(set.uh1)}</strong> / ${escapeHtml(set.uh2)} / ${escapeHtml(set.uh3)}</div>
-          <div class="saved-mix-meta">${escapeHtml(set.savedAt)}</div>
+
+    const headerCols = [
+      { key: "salesOrg", label: "Satış Teşkilatı" },
+      { key: "region", label: "Şube / Bölge" },
+      { key: "uh1", label: "ÜH1" },
+      { key: "uh2", label: "ÜH2" },
+      { key: "uh3", label: "ÜH3" },
+      { key: "name", label: "ÜH4" },
+      { key: "stock", label: "Perakende Stok Adet" },
+      { key: "stockShare", label: "Perakende Stok Adet %" },
+      { key: "sales", label: "Perakende Satış Adet" },
+      { key: "salesShare", label: "Perakende Satış Adet %" },
+      { key: "profit", label: "Perakende Brüt Kar" },
+      { key: "profitShare", label: "Perakende Brüt Kar %" },
+      { key: "lyCover", label: "Stock Cover (Stok Ay)" },
+      { key: "turnover", label: "Turnover (Devir Hızı)" },
+      { key: "lyRevenue", label: "Perakende Satış Tutar (Ciro)" },
+      { key: "lyFiyat", label: "Perakende Ortalama Satış Fiyatı (LY)" },
+      { key: "planPct", label: "Gelecek Yıl Periyot Perakende Plan Stok %" },
+      { key: "planStock", label: "Gelecek Yıl Periyot Perakende Plan Stok Adet" },
+      { key: "hedefCover", label: "Hedef Stock Cover (Hedef Stok Ay)" },
+      { key: "salesBudget", label: "Perakende Satış Adet Bütçe" },
+      { key: "tyFiyat", label: "Perakende Ortalama Satış Fiyatı (TY)" },
+      { key: "tyRevenue", label: "Perakende Satış Bütçe Tutar (Ciro Bütçe)" },
+      { key: "lfl", label: "LFL(Like for like) Büyüme %" },
+      { key: "rlfl", label: "R-LFL Büyüme %" },
+      { key: "stockGrowth", label: "Stok Büyümesi" },
+      { key: "tag", label: "Durum" },
+      { key: "action", label: "Aksiyon" },
+    ];
+
+    list.innerHTML = filtered.map((set) => {
+      const dimensions = set.dimensions || set.filters || { salesOrg: set.salesOrg, region: set.region, uh1: set.uh1, uh2: set.uh2, uh3: set.uh3 };
+      const filters = dimensions;
+      const rows = (set.rows || []).map((r) => ({
+        name: r.name || "—",
+        salesOrg: filters.salesOrg || set.salesOrg || "—",
+        region: filters.region || set.region || "—",
+        uh1: filters.uh1 || set.uh1 || "—",
+        uh2: filters.uh2 || set.uh2 || "—",
+        uh3: filters.uh3 || set.uh3 || "—",
+        stock: typeof r.stock === "number" ? r.stock : 0,
+        sales: typeof r.sales === "number" ? r.sales : 0,
+        profit: typeof r.profit === "number" ? r.profit : 0,
+        stockShare: typeof r.stockShare === "number" ? r.stockShare : 0,
+        salesShare: typeof r.salesShare === "number" ? r.salesShare : 0,
+        profitShare: typeof r.profitShare === "number" ? r.profitShare : 0,
+        lyCover: typeof r.lyCover === "number" ? r.lyCover : 0,
+        turnover: typeof r.turnover === "number" ? r.turnover : 0,
+        lyRevenue: typeof r.lyRevenue === "number" ? r.lyRevenue : (typeof r.sales === "number" && typeof r.lyFiyat === "number" ? r.sales * r.lyFiyat : 0),
+        lyFiyat: typeof r.lyFiyat === "number" ? r.lyFiyat : 0,
+        planPct: typeof r.planPct === "number" ? r.planPct : 0,
+        planStock: typeof r.planStock === "number" ? r.planStock : 0,
+        hedefCover: typeof r.hedefCover === "number" ? r.hedefCover : 0,
+        salesBudget: typeof r.salesBudget === "number" ? r.salesBudget : 0,
+        lfl: typeof r.lfl === "number" ? r.lfl : 0,
+        rlfl: typeof r.rlfl === "number" ? r.rlfl : 0,
+        stockGrowth: typeof r.stockGrowth === "number" ? r.stockGrowth : 0,
+        tyFiyat: typeof r.tyFiyat === "number" ? r.tyFiyat : 0,
+        tyRevenue: typeof r.tyRevenue === "number" ? r.tyRevenue : 0,
+        tag: r.tag || "",
+        action: r.action || "",
+      }));
+
+      const rowHtml = rows.map((r) => `
+        <tr>
+          <td>${escapeHtml(r.salesOrg)}</td>
+          <td>${escapeHtml(r.region)}</td>
+          <td>${escapeHtml(r.uh1)}</td>
+          <td>${escapeHtml(r.uh2)}</td>
+          <td>${escapeHtml(r.uh3)}</td>
+          <td>${escapeHtml(r.name)}</td>
+          <td>${fmtN(r.stock)}</td>
+          <td>${fmtP(r.stockShare)}</td>
+          <td>${fmtN(r.sales)}</td>
+          <td>${fmtP(r.salesShare)}</td>
+          <td>${fmtN(r.profit)}</td>
+          <td>${fmtP(r.profitShare)}</td>
+          <td>${fmtD(r.lyCover)}</td>
+          <td>${fmtD2(r.turnover)}</td>
+          <td>${fmtN(r.lyRevenue)}</td>
+          <td>${fmtN(r.lyFiyat)}</td>
+          <td>${fmtP(r.planPct)}</td>
+          <td>${fmtN(r.planStock)}</td>
+          <td>${fmtD(r.hedefCover)}</td>
+          <td>${fmtN(r.salesBudget)}</td>
+          <td>${fmtN(r.tyFiyat)}</td>
+          <td>${fmtN(r.tyRevenue)}</td>
+          <td class="${r.lfl >= 0 ? "up" : "down"}">${fmtP0(r.lfl)}</td>
+          <td class="${r.rlfl >= 0 ? "up" : "down"}">${fmtP0(r.rlfl)}</td>
+          <td class="${r.stockGrowth >= 0 ? "up" : "down"}">${fmtP0(r.stockGrowth)}</td>
+          <td>${r.tag ? `<span class="badge ${r.tag === "Hızlı & Kârlı" ? "b-green" : r.tag === "Hızlı & Kârsız" ? "b-amber" : r.tag === "Yavaş & Kârlı" ? "b-blue" : "b-red"}">${escapeHtml(r.tag)}</span>` : "—"}</td>
+          <td>${r.action ? `<span class="badge ${r.action.includes("Plan") ? "b-green" : r.action.includes("Fiyat") ? "b-amber" : r.action.includes("Stok") ? "b-red" : "b-blue"}">${escapeHtml(r.action)}</span>` : "—"}</td>
+        </tr>
+      `).join("");
+
+      const filterControls = headerCols.map((col) => `
+        <th>
+          <input class="saved-mix-filter-input" data-filter-key="${col.key}" type="text" value="${escapeAttribute(savedMixFilterState[col.key] || "")}" placeholder="Filtre et">
+        </th>
+      `).join("");
+
+      return `
+        <div class="saved-mix-block">
+          <div class="saved-mix-head">
+            <div class="saved-mix-title">${escapeHtml(set.filterText || "Seçim yok")}</div>
+            <div class="saved-mix-meta">${escapeHtml(set.savedAt)}</div>
+          </div>
+          <div class="saved-mix-table-wrap">
+            <table class="saved-mix-table">
+              <thead>
+                <tr class="saved-mix-header-row">
+                  ${headerCols.map((col) => `<th>${escapeHtml(col.label)}</th>`).join("")}
+                </tr>
+                <tr class="saved-mix-filter-row">
+                  ${filterControls}
+                </tr>
+              </thead>
+              <tbody>${rowHtml}</tbody>
+            </table>
+          </div>
+          <div class="saved-mix-actions">
+            <button type="button" class="btn ghost mini" data-delete-save="${escapeHtml(set.id)}">Sil</button>
+          </div>
         </div>
-        <div class="saved-mix-kpis">
-          <div class="saved-mix-kpi"><div class="lbl">Plan Stok</div><div class="val">${fmtN(set.total.planStock)}</div></div>
-          <div class="saved-mix-kpi"><div class="lbl">Satış Bütçe</div><div class="val">${fmtN(set.total.salesBudget)}</div></div>
-          <div class="saved-mix-kpi"><div class="lbl">Ciro</div><div class="val">${fmtN(set.total.tyRevenue)}</div></div>
-          <div class="saved-mix-kpi"><div class="lbl">LFL</div><div class="val ${set.total.lfl >= 0 ? "up" : "down"}">${fmtP0(set.total.lfl)}</div></div>
-        </div>
-        <table class="saved-mix-table">
-          <thead>
-            <tr><th>ÜH4</th><th>Plan Stok %</th><th>Plan Stok Adet</th><th>Satış Bütçe</th><th>TY Fiyat</th><th>Ciro</th></tr>
-          </thead>
-          <tbody>
-            ${set.rows.map((r) => `
-              <tr>
-                <td>${escapeHtml(r.name)}</td>
-                <td>${fmtP(r.planPct)}</td>
-                <td>${fmtN(r.planStock)}</td>
-                <td>${fmtN(r.salesBudget)}</td>
-                <td>${fmtN(r.tyFiyat)}</td>
-                <td>${fmtN(r.tyRevenue)}</td>
-              </tr>
-            `).join("")}
-          </tbody>
-        </table>
-        <div class="saved-mix-actions">
-          <button type="button" class="btn ghost mini" data-delete-save="${escapeHtml(set.id)}">Sil</button>
-        </div>
-      </div>
-    `).join("");
+      `;
+    }).join("");
+
+    list.querySelectorAll(".saved-mix-filter-input").forEach((input) => {
+      input.addEventListener("input", (e) => {
+        const key = e.target.dataset.filterKey;
+        savedMixFilterState[key] = e.target.value;
+        renderSavedMixRecords();
+      });
+    });
+
     list.querySelectorAll("[data-delete-save]").forEach((btn) => {
       btn.addEventListener("click", () => {
         const id = btn.getAttribute("data-delete-save");

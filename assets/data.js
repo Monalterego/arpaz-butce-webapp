@@ -54,12 +54,18 @@ const DataService = {
   // Teşkilat + ürün seçimine göre süz, satır şemasına indir.
   loadMixFor(sel, level) {
     const src = (typeof REAL_DATA !== "undefined" ? REAL_DATA : []);
+    const norm = (value) => String(value || "")
+      .toLocaleLowerCase("tr-TR")
+      .normalize("NFD")
+      .replace(/[\u0300-\u036f]/g, "")
+      .replace(/\s+/g, " ")
+      .trim();
     const inSel = src.filter((d) =>
-      (!this._org || d.org === this._org) &&
-      (!this._region || d.region === this._region) &&
-      d.uh1 === sel.uh1 &&
-      (level === "uh2" ? true : d.uh2 === sel.uh2) &&
-      ((!sel.uh3 || level === "uh2") ? true : d.uh3 === sel.uh3)
+      (!this._org || norm(d.org) === norm(this._org)) &&
+      (!this._region || norm(d.region) === norm(this._region)) &&
+      norm(d.uh1) === norm(sel.uh1) &&
+      (level === "uh2" ? true : norm(d.uh2) === norm(sel.uh2)) &&
+      ((!sel.uh3 || level === "uh2") ? true : norm(d.uh3) === norm(sel.uh3))
     );
 
     // Org/bölge "Tümü" ise aynı ÜH4 birden çok satırda gelir → grupla-topla.
