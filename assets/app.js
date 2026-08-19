@@ -283,7 +283,7 @@
         <td class="pct" id="psp_${i}"></td><td class="num-cell" id="psa_${i}"></td>
         <td class="covcell"><input type="number" class="covin" id="hcov_${i}" min="1" step="0.5" value="${state.covers[i]}"></td>
         <td class="num-cell" id="sb_${i}"></td>
-        <td class="fiyatcell"><input type="number" class="fiyatin" id="tyfiyat_${i}" min="0" step="0.01"></td>
+        <td class="fiyatcell"><input type="number" class="fiyatin" id="tyfiyat_${i}" min="0" step="1"></td>
         <td id="ciro_${i}"></td>
         <td id="lfl_${i}"></td><td id="rlfl_${i}"></td><td id="sg_${i}"></td>
         <td id="tag_${i}"></td>
@@ -323,12 +323,12 @@ function updateAll() {
     $("ktp_" + i).innerHTML = `<span class="heat" style="background:${heat(r.profitShare, 0, 0.3)}">${fmtP(r.profitShare)}</span>`;
     $("cov_" + i).innerHTML = coverCellHtml(r);
     $("tov_" + i).textContent = fmtD2(r.turnover);
-    $("lyfiyat_" + i).textContent = fmtD2(r.lyFiyat);
+    $("lyfiyat_" + i).textContent = fmtN(r.lyFiyat);
     $("psp_" + i).textContent = fmtP(r.planPct);
     $("psa_" + i).textContent = fmtN(r.planStock);
     $("sb_" + i).textContent = fmtN(r.salesBudget);
     const fiyatEl = $("tyfiyat_" + i);
-    if (fiyatEl && document.activeElement !== fiyatEl) fiyatEl.value = r.tyFiyat.toFixed(2);
+    if (fiyatEl && document.activeElement !== fiyatEl) fiyatEl.value = String(Math.round(r.tyFiyat));
     $("ciro_" + i).textContent = fmtN(r.tyRevenue);
     const lflEl = $("lfl_" + i); if (lflEl) { lflEl.textContent = fmtP0(r.lfl); lflEl.className = r.lfl >= 0 ? "up" : "down"; }
     const rlflEl = $("rlfl_" + i); if (rlflEl) { rlflEl.textContent = fmtP0(r.rlfl); rlflEl.className = r.rlfl >= 0 ? "up" : "down"; }
@@ -362,11 +362,10 @@ function updateAll() {
     <td>${fmtN(m.T.sales)}</td><td>${m.rows.length ? "100%" : "—"}</td>
     <td class="num-cell">${fmtN(m.T.profit)}</td><td>${m.rows.length ? "100%" : "—"}</td>
     <td>${fmtD(footCover)}</td><td>${fmtD2(footTurnover)}</td>
-    <td>${fmtD2(footLyFiyat)}</td>
+    <td>${fmtN(footLyFiyat)}</td>
     <td>${m.rows.length ? "100%" : "—"}</td><td>${fmtN(m.T.planStock)}</td>
     <td>${footHedefCover === null ? "—" : fmtD(footHedefCover)}</td><td>${fmtN(m.T.salesBudget)}</td>
-    <td>${footTyFiyat === null ? "—" : fmtD2(footTyFiyat)}</td>
-    <td>${fmtN(m.T.tyRevenue)}</td>
+    <td>${footTyFiyat === null ? "—" : fmtN(footTyFiyat)}</td>    <td>${fmtN(m.T.tyRevenue)}</td>
     <td class="${m.rows.length ? (m.T.lfl >= 0 ? "up" : "down") : ""}">${m.rows.length ? fmtP0(m.T.lfl) : "—"}</td>
     <td class="${footRlfl === null ? "" : (footRlfl >= 0 ? "up" : "down")}">${footRlfl === null ? "—" : fmtP0(footRlfl)}</td>
     <td class="${m.rows.length ? (footStockGrowth >= 0 ? "up" : "down") : ""}">${m.rows.length ? fmtP0(footStockGrowth) : "—"}</td>
