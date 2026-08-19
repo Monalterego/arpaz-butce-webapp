@@ -320,6 +320,13 @@ function updateAll() {
   const footStockGrowth = m.T.stock ? m.T.planStock / m.T.stock - 1 : 0;
   const footRlfl = (m.T.planStock && m.T.sales && m.T.stock)
     ? (m.T.salesBudget / m.T.planStock) / (m.T.sales / m.T.stock) - 1 : null;
+  // "Etkin" Hedef Cover: tüm satırlara UYGULANSAYDI aynı toplam Satış Bütçe'yi
+  // üretecek değer — satır formülünün (salesBudget = planStock/hedefCover × pazarF
+  // × campF) tersi. Hesaba/satır formülüne dokunmaz, sadece TOPLAM'a türetilmiş
+  // bir gösterge ekler.
+  const footHedefCover = m.T.salesBudget
+    ? (m.T.planStock * m.pazarF * m.campF) / m.T.salesBudget
+    : null;
   $("tfoot").innerHTML = `
     <td>TOPLAM</td>
     <td>${fmtN(m.T.stock)}</td><td>${m.rows.length ? "100%" : "—"}</td>
@@ -327,7 +334,7 @@ function updateAll() {
     <td class="num-cell">${fmtN(m.T.profit)}</td><td>${m.rows.length ? "100%" : "—"}</td>
     <td>${fmtD(footCover)}</td><td>${fmtD2(footTurnover)}</td>
     <td>${m.rows.length ? "100%" : "—"}</td><td>${fmtN(m.T.planStock)}</td>
-    <td>—</td><td>${fmtN(m.T.salesBudget)}</td>
+    <td>${footHedefCover === null ? "—" : fmtD(footHedefCover)}</td><td>${fmtN(m.T.salesBudget)}</td>
     <td class="${m.rows.length ? (m.T.lfl >= 0 ? "up" : "down") : ""}">${m.rows.length ? fmtP0(m.T.lfl) : "—"}</td>
     <td class="${footRlfl === null ? "" : (footRlfl >= 0 ? "up" : "down")}">${footRlfl === null ? "—" : fmtP0(footRlfl)}</td>
     <td class="${m.rows.length ? (footStockGrowth >= 0 ? "up" : "down") : ""}">${m.rows.length ? fmtP0(footStockGrowth) : "—"}</td>

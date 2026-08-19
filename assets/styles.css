@@ -142,6 +142,13 @@ tfoot td{background:#eef3f8;font-weight:700;border-top:2px solid var(--navy)}
 #grid td:not(:first-child):not(:last-child),
 #grid thead tr:first-child th:not(:first-child):not(:last-child),
 #grid thead tr:last-child th{border-right:1px solid var(--line)}
+/* ÜH4 başlığı (row1'in ilk hücresi) yukarıdaki kuralın DIŞINDA bırakılmıştı
+   (donmuş sütun olduğu için), ama kendi sağ kenarında da ince bir ayırıcı
+   olması gerekiyor — GERÇEKLEŞEN (LY) banner'ından önce. Mevcut box-shadow
+   (freeze pane ayırıcısı, aşağıda) ile aynı kenarda üst üste biniyor ama ikisi
+   ayrı katman (border kutunun içinde, box-shadow dışında taşıyor), çift çizgi
+   OLUŞTURMUYOR — ekran görüntüsüyle doğrulandı. */
+#grid thead tr:first-child th:first-child{border-right:1px solid var(--line)}
 /* güvenlik ağı: ölçüm yine de yetersiz kalırsa kelime KESILMEK yerine satır içinde
    zorla bölünsün (sessizce harf kaybından çok daha iyi bir sonuç) */
 #grid th{overflow-wrap:break-word}
