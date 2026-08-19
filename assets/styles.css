@@ -201,7 +201,13 @@ tfoot td{background:#eef3f8;font-weight:700;border-top:2px solid var(--navy)}
 .saved-mix-list{display:grid;grid-template-columns:1fr;gap:14px}
 .saved-mix-empty{padding:18px;border:1px dashed var(--line);border-radius:10px;color:var(--grey);background:#f8fafc}
 .saved-mix-table-wrap{overflow-x:auto;overflow-y:hidden;border:1px solid var(--line);margin-bottom:10px;background:#fff;border-radius:12px;box-shadow:var(--shadow-sm)}
-.saved-mix-table{width:100%;min-width:1600px;border-collapse:collapse;table-layout:fixed;font-size:11px}
+/* min-width, <colgroup>'taki (app.js SAVED_MIX_COLUMNS) 31 kolon genişliğinin
+   TOPLAMINA eşit olmalı (120+68+164+140+240+262+260+85+85 kimlik + 1802 metrik +
+   60 Sil = 3286px) — table-layout:fixed'de tablo kendi genişliği colgroup
+   toplamından KÜÇÜK kalırsa tarayıcı sütunları orantılı SIKIŞTIRIR (ana #grid'de
+   yaşanan aynı sorun, bkz. #grid{width:...} yorumu); @media bloğundaki değer de
+   AYNI SEBEPLE güncellendi, sadece font/padding küçültme kozmetiktir. */
+.saved-mix-table{width:100%;min-width:3286px;border-collapse:collapse;table-layout:fixed;font-size:11px}
 .saved-mix-table th,.saved-mix-table td{padding:6px 7px;border:1px solid rgba(11,37,69,.12);text-align:right;vertical-align:middle;line-height:1.25;white-space:normal;overflow-wrap:anywhere;word-break:break-word}
 .saved-mix-table th{background:var(--navy);color:#fff;font-size:10px;font-weight:700;position:sticky;top:0;z-index:3;letter-spacing:.15px}
 .saved-mix-table td{font-size:11px;color:var(--ink)}
@@ -214,7 +220,7 @@ tfoot td{background:#eef3f8;font-weight:700;border-top:2px solid var(--navy)}
 .saved-mix-table tbody tr:nth-child(even){background:#f8fafc}
 .saved-mix-table tbody tr:hover{background:#edf5ff}
 @media (max-width: 1200px){
-  .saved-mix-table{min-width:1400px;font-size:10px}
+  .saved-mix-table{min-width:3286px;font-size:10px}
   .saved-mix-table th,.saved-mix-table td{padding:5px 4px}
 }
 /* Görünüm araç çubuğu — başlık/hücre hizalama. Grup banner'ları (GERÇEKLEŞEN/GELECEK

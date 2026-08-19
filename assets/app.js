@@ -631,50 +631,47 @@ function updateAll() {
     });
   }
 
-  function renderSavedMixRecords() {
-    const list = $("savedMixList");
-    if (!list) return;
-    const flat = buildFlatRows().filter(rowPassesFilters);
+  // Sütun tanımları (key + başlık + genişlik) — hem thead hem colgroup hem
+  // <tbody> render'ı bu TEK listeden beslenir. Genişlikler Canvas measureText
+  // (600 11px "Segoe UI", ana tablodaki yöntem) + gerçek HIERARCHY/ORGS/REGIONS
+  // taramasıyla ölçüldü; metrik kolonlar (stock→action) ana #grid'in colgroup'undaki
+  // AYNI kolonlarla BİREBİR aynı (aynı veri tipi, tekrar ölçülmedi).
+  const SAVED_MIX_COLUMNS = [
+    { key: "savedAt", label: "Kayıt Zamanı", width: 120 },
+    { key: "salesOrg", label: "Satış Teşkilatı", width: 68 },
+    { key: "region", label: "Şube / Bölge", width: 164 },
+    { key: "uh1", label: "ÜH1", width: 140 },
+    { key: "uh2", label: "ÜH2", width: 240 },
+    { key: "uh3", label: "ÜH3", width: 262 },
+    { key: "name", label: "ÜH4", width: 260 },
+    { key: "baseperiod", label: "Baz Periyot (LY)", width: 85 },
+    { key: "targetperiod", label: "Hedef Periyot (TY)", width: 85 },
+    { key: "stock", label: "Perakende Stok Adet", width: 77 },
+    { key: "stockShare", label: "Perakende Stok Adet %", width: 77 },
+    { key: "sales", label: "Perakende Satış Adet", width: 77 },
+    { key: "salesShare", label: "Perakende Satış Adet %", width: 77 },
+    { key: "profit", label: "Perakende Brüt Kar", width: 90 },
+    { key: "profitShare", label: "Perakende Brüt Kar %", width: 77 },
+    { key: "lyCover", label: "Stock Cover (Stok Ay)", width: 60 },
+    { key: "turnover", label: "Turnover (Devir Hızı)", width: 69 },
+    { key: "lyRevenue", label: "Perakende Satış Tutar (Ciro)", width: 103 },
+    { key: "lyFiyat", label: "Perakende Ortalama Satış Fiyatı (LY)", width: 79 },
+    { key: "planPct", label: "Gelecek Yıl Periyot Perakende Plan Stok %", width: 77 },
+    { key: "planStock", label: "Gelecek Yıl Periyot Perakende Plan Stok Adet", width: 77 },
+    { key: "hedefCover", label: "Hedef Stock Cover (Hedef Stok Ay)", width: 76 },
+    { key: "salesBudget", label: "Perakende Satış Adet Bütçe", width: 77 },
+    { key: "tyFiyat", label: "Perakende Ortalama Satış Fiyatı (TY)", width: 83 },
+    { key: "tyRevenue", label: "Perakende Satış Bütçe Tutar (Ciro Bütçe)", width: 103 },
+    { key: "lfl", label: "LFL(Like for like) Büyüme %", width: 65 },
+    { key: "rlfl", label: "R-LFL Büyüme %", width: 65 },
+    { key: "stockGrowth", label: "Stok Büyümesi", width: 73 },
+    { key: "tag", label: "Durum", width: 110 },
+    { key: "action", label: "Aksiyon", width: 210 },
+  ];
+  const SAVED_MIX_DELETE_COL_WIDTH = 60;
 
-    if (!flat.length) {
-      list.innerHTML = '<div class="saved-mix-empty">Henüz kaydedilmiş çalışma bulunmuyor.</div>';
-      return;
-    }
-
-    const headerCols = [
-      { key: "savedAt", label: "Kayıt Zamanı" },
-      { key: "salesOrg", label: "Satış Teşkilatı" },
-      { key: "region", label: "Şube / Bölge" },
-      { key: "uh1", label: "ÜH1" },
-      { key: "uh2", label: "ÜH2" },
-      { key: "uh3", label: "ÜH3" },
-      { key: "name", label: "ÜH4" },
-      { key: "baseperiod", label: "Baz Periyot (LY)" },
-      { key: "targetperiod", label: "Hedef Periyot (TY)" },
-      { key: "stock", label: "Perakende Stok Adet" },
-      { key: "stockShare", label: "Perakende Stok Adet %" },
-      { key: "sales", label: "Perakende Satış Adet" },
-      { key: "salesShare", label: "Perakende Satış Adet %" },
-      { key: "profit", label: "Perakende Brüt Kar" },
-      { key: "profitShare", label: "Perakende Brüt Kar %" },
-      { key: "lyCover", label: "Stock Cover (Stok Ay)" },
-      { key: "turnover", label: "Turnover (Devir Hızı)" },
-      { key: "lyRevenue", label: "Perakende Satış Tutar (Ciro)" },
-      { key: "lyFiyat", label: "Perakende Ortalama Satış Fiyatı (LY)" },
-      { key: "planPct", label: "Gelecek Yıl Periyot Perakende Plan Stok %" },
-      { key: "planStock", label: "Gelecek Yıl Periyot Perakende Plan Stok Adet" },
-      { key: "hedefCover", label: "Hedef Stock Cover (Hedef Stok Ay)" },
-      { key: "salesBudget", label: "Perakende Satış Adet Bütçe" },
-      { key: "tyFiyat", label: "Perakende Ortalama Satış Fiyatı (TY)" },
-      { key: "tyRevenue", label: "Perakende Satış Bütçe Tutar (Ciro Bütçe)" },
-      { key: "lfl", label: "LFL(Like for like) Büyüme %" },
-      { key: "rlfl", label: "R-LFL Büyüme %" },
-      { key: "stockGrowth", label: "Stok Büyümesi" },
-      { key: "tag", label: "Durum" },
-      { key: "action", label: "Aksiyon" },
-    ];
-
-    const rowHtml = flat.map((r) => `
+  function savedMixRowHtml(r) {
+    return `
       <tr>
         <td>${escapeHtml(r.savedAt)}</td>
         <td>${escapeHtml(r.salesOrg)}</td>
@@ -708,9 +705,54 @@ function updateAll() {
         <td>${r.action ? `<span class="badge ${r.action.includes("Plan") ? "b-green" : r.action.includes("Fiyat") ? "b-amber" : r.action.includes("Stok") ? "b-red" : "b-blue"}">${escapeHtml(r.action)}</span>` : "—"}</td>
         <td><button type="button" class="btn ghost mini" data-delete-save="${escapeHtml(r.setId)}">Sil</button></td>
       </tr>
-    `).join("");
+    `;
+  }
 
-    const filterControls = headerCols.map((col) => `
+  // Silme setId'ye göre çalışır — bir set'in HERHANGİ bir satırındaki "Sil"e
+  // tıklanınca o set'in TÜM satırları (localStorage'daki tüm kaydı) kalkar.
+  // Satır sayısı değişeceğinden (belki 0'a düşüp boş mesaja geçilecek) tam
+  // renderSavedMixTable() çağırır.
+  function bindSavedMixDeleteButtons(container) {
+    container.querySelectorAll("[data-delete-save]").forEach((btn) => {
+      btn.addEventListener("click", () => {
+        const id = btn.getAttribute("data-delete-save");
+        const next = loadSavedMixSets().filter((item) => item.id !== id);
+        saveSavedMixSets(next);
+        renderSavedMixTable();
+      });
+    });
+  }
+
+  // SADECE <tbody> içeriğini günceller — thead/filtre input'larına DOKUNMAZ,
+  // bu yüzden filtre kutusuna yazarken input DOM'dan hiç silinmiyor, focus/
+  // imleç konumu korunuyor. Filtre input'larının "input" olayı bunu çağırır.
+  function renderSavedMixRows() {
+    const list = $("savedMixList");
+    if (!list) return;
+    const tbody = list.querySelector(".saved-mix-table tbody");
+    if (!tbody) return;
+    const flat = buildFlatRows().filter(rowPassesFilters);
+    tbody.innerHTML = flat.map(savedMixRowHtml).join("");
+    bindSavedMixDeleteButtons(tbody);
+  }
+
+  // TABLO YAPISINI (colgroup, thead — başlık satırı + filtre input'ları) kurar.
+  // Sadece ilk açılışta ve kayıt ekleme/silme sonrası çağrılır (satır SAYISI
+  // değişebilir); filtrelemede ÇAĞRILMAZ (bkz. renderSavedMixRows).
+  function renderSavedMixTable() {
+    const list = $("savedMixList");
+    if (!list) return;
+    const flat = buildFlatRows().filter(rowPassesFilters);
+
+    if (!flat.length) {
+      list.innerHTML = '<div class="saved-mix-empty">Henüz kaydedilmiş çalışma bulunmuyor.</div>';
+      return;
+    }
+
+    const colgroupHtml = SAVED_MIX_COLUMNS.map((col) => `<col style="width:${col.width}px">`).join("")
+      + `<col style="width:${SAVED_MIX_DELETE_COL_WIDTH}px">`;
+
+    const filterControls = SAVED_MIX_COLUMNS.map((col) => `
       <th>
         <input class="saved-mix-filter-input" data-filter-key="${col.key}" type="text" value="${escapeAttribute(savedMixFilterState[col.key] || "")}" placeholder="Filtre et">
       </th>
@@ -719,16 +761,17 @@ function updateAll() {
     list.innerHTML = `
       <div class="saved-mix-table-wrap">
         <table class="saved-mix-table">
+          <colgroup>${colgroupHtml}</colgroup>
           <thead>
             <tr class="saved-mix-header-row">
-              ${headerCols.map((col) => `<th>${escapeHtml(col.label)}</th>`).join("")}
+              ${SAVED_MIX_COLUMNS.map((col) => `<th>${escapeHtml(col.label)}</th>`).join("")}
               <th></th>
             </tr>
             <tr class="saved-mix-filter-row">
               ${filterControls}
             </tr>
           </thead>
-          <tbody>${rowHtml}</tbody>
+          <tbody></tbody>
         </table>
       </div>
     `;
@@ -737,20 +780,11 @@ function updateAll() {
       input.addEventListener("input", (e) => {
         const key = e.target.dataset.filterKey;
         savedMixFilterState[key] = e.target.value;
-        renderSavedMixRecords();
+        renderSavedMixRows();
       });
     });
 
-    // Silme setId'ye göre çalışır — bir set'in HERHANGİ bir satırındaki "Sil"e
-    // tıklanınca o set'in TÜM satırları (localStorage'daki tüm kaydı) kalkar.
-    list.querySelectorAll("[data-delete-save]").forEach((btn) => {
-      btn.addEventListener("click", () => {
-        const id = btn.getAttribute("data-delete-save");
-        const next = loadSavedMixSets().filter((item) => item.id !== id);
-        saveSavedMixSets(next);
-        renderSavedMixRecords();
-      });
-    });
+    renderSavedMixRows();
   }
   function saveCurrentMixSet() {
     // "Seçim yok" görünen kayıtların kök nedeni: bu beş boyuttan biri boşken
@@ -763,7 +797,7 @@ function updateAll() {
     const next = loadSavedMixSets();
     next.unshift(payload);
     saveSavedMixSets(next.slice(0, 25));
-    renderSavedMixRecords();
+    renderSavedMixTable();
   }
 
   // --- Senaryo yönetimi ---
@@ -1242,7 +1276,7 @@ function updateAll() {
     initFormulaToggle();
     initColResize();
     initGridFormat();
-    renderSavedMixRecords();
+    renderSavedMixTable();
     updateAll();
     updateSelInfo();
     renderCalendar();
