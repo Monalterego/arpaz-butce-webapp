@@ -496,6 +496,9 @@ function updateAll() {
     const model = computeModel(p, state.covers, state.tyFiyat);
     const salesOrg = ($("h_org") && $("h_org").value) || "";
     const region = ($("h_region") && $("h_region").value) || "";
+    const baseperiod = ($("h_baseperiod") && $("h_baseperiod").value) || "";
+    const targetperiod = ($("h_targetperiod") && $("h_targetperiod").value) || "";
+    const periodText = (baseperiod || targetperiod) ? `${baseperiod || "?"} → ${targetperiod || "?"}` : "";
     return {
       id: (Date.now() + Math.random().toString(16).slice(2)),
       savedAt: new Date().toLocaleString("tr-TR"),
@@ -510,14 +513,18 @@ function updateAll() {
         uh1: state.sel.uh1,
         uh2: state.sel.uh2,
         uh3: state.sel.uh3,
+        baseperiod,
+        targetperiod,
       },
-      filterText: [salesOrg, region, state.sel.uh1, state.sel.uh2, state.sel.uh3].filter(Boolean).join(" / "),
+      filterText: [salesOrg, region, state.sel.uh1, state.sel.uh2, state.sel.uh3, periodText].filter(Boolean).join(" / "),
       filters: {
         salesOrg,
         region,
         uh1: state.sel.uh1,
         uh2: state.sel.uh2,
         uh3: state.sel.uh3,
+        baseperiod,
+        targetperiod,
       },
       keyFigures: {
         stock: model.T.stock,
@@ -560,83 +567,90 @@ function updateAll() {
       })),
     };
   }
-  const SAVED_MIX_FILTER_KEYS = [
-    "salesOrg", "region", "uh1", "uh2", "uh3", "name", "stock", "stockShare", "sales", "salesShare", "profit", "profitShare", "lyCover", "turnover", "lyRevenue", "lyFiyat", "planPct", "planStock", "hedefCover", "salesBudget", "tyFiyat", "tyRevenue", "lfl", "rlfl", "stockGrowth", "tag", "action"
-  ];
-
   let savedMixFilterState = {};
 
   function normalizeSavedMixValue(value) {
     return String(value ?? "").trim().toLocaleLowerCase("tr-TR");
   }
 
-  function getSavedMixFilterMatch(set, key, needle) {
-    if (!needle) return true;
-    const dims = set.dimensions || set.filters || { salesOrg: set.salesOrg, region: set.region, uh1: set.uh1, uh2: set.uh2, uh3: set.uh3 };
-    const rowValues = (set.rows || []).map((r) => ({
-      salesOrg: dims.salesOrg || set.salesOrg || "",
-      region: dims.region || set.region || "",
-      uh1: dims.uh1 || set.uh1 || "",
-      uh2: dims.uh2 || set.uh2 || "",
-      uh3: dims.uh3 || set.uh3 || "",
-      name: r.name || "",
-      stock: String(r.stock ?? ""),
-      stockShare: String(r.stockShare ?? ""),
-      sales: String(r.sales ?? ""),
-      salesShare: String(r.salesShare ?? ""),
-      profit: String(r.profit ?? ""),
-      profitShare: String(r.profitShare ?? ""),
-      lyCover: String(r.lyCover ?? ""),
-      turnover: String(r.turnover ?? ""),
-      lyRevenue: String(r.lyRevenue ?? ""),
-      lyFiyat: String(r.lyFiyat ?? ""),
-      planPct: String(r.planPct ?? ""),
-      planStock: String(r.planStock ?? ""),
-      hedefCover: String(r.hedefCover ?? ""),
-      salesBudget: String(r.salesBudget ?? ""),
-      tyFiyat: String(r.tyFiyat ?? ""),
-      tyRevenue: String(r.tyRevenue ?? ""),
-      lfl: String(r.lfl ?? ""),
-      rlfl: String(r.rlfl ?? ""),
-      stockGrowth: String(r.stockGrowth ?? ""),
-      tag: String(r.tag || ""),
-      action: String(r.action || "")
-    }));
-
-    if (key === "salesOrg") return normalizeSavedMixValue(dims.salesOrg || set.salesOrg).includes(needle);
-    if (key === "region") return normalizeSavedMixValue(dims.region || set.region).includes(needle);
-    if (key === "uh1") return normalizeSavedMixValue(dims.uh1 || set.uh1).includes(needle);
-    if (key === "uh2") return normalizeSavedMixValue(dims.uh2 || set.uh2).includes(needle);
-    if (key === "uh3") return normalizeSavedMixValue(dims.uh3 || set.uh3).includes(needle);
-    if (key === "name") return rowValues.some((r) => normalizeSavedMixValue(r.name).includes(needle));
-    return rowValues.some((r) => normalizeSavedMixValue(r[key]).includes(needle));
+  // Tüm kayıtlı set'lerin tüm satırlarını TEK bir düz diziye indirger — her satır
+  // kendi boyut (org/bölge/ÜH/periyot) bilgisini de taşır, filtreleme artık set
+  // değil doğrudan satır bazlı yapılabilir.
+  function buildFlatRows() {
+    const saved = loadSavedMixSets();
+    const flat = [];
+    saved.forEach((set) => {
+      const dims = set.dimensions || set.filters || { salesOrg: set.salesOrg, region: set.region, uh1: set.uh1, uh2: set.uh2, uh3: set.uh3 };
+      (set.rows || []).forEach((r) => {
+        flat.push({
+          setId: set.id,
+          savedAt: set.savedAt || "—",
+          salesOrg: dims.salesOrg || set.salesOrg || "—",
+          region: dims.region || set.region || "—",
+          uh1: dims.uh1 || set.uh1 || "—",
+          uh2: dims.uh2 || set.uh2 || "—",
+          uh3: dims.uh3 || set.uh3 || "—",
+          // eski kayıtlarda baseperiod/targetperiod alanları yok (undefined) — "—" göster
+          baseperiod: dims.baseperiod || "—",
+          targetperiod: dims.targetperiod || "—",
+          name: r.name || "—",
+          stock: typeof r.stock === "number" ? r.stock : 0,
+          sales: typeof r.sales === "number" ? r.sales : 0,
+          profit: typeof r.profit === "number" ? r.profit : 0,
+          stockShare: typeof r.stockShare === "number" ? r.stockShare : 0,
+          salesShare: typeof r.salesShare === "number" ? r.salesShare : 0,
+          profitShare: typeof r.profitShare === "number" ? r.profitShare : 0,
+          lyCover: typeof r.lyCover === "number" ? r.lyCover : 0,
+          turnover: typeof r.turnover === "number" ? r.turnover : 0,
+          lyRevenue: typeof r.lyRevenue === "number" ? r.lyRevenue : (typeof r.sales === "number" && typeof r.lyFiyat === "number" ? r.sales * r.lyFiyat : 0),
+          lyFiyat: typeof r.lyFiyat === "number" ? r.lyFiyat : 0,
+          planPct: typeof r.planPct === "number" ? r.planPct : 0,
+          planStock: typeof r.planStock === "number" ? r.planStock : 0,
+          hedefCover: typeof r.hedefCover === "number" ? r.hedefCover : 0,
+          salesBudget: typeof r.salesBudget === "number" ? r.salesBudget : 0,
+          tyFiyat: typeof r.tyFiyat === "number" ? r.tyFiyat : 0,
+          tyRevenue: typeof r.tyRevenue === "number" ? r.tyRevenue : 0,
+          lfl: typeof r.lfl === "number" ? r.lfl : 0,
+          rlfl: typeof r.rlfl === "number" ? r.rlfl : 0,
+          stockGrowth: typeof r.stockGrowth === "number" ? r.stockGrowth : 0,
+          tag: r.tag || "",
+          action: r.action || "",
+        });
+      });
+    });
+    return flat;
   }
 
-  function savedMixPassesFilters(set) {
+  // Satır bazlı filtre — her sütun için ayrı bir metin girişi, satırın kendi
+  // alanına karşı doğrudan eşleşir (set içindeki satırları dolaşan eski karmaşık
+  // mantığa gerek kalmadı, her satır zaten bağımsız/düz).
+  function rowPassesFilters(row) {
     return Object.entries(savedMixFilterState).every(([key, value]) => {
       const needle = normalizeSavedMixValue(value);
-      return !needle || getSavedMixFilterMatch(set, key, needle);
+      return !needle || normalizeSavedMixValue(row[key]).includes(needle);
     });
   }
 
   function renderSavedMixRecords() {
     const list = $("savedMixList");
     if (!list) return;
-    const saved = loadSavedMixSets();
-    const filtered = saved.filter((set) => savedMixPassesFilters(set));
+    const flat = buildFlatRows().filter(rowPassesFilters);
 
-    if (!filtered.length) {
+    if (!flat.length) {
       list.innerHTML = '<div class="saved-mix-empty">Henüz kaydedilmiş çalışma bulunmuyor.</div>';
       return;
     }
 
     const headerCols = [
+      { key: "savedAt", label: "Kayıt Zamanı" },
       { key: "salesOrg", label: "Satış Teşkilatı" },
       { key: "region", label: "Şube / Bölge" },
       { key: "uh1", label: "ÜH1" },
       { key: "uh2", label: "ÜH2" },
       { key: "uh3", label: "ÜH3" },
       { key: "name", label: "ÜH4" },
+      { key: "baseperiod", label: "Baz Periyot (LY)" },
+      { key: "targetperiod", label: "Hedef Periyot (TY)" },
       { key: "stock", label: "Perakende Stok Adet" },
       { key: "stockShare", label: "Perakende Stok Adet %" },
       { key: "sales", label: "Perakende Satış Adet" },
@@ -660,102 +674,64 @@ function updateAll() {
       { key: "action", label: "Aksiyon" },
     ];
 
-    list.innerHTML = filtered.map((set) => {
-      const dimensions = set.dimensions || set.filters || { salesOrg: set.salesOrg, region: set.region, uh1: set.uh1, uh2: set.uh2, uh3: set.uh3 };
-      const filters = dimensions;
-      const rows = (set.rows || []).map((r) => ({
-        name: r.name || "—",
-        salesOrg: filters.salesOrg || set.salesOrg || "—",
-        region: filters.region || set.region || "—",
-        uh1: filters.uh1 || set.uh1 || "—",
-        uh2: filters.uh2 || set.uh2 || "—",
-        uh3: filters.uh3 || set.uh3 || "—",
-        stock: typeof r.stock === "number" ? r.stock : 0,
-        sales: typeof r.sales === "number" ? r.sales : 0,
-        profit: typeof r.profit === "number" ? r.profit : 0,
-        stockShare: typeof r.stockShare === "number" ? r.stockShare : 0,
-        salesShare: typeof r.salesShare === "number" ? r.salesShare : 0,
-        profitShare: typeof r.profitShare === "number" ? r.profitShare : 0,
-        lyCover: typeof r.lyCover === "number" ? r.lyCover : 0,
-        turnover: typeof r.turnover === "number" ? r.turnover : 0,
-        lyRevenue: typeof r.lyRevenue === "number" ? r.lyRevenue : (typeof r.sales === "number" && typeof r.lyFiyat === "number" ? r.sales * r.lyFiyat : 0),
-        lyFiyat: typeof r.lyFiyat === "number" ? r.lyFiyat : 0,
-        planPct: typeof r.planPct === "number" ? r.planPct : 0,
-        planStock: typeof r.planStock === "number" ? r.planStock : 0,
-        hedefCover: typeof r.hedefCover === "number" ? r.hedefCover : 0,
-        salesBudget: typeof r.salesBudget === "number" ? r.salesBudget : 0,
-        lfl: typeof r.lfl === "number" ? r.lfl : 0,
-        rlfl: typeof r.rlfl === "number" ? r.rlfl : 0,
-        stockGrowth: typeof r.stockGrowth === "number" ? r.stockGrowth : 0,
-        tyFiyat: typeof r.tyFiyat === "number" ? r.tyFiyat : 0,
-        tyRevenue: typeof r.tyRevenue === "number" ? r.tyRevenue : 0,
-        tag: r.tag || "",
-        action: r.action || "",
-      }));
+    const rowHtml = flat.map((r) => `
+      <tr>
+        <td>${escapeHtml(r.savedAt)}</td>
+        <td>${escapeHtml(r.salesOrg)}</td>
+        <td>${escapeHtml(r.region)}</td>
+        <td>${escapeHtml(r.uh1)}</td>
+        <td>${escapeHtml(r.uh2)}</td>
+        <td>${escapeHtml(r.uh3)}</td>
+        <td>${escapeHtml(r.name)}</td>
+        <td>${escapeHtml(r.baseperiod)}</td>
+        <td>${escapeHtml(r.targetperiod)}</td>
+        <td>${fmtN(r.stock)}</td>
+        <td>${fmtP(r.stockShare)}</td>
+        <td>${fmtN(r.sales)}</td>
+        <td>${fmtP(r.salesShare)}</td>
+        <td>${fmtN(r.profit)}</td>
+        <td>${fmtP(r.profitShare)}</td>
+        <td>${fmtD(r.lyCover)}</td>
+        <td>${fmtD2(r.turnover)}</td>
+        <td>${fmtN(r.lyRevenue)}</td>
+        <td>${fmtN(r.lyFiyat)}</td>
+        <td>${fmtP(r.planPct)}</td>
+        <td>${fmtN(r.planStock)}</td>
+        <td>${fmtD(r.hedefCover)}</td>
+        <td>${fmtN(r.salesBudget)}</td>
+        <td>${fmtN(r.tyFiyat)}</td>
+        <td>${fmtN(r.tyRevenue)}</td>
+        <td class="${r.lfl >= 0 ? "up" : "down"}">${fmtP0(r.lfl)}</td>
+        <td class="${r.rlfl >= 0 ? "up" : "down"}">${fmtP0(r.rlfl)}</td>
+        <td class="${r.stockGrowth >= 0 ? "up" : "down"}">${fmtP0(r.stockGrowth)}</td>
+        <td>${r.tag ? `<span class="badge ${r.tag === "Hızlı & Kârlı" ? "b-green" : r.tag === "Hızlı & Kârsız" ? "b-amber" : r.tag === "Yavaş & Kârlı" ? "b-blue" : "b-red"}">${escapeHtml(r.tag)}</span>` : "—"}</td>
+        <td>${r.action ? `<span class="badge ${r.action.includes("Plan") ? "b-green" : r.action.includes("Fiyat") ? "b-amber" : r.action.includes("Stok") ? "b-red" : "b-blue"}">${escapeHtml(r.action)}</span>` : "—"}</td>
+        <td><button type="button" class="btn ghost mini" data-delete-save="${escapeHtml(r.setId)}">Sil</button></td>
+      </tr>
+    `).join("");
 
-      const rowHtml = rows.map((r) => `
-        <tr>
-          <td>${escapeHtml(r.salesOrg)}</td>
-          <td>${escapeHtml(r.region)}</td>
-          <td>${escapeHtml(r.uh1)}</td>
-          <td>${escapeHtml(r.uh2)}</td>
-          <td>${escapeHtml(r.uh3)}</td>
-          <td>${escapeHtml(r.name)}</td>
-          <td>${fmtN(r.stock)}</td>
-          <td>${fmtP(r.stockShare)}</td>
-          <td>${fmtN(r.sales)}</td>
-          <td>${fmtP(r.salesShare)}</td>
-          <td>${fmtN(r.profit)}</td>
-          <td>${fmtP(r.profitShare)}</td>
-          <td>${fmtD(r.lyCover)}</td>
-          <td>${fmtD2(r.turnover)}</td>
-          <td>${fmtN(r.lyRevenue)}</td>
-          <td>${fmtN(r.lyFiyat)}</td>
-          <td>${fmtP(r.planPct)}</td>
-          <td>${fmtN(r.planStock)}</td>
-          <td>${fmtD(r.hedefCover)}</td>
-          <td>${fmtN(r.salesBudget)}</td>
-          <td>${fmtN(r.tyFiyat)}</td>
-          <td>${fmtN(r.tyRevenue)}</td>
-          <td class="${r.lfl >= 0 ? "up" : "down"}">${fmtP0(r.lfl)}</td>
-          <td class="${r.rlfl >= 0 ? "up" : "down"}">${fmtP0(r.rlfl)}</td>
-          <td class="${r.stockGrowth >= 0 ? "up" : "down"}">${fmtP0(r.stockGrowth)}</td>
-          <td>${r.tag ? `<span class="badge ${r.tag === "Hızlı & Kârlı" ? "b-green" : r.tag === "Hızlı & Kârsız" ? "b-amber" : r.tag === "Yavaş & Kârlı" ? "b-blue" : "b-red"}">${escapeHtml(r.tag)}</span>` : "—"}</td>
-          <td>${r.action ? `<span class="badge ${r.action.includes("Plan") ? "b-green" : r.action.includes("Fiyat") ? "b-amber" : r.action.includes("Stok") ? "b-red" : "b-blue"}">${escapeHtml(r.action)}</span>` : "—"}</td>
-        </tr>
-      `).join("");
+    const filterControls = headerCols.map((col) => `
+      <th>
+        <input class="saved-mix-filter-input" data-filter-key="${col.key}" type="text" value="${escapeAttribute(savedMixFilterState[col.key] || "")}" placeholder="Filtre et">
+      </th>
+    `).join("") + "<th></th>";
 
-      const filterControls = headerCols.map((col) => `
-        <th>
-          <input class="saved-mix-filter-input" data-filter-key="${col.key}" type="text" value="${escapeAttribute(savedMixFilterState[col.key] || "")}" placeholder="Filtre et">
-        </th>
-      `).join("");
-
-      return `
-        <div class="saved-mix-block">
-          <div class="saved-mix-head">
-            <div class="saved-mix-title">${escapeHtml(set.filterText || "Seçim yok")}</div>
-            <div class="saved-mix-meta">${escapeHtml(set.savedAt)}</div>
-          </div>
-          <div class="saved-mix-table-wrap">
-            <table class="saved-mix-table">
-              <thead>
-                <tr class="saved-mix-header-row">
-                  ${headerCols.map((col) => `<th>${escapeHtml(col.label)}</th>`).join("")}
-                </tr>
-                <tr class="saved-mix-filter-row">
-                  ${filterControls}
-                </tr>
-              </thead>
-              <tbody>${rowHtml}</tbody>
-            </table>
-          </div>
-          <div class="saved-mix-actions">
-            <button type="button" class="btn ghost mini" data-delete-save="${escapeHtml(set.id)}">Sil</button>
-          </div>
-        </div>
-      `;
-    }).join("");
+    list.innerHTML = `
+      <div class="saved-mix-table-wrap">
+        <table class="saved-mix-table">
+          <thead>
+            <tr class="saved-mix-header-row">
+              ${headerCols.map((col) => `<th>${escapeHtml(col.label)}</th>`).join("")}
+              <th></th>
+            </tr>
+            <tr class="saved-mix-filter-row">
+              ${filterControls}
+            </tr>
+          </thead>
+          <tbody>${rowHtml}</tbody>
+        </table>
+      </div>
+    `;
 
     list.querySelectorAll(".saved-mix-filter-input").forEach((input) => {
       input.addEventListener("input", (e) => {
@@ -765,6 +741,8 @@ function updateAll() {
       });
     });
 
+    // Silme setId'ye göre çalışır — bir set'in HERHANGİ bir satırındaki "Sil"e
+    // tıklanınca o set'in TÜM satırları (localStorage'daki tüm kaydı) kalkar.
     list.querySelectorAll("[data-delete-save]").forEach((btn) => {
       btn.addEventListener("click", () => {
         const id = btn.getAttribute("data-delete-save");
@@ -775,6 +753,11 @@ function updateAll() {
     });
   }
   function saveCurrentMixSet() {
+    // "Seçim yok" görünen kayıtların kök nedeni: bu beş boyuttan biri boşken
+    // kaydediliyordu. Guard: hiçbiri boş olmadan kayıt oluşturulamaz.
+    const salesOrg = ($("h_org") && $("h_org").value) || "";
+    const region = ($("h_region") && $("h_region").value) || "";
+    if (!salesOrg || !region || !state.sel.uh1 || !state.sel.uh2 || !state.sel.uh3) return;
     const payload = buildCurrentMixRecord();
     if (!payload.rows.length) return;
     const next = loadSavedMixSets();

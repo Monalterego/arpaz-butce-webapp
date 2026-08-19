@@ -200,11 +200,7 @@ tfoot td{background:#eef3f8;font-weight:700;border-top:2px solid var(--navy)}
 .saved-actions{grid-template-columns:minmax(150px,1fr) auto auto}
 .saved-mix-list{display:grid;grid-template-columns:1fr;gap:14px}
 .saved-mix-empty{padding:18px;border:1px dashed var(--line);border-radius:10px;color:var(--grey);background:#f8fafc}
-.saved-mix-block{border:1px solid var(--line);border-radius:12px;background:#fff;padding:0;box-shadow:var(--shadow-sm)}
-.saved-mix-head{display:flex;justify-content:space-between;align-items:center;gap:12px;padding:10px 12px;border-bottom:1px solid var(--line);background:#f8fafc}
-.saved-mix-title{font-size:12px;color:var(--navy);font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-.saved-mix-meta{font-size:11px;color:var(--grey)}
-.saved-mix-table-wrap{overflow-x:auto;overflow-y:hidden;border:none;margin-bottom:10px;background:#fff;border-radius:0 0 12px 12px}
+.saved-mix-table-wrap{overflow-x:auto;overflow-y:hidden;border:1px solid var(--line);margin-bottom:10px;background:#fff;border-radius:12px;box-shadow:var(--shadow-sm)}
 .saved-mix-table{width:100%;min-width:1600px;border-collapse:collapse;table-layout:fixed;font-size:11px}
 .saved-mix-table th,.saved-mix-table td{padding:6px 7px;border:1px solid rgba(11,37,69,.12);text-align:right;vertical-align:middle;line-height:1.25;white-space:normal;overflow-wrap:anywhere;word-break:break-word}
 .saved-mix-table th{background:var(--navy);color:#fff;font-size:10px;font-weight:700;position:sticky;top:0;z-index:3;letter-spacing:.15px}
@@ -217,7 +213,6 @@ tfoot td{background:#eef3f8;font-weight:700;border-top:2px solid var(--navy)}
 .saved-mix-filter-input:focus{outline:2px solid rgba(0,119,182,.18);border-color:var(--accent2)}
 .saved-mix-table tbody tr:nth-child(even){background:#f8fafc}
 .saved-mix-table tbody tr:hover{background:#edf5ff}
-.saved-mix-actions{display:flex;justify-content:flex-end;padding:0 12px 12px}
 @media (max-width: 1200px){
   .saved-mix-table{min-width:1400px;font-size:10px}
   .saved-mix-table th,.saved-mix-table td{padding:5px 4px}
