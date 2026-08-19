@@ -68,6 +68,7 @@
             <div class="ptitle">Global Hedefler</div>
             <div class="prow"><label>Hedef Stok Büyümesi %</label><input type="number" id="p_stokbuyume" value="-10" step="1"></div>
             <div class="prow"><label>Pazarlama Büyümesi %</label><input type="number" id="p_pazar" value="5" step="1"></div>
+            <div class="prow"><label>Fiyat Büyümesi %</label><input type="number" id="p_fiyatbuyume" value="5" step="1"></div>
           </div>
           <div class="pgroup">
             <div class="ptitle">Plan Stok % Ağırlıkları</div>
@@ -201,10 +202,13 @@
             <col style="width:77px">   <!-- Perakende Brüt Kar % -->
             <col style="width:60px">   <!-- Stock Cover (Stok Ay) (uç değerler ör. 3687,0) -->
             <col style="width:69px">   <!-- Turnover (Devir Hızı) ("Turnover" 44px ölçüldü) -->
+            <col style="width:79px">   <!-- Perakende Ortalama Satış Fiyatı (LY) (başlık "Perakende" 52px→77px yeterliydi ama DATA taşması bağlayıcı oldu: 558 kombinasyon taramasında en uzun değer "138030,30" = 54,4px→79px) -->
             <col style="width:77px">   <!-- Gelecek Yıl Periyot Perakende Plan Stok % -->
             <col style="width:77px">   <!-- Gelecek Yıl Periyot Perakende Plan Stok Adet -->
             <col style="width:76px">   <!-- Hedef Stock Cover (Hedef Stok Ay) -->
             <col style="width:77px">   <!-- Perakende Satış Adet Bütçe -->
+            <col style="width:83px">   <!-- Perakende Ortalama Satış Fiyatı (TY) (elle giriş, kalın font — DATA taşması bağlayıcı: "144931,82" = 58,5px→83px) -->
+            <col style="width:103px">  <!-- Perakende Satış Bütçe Tutar (Ciro Bütçe) (DATA taşması bağlayıcı: uç parametrelerde "14.702.494.305" = 79px→103px) -->
             <col style="width:65px">   <!-- LFL % ("Büyüme" 41px ölçüldü) -->
             <col style="width:65px">   <!-- R-LFL % -->
             <col style="width:73px">   <!-- Stok Büyümesi ("Büyümesi" 48px ölçüldü; uç değerler ör. 127292%) -->
@@ -214,8 +218,8 @@
           <thead>
             <tr>
               <th rowspan="2" id="grpColHead" title="ÜH4">ÜH4</th>
-              <th colspan="8" class="grp-real">GERÇEKLEŞEN (LY)</th>
-              <th colspan="7" class="grp-plan">GELECEK YIL PLANI (TY)</th>
+              <th colspan="9" class="grp-real">GERÇEKLEŞEN (LY)</th>
+              <th colspan="9" class="grp-plan">GELECEK YIL PLANI (TY)</th>
               <th rowspan="2">Durum</th><th rowspan="2">Aksiyon</th>
             </tr>
             <tr>
@@ -224,8 +228,11 @@
               <th title="Perakende Brüt Kar">Perakende Brüt Kar</th>
               <th title="Perakende Brüt Kar %">Perakende Brüt Kar %</th>
               <th title="Stock Cover (Stok Ay)">Stock Cover (Stok Ay)</th><th title="Turnover (Devir Hızı)">Turnover (Devir Hızı)</th>
+              <th title="Perakende Ortalama Satış Fiyatı (LY)">Perakende Ortalama Satış Fiyatı (LY)</th>
               <th title="Gelecek Yıl Periyot Perakende Plan Stok %">Gelecek Yıl Periyot Perakende Plan Stok %</th><th title="Gelecek Yıl Periyot Perakende Plan Stok Adet">Gelecek Yıl Periyot Perakende Plan Stok Adet</th>
               <th class="wH" title="Hedef Stock Cover (Hedef Stok Ay)">Hedef Stock Cover (Hedef Stok Ay)</th><th title="Perakende Satış Adet Bütçe">Perakende Satış Adet Bütçe</th>
+              <th title="Perakende Ortalama Satış Fiyatı (TY)">Perakende Ortalama Satış Fiyatı (TY)</th>
+              <th title="Perakende Satış Bütçe Tutar (Ciro Bütçe)">Perakende Satış Bütçe Tutar (Ciro Bütçe)</th>
               <th title="LFL(Like for like) Büyüme %">LFL(Like for like) Büyüme %</th><th title="R-LFL Büyüme %">R-LFL Büyüme %</th><th title="Stok Büyümesi">Stok Büyümesi</th>
             </tr>
           </thead>

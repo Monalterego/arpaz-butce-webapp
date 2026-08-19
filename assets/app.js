@@ -21,7 +21,7 @@
 
   const CAMP = ["paro", "bundle", "event", "gam", "kota"];
   const OLU_STOK_CARPANI = 3; // sabit: grup medyanının 3 katı (kullanıcı ayarlamıyor)
-  const state = { covers: null, sel: null, level: "uh4" };  // seçim + Hedef Cover
+  const state = { covers: null, tyFiyat: null, sel: null, level: "uh4" };  // seçim + Hedef Cover + TY Fiyat
 
   // --- Hiyerarşi kaskad seçimleri ---
   function fillSelect(el, items, placeholder) {
@@ -159,6 +159,7 @@
     return {
       stokBuyume: num("p_stokbuyume", 0),
       pazar: num("p_pazar", 0),
+      fiyatBuyume: num("p_fiyatbuyume", 0),
       wKar: num("w_kar", 40), wSatis: num("w_satis", 30), wStok: num("w_stok", 20),
       camp,
     };
@@ -185,9 +186,10 @@
 
   // --- SAF HESAP MODELİ (render'dan bağımsız) ---
   // computeFromData: herhangi bir veri kümesi (ÜH4 veya ÜH3) için hesaplar
-  function computeFromData(data, p, covers) {
+  function computeFromData(data, p, covers, tyFiyatOverrides) {
     const totStock = data.reduce((a, d) => a + d[1], 0);
     const totSales = data.reduce((a, d) => a + d[2], 0);
+    const totValue = data.reduce((a, d) => a + d[3], 0);
     const totProfit = data.reduce((a, d) => a + d[3] * d[4] / 100, 0);
     const totalPlanStock = totStock * (1 + p.stokBuyume / 100);
     const pazarF = 1 + p.pazar / 100;
@@ -202,6 +204,7 @@
       const profitShare = profit / totProfit || 0;
       const lyCover = sales ? stock / sales : 0;
       const turnover = stock ? sales / stock : 0;
+      const lyFiyat = sales ? value / sales : 0;
 
       const planPct = (p.wKar * profitShare + p.wSatis * salesShare + p.wStok * stockShare) / wsum;
       const planStock = totalPlanStock * planPct;
@@ -212,8 +215,13 @@
       const stockGrowth = stock ? planStock / stock - 1 : 0;
       const tag = actionTag(stockShare, salesShare, profitShare);
 
+      const tyFiyatManual = (tyFiyatOverrides && tyFiyatOverrides[i] != null) ? tyFiyatOverrides[i] : null;
+      const tyFiyat = tyFiyatManual !== null ? tyFiyatManual : lyFiyat * (1 + p.fiyatBuyume / 100);
+      const tyRevenue = salesBudget * tyFiyat;
+
       return { name, stock, sales, profit, stockShare, salesShare, profitShare,
-        lyCover, turnover, planPct, planStock, hedefCover, salesBudget, lfl, rlfl, stockGrowth, tag };
+        lyCover, turnover, lyFiyat, planPct, planStock, hedefCover, salesBudget, lfl, rlfl, stockGrowth,
+        tyFiyat, tyRevenue, tag };
     });
 
     // --- Ölü stok işaretleme (SADECE görsel — bütçe hesabına etkisi yok) ---
@@ -228,9 +236,10 @@
     });
 
     const T = {
-      stock: totStock, sales: totSales, profit: totProfit,
+      stock: totStock, sales: totSales, value: totValue, profit: totProfit,
       planStock: rows.reduce((a, r) => a + r.planStock, 0),
       salesBudget: rows.reduce((a, r) => a + r.salesBudget, 0),
+      tyRevenue: rows.reduce((a, r) => a + r.tyRevenue, 0),
       oluAdet: rows.filter((r) => r.oluStok).length,
     };
     T.lfl = T.salesBudget / (totSales || 1) - 1;
@@ -239,21 +248,24 @@
   }
 
   // computeModel: mevcut görünümdeki DataService.loadMix() için wrapper
-  function computeModel(p, covers) {
+  function computeModel(p, covers, tyFiyat) {
     const data = DataService.loadMix();
-    return computeFromData(data, p, covers);
+    return computeFromData(data, p, covers, tyFiyat);
   }
 
   // --- Tabloyu bir kez kur (input'lar korunsun diye) ---
   function buildTable() {
     const data = DataService.loadMix();
     if (!data.length) {
-      $("rows").innerHTML = `<tr><td colspan="18" style="text-align:center;color:var(--grey);padding:18px">Bu seçim için veri bulunamadı.</td></tr>`;
+      $("rows").innerHTML = `<tr><td colspan="21" style="text-align:center;color:var(--grey);padding:18px">Bu seçim için veri bulunamadı.</td></tr>`;
       state.covers = [];
+      state.tyFiyat = [];
       return;
     }
     if (!state.covers || state.covers.length !== data.length)
       state.covers = data.map((d) => Math.max(1, Math.round(d[1] / (d[2] || 1)))); // default = LY cover
+    if (!state.tyFiyat || state.tyFiyat.length !== data.length)
+      state.tyFiyat = new Array(data.length).fill(null);   // null = otomatik hesap (LY Fiyat × Fiyat Büyümesi)
 
     const tb = $("rows");
     tb.innerHTML = "";
@@ -267,9 +279,12 @@
         <td class="num-cell" id="bk_${i}"></td>
         <td id="ktp_${i}"></td>
         <td id="cov_${i}"></td><td id="tov_${i}"></td>
+        <td id="lyfiyat_${i}"></td>
         <td class="pct" id="psp_${i}"></td><td class="num-cell" id="psa_${i}"></td>
         <td class="covcell"><input type="number" class="covin" id="hcov_${i}" min="1" step="0.5" value="${state.covers[i]}"></td>
         <td class="num-cell" id="sb_${i}"></td>
+        <td class="fiyatcell"><input type="number" class="fiyatin" id="tyfiyat_${i}" min="0" step="0.01"></td>
+        <td id="ciro_${i}"></td>
         <td id="lfl_${i}"></td><td id="rlfl_${i}"></td><td id="sg_${i}"></td>
         <td id="tag_${i}"></td>
         <td id="act_${i}"></td>`;
@@ -278,10 +293,15 @@
 
     data.forEach((d, i) => {
       const covInput = $("hcov_" + i);
-      if (!covInput) return;
-      covInput.addEventListener("input", (e) => {
+      if (covInput) covInput.addEventListener("input", (e) => {
         const v = parseFloat(e.target.value);
         state.covers[i] = isNaN(v) || v <= 0 ? state.covers[i] : v;
+        updateAll();
+      });
+      const fiyatInput = $("tyfiyat_" + i);
+      if (fiyatInput) fiyatInput.addEventListener("input", (e) => {
+        const v = parseFloat(e.target.value);
+        state.tyFiyat[i] = (isNaN(v) || v < 0) ? null : v;   // boşaltılırsa "otomatik"a döner
         updateAll();
       });
     });
@@ -291,7 +311,7 @@
 function updateAll() {
   const p = readParams();
   CAMP.forEach((k) => ($("v_" + k).textContent = $("m_" + k).value + "%"));
-  const m = computeModel(p, state.covers);
+  const m = computeModel(p, state.covers, state.tyFiyat);
   $("mult_total").textContent = fmtX(m.pazarF * m.campF);
 
   m.rows.forEach((r, i) => {
@@ -303,9 +323,13 @@ function updateAll() {
     $("ktp_" + i).innerHTML = `<span class="heat" style="background:${heat(r.profitShare, 0, 0.3)}">${fmtP(r.profitShare)}</span>`;
     $("cov_" + i).innerHTML = coverCellHtml(r);
     $("tov_" + i).textContent = fmtD2(r.turnover);
+    $("lyfiyat_" + i).textContent = fmtD2(r.lyFiyat);
     $("psp_" + i).textContent = fmtP(r.planPct);
     $("psa_" + i).textContent = fmtN(r.planStock);
     $("sb_" + i).textContent = fmtN(r.salesBudget);
+    const fiyatEl = $("tyfiyat_" + i);
+    if (fiyatEl && document.activeElement !== fiyatEl) fiyatEl.value = r.tyFiyat.toFixed(2);
+    $("ciro_" + i).textContent = fmtN(r.tyRevenue);
     const lflEl = $("lfl_" + i); if (lflEl) { lflEl.textContent = fmtP0(r.lfl); lflEl.className = r.lfl >= 0 ? "up" : "down"; }
     const rlflEl = $("rlfl_" + i); if (rlflEl) { rlflEl.textContent = fmtP0(r.rlfl); rlflEl.className = r.rlfl >= 0 ? "up" : "down"; }
     const sgEl = $("sg_" + i); if (sgEl) { sgEl.textContent = fmtP0(r.stockGrowth); sgEl.className = r.stockGrowth >= 0 ? "up" : "down"; }
@@ -327,14 +351,22 @@ function updateAll() {
   const footHedefCover = m.T.salesBudget
     ? (m.T.planStock * m.pazarF * m.campF) / m.T.salesBudget
     : null;
+  const footLyFiyat = m.T.sales ? m.T.value / m.T.sales : 0;
+  // TY Fiyat toplamı da Hedef Cover ile AYNI yöntem: "etkin" ağırlıklı ortalama
+  // (tyRevenue/salesBudget) — tüm satırlara uygulansaydı aynı toplam Ciro Bütçe'yi
+  // üretecek değer, tutarlılık için.
+  const footTyFiyat = m.T.salesBudget ? m.T.tyRevenue / m.T.salesBudget : null;
   $("tfoot").innerHTML = `
     <td>TOPLAM</td>
     <td>${fmtN(m.T.stock)}</td><td>${m.rows.length ? "100%" : "—"}</td>
     <td>${fmtN(m.T.sales)}</td><td>${m.rows.length ? "100%" : "—"}</td>
     <td class="num-cell">${fmtN(m.T.profit)}</td><td>${m.rows.length ? "100%" : "—"}</td>
     <td>${fmtD(footCover)}</td><td>${fmtD2(footTurnover)}</td>
+    <td>${fmtD2(footLyFiyat)}</td>
     <td>${m.rows.length ? "100%" : "—"}</td><td>${fmtN(m.T.planStock)}</td>
     <td>${footHedefCover === null ? "—" : fmtD(footHedefCover)}</td><td>${fmtN(m.T.salesBudget)}</td>
+    <td>${footTyFiyat === null ? "—" : fmtD2(footTyFiyat)}</td>
+    <td>${fmtN(m.T.tyRevenue)}</td>
     <td class="${m.rows.length ? (m.T.lfl >= 0 ? "up" : "down") : ""}">${m.rows.length ? fmtP0(m.T.lfl) : "—"}</td>
     <td class="${footRlfl === null ? "" : (footRlfl >= 0 ? "up" : "down")}">${footRlfl === null ? "—" : fmtP0(footRlfl)}</td>
     <td class="${m.rows.length ? (footStockGrowth >= 0 ? "up" : "down") : ""}">${m.rows.length ? fmtP0(footStockGrowth) : "—"}</td>
@@ -406,7 +438,7 @@ function updateAll() {
   let scenarios = [];
   function currentScenario() {
     const p = readParams();
-    const m = computeModel(p, state.covers);
+    const m = computeModel(p, state.covers, state.tyFiyat);
     return { p, budget: m.T.salesBudget, planStock: m.T.planStock, lfl: m.T.lfl };
   }
   function renderScenarios() {
@@ -444,7 +476,7 @@ function updateAll() {
         <td><b>${fmtD2(r[1] / r[2])}</b></td><td>${r[3]}</td></tr>`).join("");
   }
   function renderForecast(model) {
-    const m = model || computeModel(readParams(), state.covers);
+    const m = model || computeModel(readParams(), state.covers, state.tyFiyat);
     const method = $("fcMethod").value;
     const covSum = state.covers.reduce((a, b) => a + b, 0);
     const avgCover = (state.covers.length && covSum) ? covSum / state.covers.length : 0;
@@ -467,7 +499,7 @@ function updateAll() {
 
   // --- Olaylar ---
   function bind() {
-    ["p_stokbuyume","p_pazar","w_kar","w_satis","w_stok",...CAMP.map(k=>"m_"+k)]
+    ["p_stokbuyume","p_pazar","p_fiyatbuyume","w_kar","w_satis","w_stok",...CAMP.map(k=>"m_"+k)]
       .forEach((id) => $(id).addEventListener("input", updateAll));
     $("fcMethod").addEventListener("change", () => renderForecast());
     document.querySelectorAll(".tabs button").forEach((b) => {
@@ -502,7 +534,7 @@ function updateAll() {
   // --- Sürüklenebilir sütun genişliği (SADECE #grid) + localStorage kalıcılık ---
   // Bu GERÇEK bir web uygulaması (GitHub Pages), Claude "artifact" ortamı DEĞİL — localStorage kullanılır.
   const GRID_COLS_KEY = "arpaz_grid_col_widths";
-  const COL_MIN_WIDTHS = { 0: 80, 11: 76, 16: 90, 17: 120 }; // ÜH4, Hedef Cover, Durum, Aksiyon
+  const COL_MIN_WIDTHS = { 0: 80, 12: 76, 14: 76, 19: 90, 20: 120 }; // ÜH4, Hedef Cover, TY Fiyat, Durum, Aksiyon
   const colMinWidth = (idx) => COL_MIN_WIDTHS[idx] || 36;
   let gridCols = [];
   let gridDefaultWidths = [];
@@ -572,10 +604,10 @@ function updateAll() {
     if (saved) applyColWidths(saved); else syncGridWidth();
 
     const row1Ths = document.querySelectorAll("#grid thead tr")[0].querySelectorAll("th"); // [ÜH4, GERÇEKLEŞEN, GELECEK YIL, Durum, Aksiyon]
-    const row2Ths = document.querySelectorAll("#grid thead tr")[1].querySelectorAll("th"); // 15 metrik başlık
+    const row2Ths = document.querySelectorAll("#grid thead tr")[1].querySelectorAll("th"); // 18 metrik başlık
     attachUh4ResizeHandle();
-    row1Ths[3].appendChild(makeResizeHandle(16)); // Durum
-    row1Ths[4].appendChild(makeResizeHandle(17)); // Aksiyon
+    row1Ths[3].appendChild(makeResizeHandle(19)); // Durum
+    row1Ths[4].appendChild(makeResizeHandle(20)); // Aksiyon
     row2Ths.forEach((th, i) => th.appendChild(makeResizeHandle(i + 1)));
 
     const resetBtn = $("gridColReset");

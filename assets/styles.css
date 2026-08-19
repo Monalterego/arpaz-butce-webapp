@@ -120,21 +120,27 @@ tfoot td{background:#eef3f8;font-weight:700;border-top:2px solid var(--navy)}
    width:auto ölçüldü — sütun genişliklerini colgroup'taki değerlerle BİREBİR
    eşleştirmiyordu (tarayıcı hâlâ kendi payını hesaplıyordu). width'i colgroup
    toplamına eşit sabit bir piksele çekince her sütun tam istenen genişliğe oturdu.
-   1584 = colgroup'taki 18 <col> genişliğinin toplamı (150+77+77+77+77+90+77+60+69+
-   77+77+76+77+65+65+73+110+210). Kolon genişlikleri iki ayrı taşma kaynağına göre
-   ölçüldü: (1) 558 org×bölge×ÜH1×ÜH2 kombinasyonu taranarak DATA taşması (Brüt Kâr %/
-   Cover/Stok Büyümesi), (2) Canvas 2D measureText() ile th'in gerçek fontuyla (600
-   11px "Segoe UI") her başlıktaki EN UZUN KELİME ölçülüp (+16px padding +8px pay) —
-   "Perakende" (52px) gibi bölünemeyen kelimeler önceki turda kesiliyordu. index.html'deki
+   1849 = colgroup'taki 21 <col> genişliğinin toplamı (150+77+77+77+77+90+77+60+69+79+
+   77+77+76+77+83+103+65+65+73+110+210). LY Fiyat/TY Fiyat/Ciro Bütçe eklenirken
+   (21. kolon turu) AYNI iki katmanlı yöntem tekrarlandı: (1) Canvas 2D measureText()
+   ile th'in gerçek fontuyla (600 11px "Segoe UI") her başlıktaki EN UZUN KELİME
+   ölçüldü — üçünde de "Perakende" (52px) çıktı, tek başına 77px yeterliydi; (2) 558
+   org×bölge×ÜH1×ÜH2 kombinasyonu (hem varsayılan hem uç parametrelerle: stokBüyüme
+   %50, pazar %40, fiyatBüyüme %60, tüm kampanya çarpanları %40) taranıp GERÇEK
+   computeFromData() çıktısı üzerinden DATA taşması ölçüldü — üçünde de DATA
+   bağlayıcı çıktı (header'ın önerdiği 77px'i aştı): LY Fiyat "138030,30"→79px,
+   TY Fiyat "144931,82"→83px, Ciro Bütçe uç parametrede "14.702.494.305"→103px.
+   Kalan 18 kolon önceki turda AYNI yöntemle ölçülmüştü (Brüt Kâr %/Cover/Stok
+   Büyümesi DATA bağlayıcıydı, "Perakende" (52px) HEADER bağlayıcıydı). index.html'deki
    colgroup değiştirilirse bu sayı da BİRLİKTE güncellenmeli. */
-#grid{table-layout:fixed;width:1584px}
+#grid{table-layout:fixed;width:1849px}
 /* Sütunlar arası dikey ayırıcı — önceden sadece border-bottom (satır ayırıcı) vardı,
    sütunlar arasında hiç çizgi yoktu. İlk sütun (donmuş ÜH4) HARİÇ: o zaten kendi
    box-shadow ayırıcısını taşıyor (bkz. Freeze pane bloğu aşağıda) — ikisi üst üste
    binerse çift çizgi görünür. Son sütun (Aksiyon) da hariç: sağında zaten scroll
    edilecek başka bir sütun yok, gereksiz taşma/kenarlık yaratmasın.
    DİKKAT: `:first-child`/`:last-child` her <tr>'nin KENDİ çocukları arasında
-   değerlendirilir — 2 satırlı thead'de 2. satırın (15 metrik başlık) hiçbir
+   değerlendirilir — 2 satırlı thead'de 2. satırın (18 metrik başlık) hiçbir
    hücresi tablonun GERÇEK ilk/son sütunu DEĞİL (ÜH4/Durum/Aksiyon rowspan=2
    olduğundan 2. satırda hiç yer almaz), bu yüzden ona :not(:first-child) ASLA
    uygulanmaz — tümü sınırsız border-right alır (İş 3'teki freeze pane hatasıyla
@@ -199,9 +205,12 @@ tfoot td{background:#eef3f8;font-weight:700;border-top:2px solid var(--navy)}
 #grid thead tr:last-child th{text-align:var(--grid-h-align,center)}
 #grid tbody td:not(:first-child):not(:nth-last-child(-n+2)){text-align:var(--grid-c-align,right)}
 /* düzenlenebilir Hedef Cover hücresi */
-.covcell{background:#fff8e6;text-align:center}
-.covin{width:56px;padding-inline:6px;padding-block:max(0px,calc(var(--grid-row-pad,7px) - 3px));border:1px solid var(--amber);border-radius:6px;text-align:right;font-weight:700;font-size:var(--grid-c-size,12px);color:var(--amber);background:#fffdf6}
-.covin:focus{outline:2px solid var(--amber);background:#fff}
+/* Hedef Cover (covin/covcell) ve TY Fiyat (fiyatin/fiyatcell) elle-giriş
+   hücreleri AYNI davranışı paylaşır (satır yüksekliği/font boyutuna duyarlı
+   padding, amber vurgu) — ayrı HTML class ama tek CSS kuralı, kopyalanmadı. */
+.covcell,.fiyatcell{background:#fff8e6;text-align:center}
+.covin,.fiyatin{width:56px;padding-inline:6px;padding-block:max(0px,calc(var(--grid-row-pad,7px) - 3px));border:1px solid var(--amber);border-radius:6px;text-align:right;font-weight:700;font-size:var(--grid-c-size,12px);color:var(--amber);background:#fffdf6}
+.covin:focus,.fiyatin:focus{outline:2px solid var(--amber);background:#fff}
 /* Freeze pane: donmuş ÜH4 sütunu ile kayan sütunlar arasında Excel/Power BI'daki
    gibi görsel bir ayırıcı çizgi + deterministik z-index katmanı. z-index olmadan
    üst üste biniyor hissi veriyordu (aynı renk, ayırıcı çizgi yok). thead th'lerin
@@ -209,7 +218,7 @@ tfoot td{background:#eef3f8;font-weight:700;border-top:2px solid var(--navy)}
    z-index:2 alır; ilk sütun başlığı hem sağa hem aşağı kaydırmada en üstte kalsın
    diye 4'e çıkarılır (tbody'deki ilk sütun 1'de kalır, hepsinin altında).
    KRİTİK: `#grid th:first-child` (tr kapsamı olmadan) İKİ satırlı thead'de SADECE
-   1. satırın (rowspan=2 ÜH4) ilk hücresini DEĞİL, 2. satırın (15 metrik başlık)
+   1. satırın (rowspan=2 ÜH4) ilk hücresini DEĞİL, 2. satırın (18 metrik başlık)
    ilk hücresini ("Perakende Stok Adet") de eşleştiriyordu — çünkü :first-child
    kendi ebeveyni olan <tr>'ye göre değerlendirilir, tabloya göre değil. Bu yüzden
    2. satırın ilk başlığı da yanlışlıkla sticky+left:0 oluyor, sağa kaydırınca

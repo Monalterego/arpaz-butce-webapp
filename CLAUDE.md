@@ -248,9 +248,13 @@ Sol menü sırası: **TEŞKİLAT → ÜRÜN HİYERARŞİSİ → PERİYOT**.
 - Sekmeler: **Bütçe & Stok Miks** (ana) · Kampanya/Özel Gün Takvimi (2021+) ·
   Perakende/Toptan Rasyo · Tahmin (Forecast: LFL / Mevsimsel / 3-Aylık Hareketli Ort.).
 - Ana tablo blokları: **GERÇEKLEŞEN (LY)** [Stok Adet, Stok%, Satış Adet, Satış%,
-  Brüt Kâr (₺), Kâr%, Cover, Turnover — 8 kolon] ve **GELECEK YIL PLANI (TY)** [Plan Stok %,
-  Plan Stok Adet, Hedef Cover(elle), Satış Bütçe, LFL%, **R-LFL%**, Stok Büy.% — 7 kolon]
-  + Durum + Aksiyon. Toplam: Grup(1) + LY(8) + TY(7) + Durum(1) + Aksiyon(1) = **18 kolon**.
+  Brüt Kâr (₺), Kâr%, Cover, Turnover, **Ortalama Satış Fiyatı** — 9 kolon] ve
+  **GELECEK YIL PLANI (TY)** [Plan Stok %, Plan Stok Adet, Hedef Cover(elle), Satış Bütçe,
+  **Ortalama Satış Fiyatı(elle)**, **Ciro Bütçe**, LFL%, **R-LFL%**, Stok Büy.% — 9 kolon]
+  + Durum + Aksiyon. Toplam: Grup(1) + LY(9) + TY(9) + Durum(1) + Aksiyon(1) = **21 kolon**.
+  LY Fiyat = SatışTutar/SatışAdet (gerçek veri). TY Fiyat elle girilebilir (boşaltılırsa
+  LY Fiyat × Fiyat Büyümesi %'ye otomatik döner, Hedef Cover ile AYNI desen — bkz. Bölüm 8).
+  Ciro Bütçe = Satış Bütçe × TY Fiyat.
 - KPI kartları (üst şerit, `#kpis`, 6 kart): Toplam Stok, Toplam Satış (LY), Toplam Kâr
   (LY ₺), Bayi Stok Ay (Cover), Toplam Satış Bütçe (TY), LFL Büyüme.
 - Durum Dağılımı şeridi (`#durumKpis`, ayrı grid, 4 kart): actionTag'in 2×2 matrisindeki
@@ -269,8 +273,8 @@ Sol menü sırası: **TEŞKİLAT → ÜRÜN HİYERARŞİSİ → PERİYOT**.
 
 ## 8) app.js — Anahtar Fonksiyonlar
 - `initHierarchy()` — org/region + ÜH1/ÜH2/ÜH3 select'lerini kurar, event bağlar.
-- `readParams()` — stokBuyume, pazar, wKar/wSatis/wStok, camp{paro,bundle,event,gam,kota}.
-- `computeFromData(data, p, covers)` — SAF hesap; `computeModel` = loadMix wrapper.
+- `readParams()` — stokBuyume, pazar, fiyatBuyume, wKar/wSatis/wStok, camp{paro,bundle,event,gam,kota}.
+- `computeFromData(data, p, covers, tyFiyatOverrides)` — SAF hesap; `computeModel` = loadMix wrapper.
 - `buildTable()` — DOM'u bir kez kurar (input focus korunur). Tek dallı, düz ÜH4 listesi
   üretir; `state.level` HER ZAMAN `"uh4"` olduğundan (bkz. Bölüm 4, 10) `level`'e göre
   bir dallanma YOKTUR (eski uh3 drill-down dalı kaldırılmıştır).
@@ -323,10 +327,18 @@ Sol menü sırası: **TEŞKİLAT → ÜRÜN HİYERARŞİSİ → PERİYOT**.
   paren. Değişiklik sonrası konsol temiz olmalı.)
 - **Bütçe formüllerinin özünü değiştirme; HedefCover elle-girişini ezme.**
 - **hierarchy.js'e (İPTAL) grup ekleme.** "buyer grup" deme; "ÜH4" de.
-- **Ana tabloya (`#grid`) kolon eklerken/çıkarırken ÜÇ yeri BİRLİKTE güncelle:**
-  1) `index.html` thead (grup `colspan` + 2. satır `<th>`), 2) `app.js` `tfoot` (`<td>`
-  sayısı), 3) `app.js` boş-veri satırının `colspan`'ı. Güncel toplam kolon sayısı: **18**
-  (Grup 1 + GERÇEKLEŞEN 8 + GELECEK YIL PLANI 7 + Durum 1 + Aksiyon 1).
+- **Ana tabloya (`#grid`) kolon eklerken/çıkarırken TÜM bu yerleri BİRLİKTE güncelle**
+  (21 kolona çıkarken hepsi elden geçti, bkz. commit geçmişi):
+  1) `index.html` `<colgroup>` (yeni `<col>` + genişlik — bkz. Bölüm 9'daki ölçüm kuralı),
+  2) `index.html` thead (grup `colspan` + 2. satır `<th>`, `title` attribute'uyla),
+  3) `app.js` `buildTable()` satır şablonu (yeni `<td>`/input hücreleri),
+  4) `app.js` `updateAll()` (yeni hücrelerin render'ı) ve `tfoot` (`<td>` sayısı + toplamı),
+  5) `app.js` boş-veri satırının `colspan`'ı,
+  6) `assets/styles.css` `#grid{width:...}` (colgroup toplamına eşit olmalı),
+  7) `app.js` `COL_MIN_WIDTHS` ve `initColResize()`'daki Durum/Aksiyon `makeResizeHandle`
+  index'leri (satır 2'nin th'leri `i+1` ile otomatik kayar, ama rowspan'lı ÜH4/Durum/
+  Aksiyon'un sabit index'leri elle güncellenmeli). Güncel toplam kolon sayısı: **21**
+  (Grup 1 + GERÇEKLEŞEN 9 + GELECEK YIL PLANI 9 + Durum 1 + Aksiyon 1).
 - **Cerrahi düzenleme yap** (mümkünse tüm dosyayı değil ilgili bloğu değiştir).
 - Küçük, sık commit al. Geri dönülebilir olsun.
 - **Yeni border-radius/box-shadow/spacing değeri eklerken önce `:root`'taki mevcut
