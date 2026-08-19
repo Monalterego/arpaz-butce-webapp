@@ -21,7 +21,7 @@
 
   const CAMP = ["paro", "bundle", "event", "gam", "kota"];
   const OLU_STOK_CARPANI = 3; // sabit: grup medyanının 3 katı (kullanıcı ayarlamıyor)
-  const state = { covers: null, tyFiyat: null, sel: null, level: "uh4" };  // seçim + Hedef Cover + TY Fiyat
+  const state = { covers: null, tyFiyat: null, sel: null, level: "uh4", planPctOverrides: null };  // seçim + Hedef Cover + TY Fiyat + manuel plan stok % override
 
   // --- Hiyerarşi kaskad seçimleri ---
   function fillSelect(el, items, placeholder) {
@@ -79,15 +79,17 @@
 
     // --- Teşkilat select'lerini doldur (DataService.orgs / regions)
     if (document.getElementById('h_org')) {
-      fillSelect($("h_org"), DataService.orgs(), "Tümü");
-      $("h_org").value = "";
+      fillSelect($("h_org"), DataService.orgs());
+      $("h_org").value = DataService.orgs()[0] || "";
       autoFitSelectFont($("h_org"));
+      DataService.setOrg($("h_org").value);
       $("h_org").addEventListener("change", () => { DataService.setOrg($("h_org").value); autoFitSelectFont($("h_org")); rebuild(); });
     }
     if (document.getElementById('h_region')) {
-      fillSelect($("h_region"), DataService.regions(), "Tümü");
-      $("h_region").value = "";
+      fillSelect($("h_region"), DataService.regions());
+      $("h_region").value = DataService.regions()[0] || "";
       autoFitSelectFont($("h_region"));
+      DataService.setRegion($("h_region").value);
       $("h_region").addEventListener("change", () => { DataService.setRegion($("h_region").value); autoFitSelectFont($("h_region")); rebuild(); });
     }
 
@@ -151,6 +153,28 @@
     $("selInfo").textContent = `Seçim: ${path}  •  Seviye: ${state.level.toUpperCase()}  •  ${n} satır.`;
   }
 
+  function enforceWeightTotal() {
+    const ids = ["w_kar", "w_satis", "w_stok"];
+    const values = ids.map((id) => {
+      const v = parseFloat($(id).value);
+      return isFinite(v) ? v : 0;
+    });
+    const total = values.reduce((sum, v) => sum + v, 0);
+    if (total === 0) {
+      $("w_kar").value = 40;
+      $("w_satis").value = 30;
+      $("w_stok").value = 30;
+      return;
+    }
+    if (total !== 100) {
+      const lastId = ids[ids.length - 1];
+      const lastValue = parseFloat($(lastId).value) || 0;
+      const currentOtherSum = values.slice(0, -1).reduce((sum, v) => sum + v, 0);
+      const adjustedLast = Math.max(0, 100 - currentOtherSum);
+      $(lastId).value = adjustedLast;
+    }
+  }
+
   // --- Parametreleri oku ---
   function readParams() {
     const num = (id, d) => { const v = parseFloat($(id).value); return isNaN(v) ? d : v; };
@@ -160,7 +184,7 @@
       stokBuyume: num("p_stokbuyume", 0),
       pazar: num("p_pazar", 0),
       fiyatBuyume: num("p_fiyatbuyume", 0),
-      wKar: num("w_kar", 40), wSatis: num("w_satis", 30), wStok: num("w_stok", 20),
+      wKar: num("w_kar", 40), wSatis: num("w_satis", 30), wStok: num("w_stok", 30),
       camp,
     };
   }
@@ -206,7 +230,9 @@
       const turnover = stock ? sales / stock : 0;
       const lyFiyat = sales ? value / sales : 0;
 
-      const planPct = (p.wKar * profitShare + p.wSatis * salesShare + p.wStok * stockShare) / wsum;
+      const computedPlanPct = (p.wKar * profitShare + p.wSatis * salesShare + p.wStok * stockShare) / wsum;
+      const planPctOverride = (Array.isArray((typeof state !== 'undefined' && state.planPctOverrides)) ? state.planPctOverrides[i] : null);
+      const planPct = (planPctOverride !== null && planPctOverride !== undefined) ? planPctOverride : computedPlanPct;
       const planStock = totalPlanStock * planPct;
       const hedefCover = (covers && typeof covers[i] !== 'undefined') ? covers[i] : Math.max(1, Math.round(stock / (sales || 1)));
       const salesBudget = hedefCover ? (planStock / hedefCover) * pazarF * campF : 0;
@@ -237,6 +263,7 @@
 
     const T = {
       stock: totStock, sales: totSales, value: totValue, profit: totProfit,
+      planPct: rows.reduce((a, r) => a + r.planPct, 0),
       planStock: rows.reduce((a, r) => a + r.planStock, 0),
       salesBudget: rows.reduce((a, r) => a + r.salesBudget, 0),
       tyRevenue: rows.reduce((a, r) => a + r.tyRevenue, 0),
@@ -257,7 +284,7 @@
   function buildTable() {
     const data = DataService.loadMix();
     if (!data.length) {
-      $("rows").innerHTML = `<tr><td colspan="21" style="text-align:center;color:var(--grey);padding:18px">Bu seçim için veri bulunamadı.</td></tr>`;
+      $("rows").innerHTML = `<tr><td colspan="22" style="text-align:center;color:var(--grey);padding:18px">Bu seçim için veri bulunamadı.</td></tr>`;
       state.covers = [];
       state.tyFiyat = [];
       return;
@@ -266,6 +293,8 @@
       state.covers = data.map((d) => Math.max(1, Math.round(d[1] / (d[2] || 1)))); // default = LY cover
     if (!state.tyFiyat || state.tyFiyat.length !== data.length)
       state.tyFiyat = new Array(data.length).fill(null);   // null = otomatik hesap (LY Fiyat × Fiyat Büyümesi)
+    if (!state.planPctOverrides || state.planPctOverrides.length !== data.length)
+      state.planPctOverrides = new Array(data.length).fill(null);
 
     const tb = $("rows");
     tb.innerHTML = "";
@@ -279,8 +308,8 @@
         <td class="num-cell" id="bk_${i}"></td>
         <td id="ktp_${i}"></td>
         <td id="cov_${i}"></td><td id="tov_${i}"></td>
-        <td id="lyfiyat_${i}"></td>
-        <td class="pct" id="psp_${i}"></td><td class="num-cell" id="psa_${i}"></td>
+        <td class="num-cell" id="lyciro_${i}"></td><td id="lyfiyat_${i}"></td>
+        <td class="planpctcell"><input type="number" class="planpctin" id="psp_${i}" min="0" max="100" step="0.1"></td><td class="num-cell" id="psa_${i}"></td>
         <td class="covcell"><input type="number" class="covin" id="hcov_${i}" min="1" step="0.5" value="${state.covers[i]}"></td>
         <td class="num-cell" id="sb_${i}"></td>
         <td class="fiyatcell"><input type="number" class="fiyatin" id="tyfiyat_${i}" min="0" step="1"></td>
@@ -304,6 +333,12 @@
         state.tyFiyat[i] = (isNaN(v) || v < 0) ? null : v;   // boşaltılırsa "otomatik"a döner
         updateAll();
       });
+      const planPctInput = $("psp_" + i);
+      if (planPctInput) planPctInput.addEventListener("input", (e) => {
+        const v = parseFloat(e.target.value);
+        state.planPctOverrides[i] = (isNaN(v) || v < 0 || v > 100) ? null : v / 100;
+        updateAll();
+      });
     });
   }
 
@@ -323,8 +358,10 @@ function updateAll() {
     $("ktp_" + i).innerHTML = `<span class="heat" style="background:${heat(r.profitShare, 0, 0.3)}">${fmtP(r.profitShare)}</span>`;
     $("cov_" + i).innerHTML = coverCellHtml(r);
     $("tov_" + i).textContent = fmtD2(r.turnover);
+    $("lyciro_" + i).textContent = fmtN(r.sales * r.lyFiyat);
     $("lyfiyat_" + i).textContent = fmtN(r.lyFiyat);
-    $("psp_" + i).textContent = fmtP(r.planPct);
+    const planPctEl = $("psp_" + i);
+    if (planPctEl && document.activeElement !== planPctEl) planPctEl.value = Number((r.planPct * 100).toFixed(1));
     $("psa_" + i).textContent = fmtN(r.planStock);
     $("sb_" + i).textContent = fmtN(r.salesBudget);
     const fiyatEl = $("tyfiyat_" + i);
@@ -362,8 +399,8 @@ function updateAll() {
     <td>${fmtN(m.T.sales)}</td><td>${m.rows.length ? "100%" : "—"}</td>
     <td class="num-cell">${fmtN(m.T.profit)}</td><td>${m.rows.length ? "100%" : "—"}</td>
     <td>${fmtD(footCover)}</td><td>${fmtD2(footTurnover)}</td>
-    <td>${fmtN(footLyFiyat)}</td>
-    <td>${m.rows.length ? "100%" : "—"}</td><td>${fmtN(m.T.planStock)}</td>
+    <td>${fmtN(m.T.value)}</td><td>${fmtN(footLyFiyat)}</td>
+    <td>${m.rows.length ? fmtP(m.T.planPct) : "—"}</td><td>${fmtN(m.T.planStock)}</td>
     <td>${footHedefCover === null ? "—" : fmtD(footHedefCover)}</td><td>${fmtN(m.T.salesBudget)}</td>
     <td>${footTyFiyat === null ? "—" : fmtN(footTyFiyat)}</td>    <td>${fmtN(m.T.tyRevenue)}</td>
     <td class="${m.rows.length ? (m.T.lfl >= 0 ? "up" : "down") : ""}">${m.rows.length ? fmtP0(m.T.lfl) : "—"}</td>
@@ -433,6 +470,115 @@ function updateAll() {
       </div>`).join("");
   }
 
+  // --- Kayıtlı ÜH3 / ÜH4 miks kayıtları ---
+  const MIX_SAVE_KEY = "arpaz_saved_mix_sets";
+  function escapeHtml(str) {
+    return String(str || "").replace(/[&<>\"']/g, (ch) => ({"&":"&amp;","<":"&lt;",">":"&gt;","\"":"&quot;","'":"&#039;"}[ch]));
+  }
+  function loadSavedMixSets() {
+    try {
+      const raw = localStorage.getItem(MIX_SAVE_KEY);
+      if (!raw) return [];
+      const parsed = JSON.parse(raw);
+      return Array.isArray(parsed) ? parsed : [];
+    } catch (e) {
+      return [];
+    }
+  }
+  function saveSavedMixSets(list) {
+    try { localStorage.setItem(MIX_SAVE_KEY, JSON.stringify(list)); } catch (e) { /* geç */ }
+  }
+  function buildCurrentMixRecord() {
+    const p = readParams();
+    const model = computeModel(p, state.covers, state.tyFiyat);
+    return {
+      id: (Date.now() + Math.random().toString(16).slice(2)),
+      savedAt: new Date().toLocaleString("tr-TR"),
+      uh1: state.sel.uh1,
+      uh2: state.sel.uh2,
+      uh3: state.sel.uh3,
+      total: {
+        planStock: model.T.planStock,
+        salesBudget: model.T.salesBudget,
+        tyRevenue: model.T.tyRevenue,
+        lfl: model.T.lfl,
+      },
+      rows: model.rows.map((r) => ({
+        name: r.name,
+        planPct: r.planPct,
+        planStock: r.planStock,
+        salesBudget: r.salesBudget,
+        tyFiyat: r.tyFiyat,
+        tyRevenue: r.tyRevenue,
+        hedefCover: r.hedefCover,
+        lyFiyat: r.lyFiyat,
+        lfl: r.lfl,
+        rlfl: r.rlfl,
+        stockGrowth: r.stockGrowth,
+        tag: r.tag.etiket,
+      })),
+    };
+  }
+  function renderSavedMixRecords() {
+    const list = $("savedMixList");
+    if (!list) return;
+    const saved = loadSavedMixSets();
+    if (!saved.length) {
+      list.innerHTML = '<div class="saved-mix-empty">Henüz kaydedilmiş ÜH3/ÜH4 miks bulunmuyor.</div>';
+      return;
+    }
+    list.innerHTML = saved.map((set) => `
+      <div class="saved-mix-card">
+        <div class="saved-mix-head">
+          <div><strong>${escapeHtml(set.uh1)}</strong> / ${escapeHtml(set.uh2)} / ${escapeHtml(set.uh3)}</div>
+          <div class="saved-mix-meta">${escapeHtml(set.savedAt)}</div>
+        </div>
+        <div class="saved-mix-kpis">
+          <div class="saved-mix-kpi"><div class="lbl">Plan Stok</div><div class="val">${fmtN(set.total.planStock)}</div></div>
+          <div class="saved-mix-kpi"><div class="lbl">Satış Bütçe</div><div class="val">${fmtN(set.total.salesBudget)}</div></div>
+          <div class="saved-mix-kpi"><div class="lbl">Ciro</div><div class="val">${fmtN(set.total.tyRevenue)}</div></div>
+          <div class="saved-mix-kpi"><div class="lbl">LFL</div><div class="val ${set.total.lfl >= 0 ? "up" : "down"}">${fmtP0(set.total.lfl)}</div></div>
+        </div>
+        <table class="saved-mix-table">
+          <thead>
+            <tr><th>ÜH4</th><th>Plan Stok %</th><th>Plan Stok Adet</th><th>Satış Bütçe</th><th>TY Fiyat</th><th>Ciro</th></tr>
+          </thead>
+          <tbody>
+            ${set.rows.map((r) => `
+              <tr>
+                <td>${escapeHtml(r.name)}</td>
+                <td>${fmtP(r.planPct)}</td>
+                <td>${fmtN(r.planStock)}</td>
+                <td>${fmtN(r.salesBudget)}</td>
+                <td>${fmtN(r.tyFiyat)}</td>
+                <td>${fmtN(r.tyRevenue)}</td>
+              </tr>
+            `).join("")}
+          </tbody>
+        </table>
+        <div class="saved-mix-actions">
+          <button type="button" class="btn ghost mini" data-delete-save="${escapeHtml(set.id)}">Sil</button>
+        </div>
+      </div>
+    `).join("");
+    list.querySelectorAll("[data-delete-save]").forEach((btn) => {
+      btn.addEventListener("click", () => {
+        const id = btn.getAttribute("data-delete-save");
+        const next = loadSavedMixSets().filter((item) => item.id !== id);
+        saveSavedMixSets(next);
+        renderSavedMixRecords();
+      });
+    });
+  }
+  function saveCurrentMixSet() {
+    const payload = buildCurrentMixRecord();
+    if (!payload.rows.length) return;
+    const next = loadSavedMixSets();
+    next.unshift(payload);
+    saveSavedMixSets(next.slice(0, 25));
+    renderSavedMixRecords();
+  }
+
   // --- Senaryo yönetimi ---
   let scenarios = [];
   function currentScenario() {
@@ -499,7 +645,12 @@ function updateAll() {
   // --- Olaylar ---
   function bind() {
     ["p_stokbuyume","p_pazar","p_fiyatbuyume","w_kar","w_satis","w_stok",...CAMP.map(k=>"m_"+k)]
-      .forEach((id) => $(id).addEventListener("input", updateAll));
+      .forEach((id) => $(id).addEventListener("input", () => {
+        if (["w_kar","w_satis","w_stok"].includes(id)) {
+          enforceWeightTotal();
+        }
+        updateAll();
+      }));
     $("fcMethod").addEventListener("change", () => renderForecast());
     document.querySelectorAll(".tabs button").forEach((b) => {
       b.addEventListener("click", () => {
@@ -515,6 +666,8 @@ function updateAll() {
       scenarios.push(s); $("scName").value = ""; renderScenarios();
     };
     $("clearSc").onclick = () => { scenarios = []; renderScenarios(); };
+    const saveMixSetBtn = $("saveMixSetBtn");
+    if (saveMixSetBtn) saveMixSetBtn.addEventListener("click", saveCurrentMixSet);
   }
 
   // --- Formül kutusu aç/kapa (sadece görünürlük, hesaba etkisi yok) ---
@@ -902,6 +1055,7 @@ function updateAll() {
     initFormulaToggle();
     initColResize();
     initGridFormat();
+    renderSavedMixRecords();
     updateAll();
     updateSelInfo();
     renderCalendar();

@@ -42,6 +42,7 @@
       <button data-tab="takvim">Kampanya / Özel Gün Takvimi</button>
       <button data-tab="rasyo">Perakende/Toptan Rasyo</button>
       <button data-tab="forecast">Tahmin (Forecast)</button>
+      <button data-tab="kayitlar">Kayıtlar</button>
     </div>
 
     <!-- ========== TAB: MIKS ========== -->
@@ -62,7 +63,7 @@
 
       <!-- PARAMETRELER -->
       <div class="panel">
-        <h2>Planlama Parametreleri <span class="pill">Kullanıcı Girişi</span></h2>
+        <h2 style="display:flex;align-items:center;gap:8px;">Planlama Parametreleri <span class="pill">Kullanıcı Girişi</span><button type="button" class="btn ghost mini" id="saveMixSetBtn" style="margin-left:auto">💾 Kaydet</button></h2>
         <div class="params">
           <div class="pgroup">
             <div class="ptitle">Global Hedefler</div>
@@ -74,7 +75,7 @@
             <div class="ptitle">Plan Stok % Ağırlıkları</div>
             <div class="prow"><label class="wK">Kâr ağırlığı</label><input type="number" id="w_kar" value="40" step="5"></div>
             <div class="prow"><label class="wS">Satış ağırlığı</label><input type="number" id="w_satis" value="30" step="5"></div>
-            <div class="prow"><label class="wSt">Stok ağırlığı</label><input type="number" id="w_stok" value="20" step="5"></div>
+            <div class="prow"><label class="wSt">Stok ağırlığı</label><input type="number" id="w_stok" value="30" step="5"></div>
           </div>
           <div class="pgroup">
             <div class="ptitle">Kampanya Çarpanları</div>
@@ -202,6 +203,7 @@
             <col style="width:77px">   <!-- Perakende Brüt Kar % -->
             <col style="width:60px">   <!-- Stock Cover (Stok Ay) (uç değerler ör. 3687,0) -->
             <col style="width:69px">   <!-- Turnover (Devir Hızı) ("Turnover" 44px ölçüldü) -->
+            <col style="width:103px">  <!-- Perakende Satış Tutar (Ciro) (LY) -->
             <col style="width:79px">   <!-- Perakende Ortalama Satış Fiyatı (LY) (başlık "Perakende" 52px→77px yeterliydi ama DATA taşması bağlayıcı oldu: 558 kombinasyon taramasında en uzun değer "138030,30" = 54,4px→79px) -->
             <col style="width:77px">   <!-- Gelecek Yıl Periyot Perakende Plan Stok % -->
             <col style="width:77px">   <!-- Gelecek Yıl Periyot Perakende Plan Stok Adet -->
@@ -218,7 +220,7 @@
           <thead>
             <tr>
               <th rowspan="2" id="grpColHead" title="ÜH4">ÜH4</th>
-              <th colspan="9" class="grp-real">GERÇEKLEŞEN (LY)</th>
+              <th colspan="10" class="grp-real">GERÇEKLEŞEN (LY)</th>
               <th colspan="9" class="grp-plan">GELECEK YIL PLANI (TY)</th>
               <th rowspan="2">Durum</th><th rowspan="2">Aksiyon</th>
             </tr>
@@ -228,6 +230,7 @@
               <th title="Perakende Brüt Kar">Perakende Brüt Kar</th>
               <th title="Perakende Brüt Kar %">Perakende Brüt Kar %</th>
               <th title="Stock Cover (Stok Ay)">Stock Cover (Stok Ay)</th><th title="Turnover (Devir Hızı)">Turnover (Devir Hızı)</th>
+              <th title="Perakende Satış Tutar (Ciro)">Perakende Satış Tutar (Ciro)</th>
               <th title="Perakende Ortalama Satış Fiyatı (LY)">Perakende Ortalama Satış Fiyatı (LY)</th>
               <th title="Gelecek Yıl Periyot Perakende Plan Stok %">Gelecek Yıl Periyot Perakende Plan Stok %</th><th title="Gelecek Yıl Periyot Perakende Plan Stok Adet">Gelecek Yıl Periyot Perakende Plan Stok Adet</th>
               <th class="wH" title="Hedef Stock Cover (Hedef Stok Ay)">Hedef Stock Cover (Hedef Stok Ay)</th><th title="Perakende Satış Adet Bütçe">Perakende Satış Adet Bütçe</th>
@@ -290,6 +293,14 @@
           <th>Ay</th><th>LY Satış</th><th>Mevsim Endeksi</th><th>TY Tahmin</th><th>Plan Stok (Cover)</th>
         </tr></thead><tbody id="fcRows"></tbody></table>
         <div class="note">Prototip mevsim endeksleri örnek değerlerdir. Gerçek veri gelince ay-bazlı geçmişten otomatik türetilir.</div>
+      </div>
+    </div>
+
+    <!-- ========== TAB: KAYITLAR ========== -->
+    <div class="tabpane" data-pane="kayitlar" style="display:none">
+      <div class="panel">
+        <h2>Kayıtlar <span class="pill">ÜH3 / ÜH4</span></h2>
+        <div id="savedMixList" class="saved-mix-list"></div>
       </div>
     </div>
   </main>

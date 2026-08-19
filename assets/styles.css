@@ -198,6 +198,20 @@ tfoot td{background:#eef3f8;font-weight:700;border-top:2px solid var(--navy)}
 .saved-form input,.saved-actions select{width:100%;padding:7px 10px;border:1px solid rgba(11,37,69,.14);border-radius:8px;background:#f8fafc;color:var(--ink);font-size:12px}
 .saved-form input:focus,.saved-actions select:focus{outline:2px solid rgba(0,119,182,.18);border-color:var(--accent2)}
 .saved-actions{grid-template-columns:minmax(150px,1fr) auto auto}
+.saved-mix-list{display:grid;grid-template-columns:1fr;gap:12px}
+.saved-mix-empty{padding:18px;border:1px dashed var(--line);border-radius:10px;color:var(--grey);background:#f8fafc}
+.saved-mix-card{border:1px solid var(--line);border-radius:12px;padding:12px;background:#fff;box-shadow:0 2px 8px rgba(11,37,69,.04)}
+.saved-mix-head{display:flex;justify-content:space-between;align-items:center;gap:12px;margin-bottom:10px;padding-bottom:8px;border-bottom:1px solid var(--line)}
+.saved-mix-meta{font-size:11px;color:var(--grey)}
+.saved-mix-kpis{display:grid;grid-template-columns:repeat(4,minmax(120px,1fr));gap:10px;margin-bottom:10px}
+.saved-mix-kpi{background:#f8fafc;border:1px solid var(--line);border-radius:8px;padding:8px 10px}
+.saved-mix-kpi .lbl{font-size:11px;color:var(--grey)}
+.saved-mix-kpi .val{font-size:15px;font-weight:700;color:var(--navy);margin-top:3px}
+.saved-mix-table{width:100%;border-collapse:collapse;table-layout:fixed;font-size:12px;margin-bottom:10px}
+.saved-mix-table th,.saved-mix-table td{padding:7px 8px;border:1px solid var(--line);text-align:right}
+.saved-mix-table th:first-child,.saved-mix-table td:first-child{text-align:left}
+.saved-mix-table th{background:#f3f7fb;color:var(--navy);font-size:11px}
+.saved-mix-actions{display:flex;justify-content:flex-end}
 /* Görünüm araç çubuğu — başlık/hücre hizalama. Grup banner'ları (GERÇEKLEŞEN/GELECEK
    YIL PLANI) ve ÜH4/Durum/Aksiyon body hücreleri (ürün adı hep sola, rozetler kendi
    düzeninde) bu kontrolün DIŞINDA tutulur. */
@@ -208,9 +222,9 @@ tfoot td{background:#eef3f8;font-weight:700;border-top:2px solid var(--navy)}
 /* Hedef Cover (covin/covcell) ve TY Fiyat (fiyatin/fiyatcell) elle-giriş
    hücreleri AYNI davranışı paylaşır (satır yüksekliği/font boyutuna duyarlı
    padding, amber vurgu) — ayrı HTML class ama tek CSS kuralı, kopyalanmadı. */
-.covcell,.fiyatcell{background:#fff8e6;text-align:center}
-.covin,.fiyatin{width:56px;padding-inline:6px;padding-block:max(0px,calc(var(--grid-row-pad,7px) - 3px));border:1px solid var(--amber);border-radius:6px;text-align:right;font-weight:700;font-size:var(--grid-c-size,12px);color:var(--amber);background:#fffdf6}
-.covin:focus,.fiyatin:focus{outline:2px solid var(--amber);background:#fff}
+.covcell,.fiyatcell,.planpctcell{background:#fff8e6;text-align:center}
+.covin,.fiyatin,.planpctin{width:56px;padding-inline:6px;padding-block:max(0px,calc(var(--grid-row-pad,7px) - 3px));border:1px solid var(--amber);border-radius:6px;text-align:right;font-weight:700;font-size:var(--grid-c-size,12px);color:var(--amber);background:#fffdf6}
+.covin:focus,.fiyatin:focus,.planpctin:focus{outline:2px solid var(--amber);background:#fff}
 /* Freeze pane: donmuş ÜH4 sütunu ile kayan sütunlar arasında Excel/Power BI'daki
    gibi görsel bir ayırıcı çizgi + deterministik z-index katmanı. z-index olmadan
    üst üste biniyor hissi veriyordu (aynı renk, ayırıcı çizgi yok). thead th'lerin
