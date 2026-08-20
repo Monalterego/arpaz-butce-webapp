@@ -1033,16 +1033,26 @@ function updateAll() {
     const ay = getSelectedAy();
     const uh2 = state.sel.uh2;
     const katsayi = getToptanKatsayi(uh2, ay);
+    // Kimlik/periyot boyutları mevcut seçimle SABİT — her satırda tekrarlanır (bkz. CLAUDE.md 13)
+    const org = ($("h_org") && $("h_org").value) || "—";
+    const region = ($("h_region") && $("h_region").value) || "—";
+    const uh1 = state.sel.uh1 || "—";
+    const uh3 = state.sel.uh3 || "—";
+    const baseperiod = ($("h_baseperiod") && $("h_baseperiod").value) || "—";
+    const targetperiod = ($("h_targetperiod") && $("h_targetperiod").value) || "—";
     const rows = m.rows.map((r) => {
       const hedefBayiStok = r.hedefCover * r.salesBudget;
       const mevcutBayiStok = r.stock;
       const deltaStok = hedefBayiStok - mevcutBayiStok;
-      const toptanButce = r.salesBudget + deltaStok;
+      // Bayiye eksi adet sevk edilemez — 0'ın altına düşen toplam TOPTAN BÜTÇE burada kırpılır.
+      const toptanButce = Math.max(0, r.salesBudget + deltaStok);
       const mevsimselKontrol = r.salesBudget * katsayi;
       const uyumlu = Math.abs(toptanButce - mevsimselKontrol) / Math.max(1, toptanButce) < 0.2;
-      return { name: r.name, salesBudget: r.salesBudget, hedefCover: r.hedefCover,
+      return { name: r.name, org, region, uh1, uh2, uh3, baseperiod, targetperiod,
+        salesBudget: r.salesBudget, hedefCover: r.hedefCover, lyCover: r.lyCover,
         mevcutBayiStok, hedefBayiStok, deltaStok, toptanButce, mevsimselKontrol, uyumlu };
     });
+    // TOPLAM = kırpılmış satır değerlerinin toplamı (önce kırp, sonra topla)
     const T = rows.reduce((a, r) => {
       a.salesBudget += r.salesBudget; a.mevcutBayiStok += r.mevcutBayiStok;
       a.hedefBayiStok += r.hedefBayiStok; a.deltaStok += r.deltaStok;
@@ -1050,6 +1060,7 @@ function updateAll() {
       return a;
     }, { salesBudget: 0, mevcutBayiStok: 0, hedefBayiStok: 0, deltaStok: 0, toptanButce: 0, mevsimselKontrol: 0 });
     T.uyumlu = Math.abs(T.toptanButce - T.mevsimselKontrol) / Math.max(1, T.toptanButce) < 0.2;
+    T.cover = m.T.cover; // ana tablodaki Stock Cover toplamıyla aynı (çapraz kontrol)
     return { rows, T, katsayi };
   }
   function uyumBadge(uyumlu) {
@@ -1060,15 +1071,23 @@ function updateAll() {
     if (!tbody) return;
     const data = computeToptan(m);
     if (!data.rows.length) {
-      tbody.innerHTML = `<tr><td colspan="9" style="text-align:center;color:var(--grey);padding:18px">Bu seçim için veri bulunamadı.</td></tr>`;
+      tbody.innerHTML = `<tr><td colspan="17" style="text-align:center;color:var(--grey);padding:18px">Bu seçim için veri bulunamadı.</td></tr>`;
       $("toptanFoot").innerHTML = "";
       return;
     }
     tbody.innerHTML = data.rows.map((r) => `
       <tr>
+        <td>${r.org}</td>
+        <td>${r.region}</td>
+        <td>${r.uh1}</td>
+        <td>${r.uh2}</td>
+        <td>${r.uh3}</td>
         <td>${r.name}</td>
+        <td>${r.baseperiod}</td>
+        <td>${r.targetperiod}</td>
         <td class="num-cell">${fmtN(r.salesBudget)}</td>
         <td>${fmtD(r.hedefCover)}</td>
+        <td>${fmtD(r.lyCover)}</td>
         <td class="num-cell">${fmtN(r.mevcutBayiStok)}</td>
         <td class="num-cell">${fmtN(r.hedefBayiStok)}</td>
         <td class="num-cell ${r.deltaStok >= 0 ? "up" : "down"}">${r.deltaStok >= 0 ? "+" : ""}${fmtN(r.deltaStok)}</td>
@@ -1078,8 +1097,16 @@ function updateAll() {
       </tr>`).join("");
     $("toptanFoot").innerHTML = `
       <td>TOPLAM</td>
+      <td>—</td>
+      <td>—</td>
+      <td>—</td>
+      <td>—</td>
+      <td>—</td>
+      <td>—</td>
+      <td>—</td>
       <td class="num-cell">${fmtN(data.T.salesBudget)}</td>
       <td>—</td>
+      <td>${fmtD(data.T.cover)}</td>
       <td class="num-cell">${fmtN(data.T.mevcutBayiStok)}</td>
       <td class="num-cell">${fmtN(data.T.hedefBayiStok)}</td>
       <td class="num-cell ${data.T.deltaStok >= 0 ? "up" : "down"}">${data.T.deltaStok >= 0 ? "+" : ""}${fmtN(data.T.deltaStok)}</td>

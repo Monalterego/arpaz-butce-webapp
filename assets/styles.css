@@ -120,6 +120,10 @@ tfoot td{background:#eef3f8;font-weight:700;border-top:2px solid var(--navy)}
 /* Toptan Bütçe tablosu — TOPTAN BÜTÇE kolonu vurgulu */
 #toptanGrid th.toptan-highlight{background:#0b6e4f}
 #toptanGrid td.toptan-highlight{background:var(--bluebg);font-weight:700;color:var(--navy)}
+/* table-layout:auto genişlikleri öngörülemez sıkıştırıyor (bkz. #grid/.saved-mix-table
+   yorumları) — table-layout:fixed + width, colgroup'taki 17 <col> genişliğinin TOPLAMI
+   olmalı: 68+164+140+240+262+260+85+85+100+80+70+105+105+100+120+110+90 = 2184px. */
+#toptanGrid{table-layout:fixed;width:2184px}
 /* gruplu başlık */
 #grid th.grp-real{background:#13315c;text-align:center}
 #grid th.grp-plan{background:#0b6e4f;text-align:center}

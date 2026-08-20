@@ -401,10 +401,23 @@ Sol menü sırası: **TEŞKİLAT → ÜRÜN HİYERARŞİSİ → PERİYOT**.
 
 ---
 
-# CLAUDE.md — EK BÖLÜM: Toptan (Sell-in) Bütçe Köprüsü
+## 11) Sıradaki Adımlar (Öncelik Sırası)
+1. **Senaryo kaydı Hedef Cover setini tutmuyor.** `currentScenario()` sadece parametreleri
+   ve toplamları saklıyor, `state.covers` saklanmıyor; senaryo kaydedilirken elle girilen
+   cover seti dahil edilmiyor (geri yükleme özelliği de şu an yok, sadece kayıt/kıyas var).
+   (Not: "en iyi LFL yeşil" vurgusu kontrol edildi — `renderScenarios()` içinde MEVCUT ve
+   çalışıyor, kaldırılmasına gerek yok.)
+2. Kampanya/Özel gün takvimini (2021+) ve kampanya geçmişini metadata olarak modele bağla.
+3. Forecast yöntemini bütçe adedine tam entegre et (aylara dağıtım + cover ile plan stok).
+4. IT tam veri verince `DataService`'i API'ye çevir (şema aynı).
 
-> Bu bölümü mevcut CLAUDE.md'nin sonuna, "Sıradaki Adımlar"dan ÖNCE ekle.
-> Toptan bütçesi mantığı artık projenin kalıcı parçasıdır.
+---
+
+## 12) İletişim Tarzı Tercihi
+- Adım adım, net, kopyala-yapıştır kod. Gereksiz teori değil, çalışan çözüm.
+- Hata olduğunda: F12 → Console → kırmızı satırı ver → hedefli düzelt.
+- Frustrasyonda kısa empati + hızlı çözüm. Ben test edip geri bildiririm (iteratif).
+- Türkçe konuş. Locale ve UI dili Türkçe kalsın.
 
 ---
 
@@ -483,23 +496,3 @@ Ekranda toptan mantığı MUTLAKA sade Türkçe ile açıklanmalı (bkz. "Nasıl
 bilgi paneli). Son kullanıcı formülün ARDINDAKİ MANTIĞI anlamalı:
 "Bayiye ne kadar mal göndereceğiz? = Bayinin satacağı kadar + bayinin deposunu
 hedeflediğimiz seviyeye getirmek için gereken fark." Teknik jargon değil, sezgi ver.
-
-
-
-## 11) Sıradaki Adımlar (Öncelik Sırası)
-1. **Senaryo kaydı Hedef Cover setini tutmuyor.** `currentScenario()` sadece parametreleri
-   ve toplamları saklıyor, `state.covers` saklanmıyor; senaryo kaydedilirken elle girilen
-   cover seti dahil edilmiyor (geri yükleme özelliği de şu an yok, sadece kayıt/kıyas var).
-   (Not: "en iyi LFL yeşil" vurgusu kontrol edildi — `renderScenarios()` içinde MEVCUT ve
-   çalışıyor, kaldırılmasına gerek yok.)
-2. Kampanya/Özel gün takvimini (2021+) ve kampanya geçmişini metadata olarak modele bağla.
-3. Forecast yöntemini bütçe adedine tam entegre et (aylara dağıtım + cover ile plan stok).
-4. IT tam veri verince `DataService`'i API'ye çevir (şema aynı).
-
----
-
-## 12) İletişim Tarzı Tercihi
-- Adım adım, net, kopyala-yapıştır kod. Gereksiz teori değil, çalışan çözüm.
-- Hata olduğunda: F12 → Console → kırmızı satırı ver → hedefli düzelt.
-- Frustrasyonda kısa empati + hızlı çözüm. Ben test edip geri bildiririm (iteratif).
-- Türkçe konuş. Locale ve UI dili Türkçe kalsın.
