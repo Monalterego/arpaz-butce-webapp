@@ -111,6 +111,15 @@ tfoot td{background:#eef3f8;font-weight:700;border-top:2px solid var(--navy)}
 /* formül kutusu */
 .panel.formula .fbox{display:flex;flex-direction:column;gap:6px;font-size:12px;background:#f8fafc;border:1px dashed var(--line);border-radius:8px;padding:10px 12px;line-height:1.5}
 .wK{color:#8e44ad;font-weight:600}.wS{color:#0077b6;font-weight:600}.wSt{color:#5b6b7c;font-weight:600}.wH{color:#b26a00;font-weight:600}
+/* Toptan Bütçe — "Nasıl Çalışır?" bilgi paneli */
+.toptan-info-box{font-size:12px;color:#33475b;line-height:1.6}
+.toptan-info-box p{margin:0 0 10px}
+.toptan-info-box ul{margin:0 0 10px;padding-left:18px}
+.toptan-info-box li{margin:4px 0}
+.toptan-formula-box{background:var(--bluebg);border:1px solid rgba(0,119,182,.25);border-radius:var(--radius-md);padding:12px 14px;margin:0 0 12px;text-align:center;font-weight:700;color:var(--navy);font-size:13px;letter-spacing:.2px}
+/* Toptan Bütçe tablosu — TOPTAN BÜTÇE kolonu vurgulu */
+#toptanGrid th.toptan-highlight{background:#0b6e4f}
+#toptanGrid td.toptan-highlight{background:var(--bluebg);font-weight:700;color:var(--navy)}
 /* gruplu başlık */
 #grid th.grp-real{background:#13315c;text-align:center}
 #grid th.grp-plan{background:#0b6e4f;text-align:center}

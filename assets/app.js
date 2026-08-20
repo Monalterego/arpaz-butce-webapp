@@ -411,6 +411,7 @@ function updateAll() {
   renderKpis(m);
   renderDurumKpis(m);
   renderForecast(m);
+  renderToptan(m);
 }
 
   function heat(v, lo, hi) {
@@ -995,6 +996,98 @@ function updateAll() {
       .map((r) => `<tr><td>${r[0]}</td><td>${r[1]}%</td><td>${r[2]}%</td>
         <td><b>${fmtD2(r[1] / r[2])}</b></td><td>${r[3]}</td></tr>`).join("");
   }
+  // --- Toptan (Sell-in) Bütçe — Envanter Akış Kimliği (bkz. CLAUDE.md Bölüm 13) ---
+  // Toptan = Perakende Bütçe + (Hedef Bayi Stok − Mevcut Bayi Stok)
+  const TR_MONTH_NUM = {
+    "OCAK": 1, "ŞUBAT": 2, "MART": 3, "NİSAN": 4, "MAYIS": 5, "HAZİRAN": 6,
+    "TEMMUZ": 7, "AĞUSTOS": 8, "EYLÜL": 9, "EKİM": 10, "KASIM": 11, "ARALIK": 12,
+  };
+  // Hedef Periyot seçiminden ay çıkarır (ör. "2027 Ocak" → 1); "Tam Yıl" / bilinmeyen → null (yıllık ortalamaya düşer)
+  function getSelectedAy() {
+    const el = $("h_targetperiod");
+    const val = el ? el.value : "";
+    const lastWord = val.toLocaleUpperCase("tr-TR").trim().split(/\s+/).pop();
+    return TR_MONTH_NUM[lastWord] || null;
+  }
+  // Güvenilmez/uç ÜH2'ler (rasyo yüzlerce/binlerce, yeni rampa, İPTAL, GRUPSUZ) — katsayı yerine 1,0 kullan
+  function isToptanOutlierUh2(uh2) {
+    const u = (uh2 || "").toLocaleUpperCase("tr-TR");
+    return u.includes("SOLAR ENERJI") || u.includes("İPTAL") || u === "GRUPSUZ" ||
+      u.includes("HAVALANDIRMA") || u.includes("HIJYEN") || u.includes("PROFESYONEL GÖRÜNTÜLEME");
+  }
+  function toptanKatsayiRaw(uh2, ay) {
+    const table = (typeof TOPTAN_KATSAYI !== "undefined") ? TOPTAN_KATSAYI : {};
+    const node = table[uh2];
+    if (!node) return null;
+    if (ay && node[String(ay)] != null) return node[String(ay)];
+    const vals = Object.values(node).filter((v) => v != null);
+    return vals.length ? vals.reduce((a, b) => a + b, 0) / vals.length : null;
+  }
+  function getToptanKatsayi(uh2, ay) {
+    if (isToptanOutlierUh2(uh2)) return 1;
+    const raw = toptanKatsayiRaw(uh2, ay);
+    if (raw == null || !isFinite(raw)) return 1;
+    return Math.max(0.5, Math.min(2, raw));
+  }
+  function computeToptan(m) {
+    const ay = getSelectedAy();
+    const uh2 = state.sel.uh2;
+    const katsayi = getToptanKatsayi(uh2, ay);
+    const rows = m.rows.map((r) => {
+      const hedefBayiStok = r.hedefCover * r.salesBudget;
+      const mevcutBayiStok = r.stock;
+      const deltaStok = hedefBayiStok - mevcutBayiStok;
+      const toptanButce = r.salesBudget + deltaStok;
+      const mevsimselKontrol = r.salesBudget * katsayi;
+      const uyumlu = Math.abs(toptanButce - mevsimselKontrol) / Math.max(1, toptanButce) < 0.2;
+      return { name: r.name, salesBudget: r.salesBudget, hedefCover: r.hedefCover,
+        mevcutBayiStok, hedefBayiStok, deltaStok, toptanButce, mevsimselKontrol, uyumlu };
+    });
+    const T = rows.reduce((a, r) => {
+      a.salesBudget += r.salesBudget; a.mevcutBayiStok += r.mevcutBayiStok;
+      a.hedefBayiStok += r.hedefBayiStok; a.deltaStok += r.deltaStok;
+      a.toptanButce += r.toptanButce; a.mevsimselKontrol += r.mevsimselKontrol;
+      return a;
+    }, { salesBudget: 0, mevcutBayiStok: 0, hedefBayiStok: 0, deltaStok: 0, toptanButce: 0, mevsimselKontrol: 0 });
+    T.uyumlu = Math.abs(T.toptanButce - T.mevsimselKontrol) / Math.max(1, T.toptanButce) < 0.2;
+    return { rows, T, katsayi };
+  }
+  function uyumBadge(uyumlu) {
+    return uyumlu ? '<span class="badge b-green">✓ uyumlu</span>' : '<span class="badge b-amber">⚠ farklı</span>';
+  }
+  function renderToptan(m) {
+    const tbody = $("toptanRows");
+    if (!tbody) return;
+    const data = computeToptan(m);
+    if (!data.rows.length) {
+      tbody.innerHTML = `<tr><td colspan="9" style="text-align:center;color:var(--grey);padding:18px">Bu seçim için veri bulunamadı.</td></tr>`;
+      $("toptanFoot").innerHTML = "";
+      return;
+    }
+    tbody.innerHTML = data.rows.map((r) => `
+      <tr>
+        <td>${r.name}</td>
+        <td class="num-cell">${fmtN(r.salesBudget)}</td>
+        <td>${fmtD(r.hedefCover)}</td>
+        <td class="num-cell">${fmtN(r.mevcutBayiStok)}</td>
+        <td class="num-cell">${fmtN(r.hedefBayiStok)}</td>
+        <td class="num-cell ${r.deltaStok >= 0 ? "up" : "down"}">${r.deltaStok >= 0 ? "+" : ""}${fmtN(r.deltaStok)}</td>
+        <td class="num-cell toptan-highlight">${fmtN(r.toptanButce)}</td>
+        <td class="num-cell">${fmtN(r.mevsimselKontrol)}</td>
+        <td>${uyumBadge(r.uyumlu)}</td>
+      </tr>`).join("");
+    $("toptanFoot").innerHTML = `
+      <td>TOPLAM</td>
+      <td class="num-cell">${fmtN(data.T.salesBudget)}</td>
+      <td>—</td>
+      <td class="num-cell">${fmtN(data.T.mevcutBayiStok)}</td>
+      <td class="num-cell">${fmtN(data.T.hedefBayiStok)}</td>
+      <td class="num-cell ${data.T.deltaStok >= 0 ? "up" : "down"}">${data.T.deltaStok >= 0 ? "+" : ""}${fmtN(data.T.deltaStok)}</td>
+      <td class="num-cell toptan-highlight">${fmtN(data.T.toptanButce)}</td>
+      <td class="num-cell">${fmtN(data.T.mevsimselKontrol)}</td>
+      <td>${uyumBadge(data.T.uyumlu)}</td>`;
+  }
+
   function renderForecast(model) {
     const m = model || computeModel(readParams(), state.covers, state.tyFiyat);
     const method = $("fcMethod").value;
@@ -1027,6 +1120,8 @@ function updateAll() {
         updateAll();
       }));
     $("fcMethod").addEventListener("change", () => renderForecast());
+    const targetPeriodEl = $("h_targetperiod");
+    if (targetPeriodEl) targetPeriodEl.addEventListener("change", updateAll); // Mevsimsel Kontrol ay seçimine göre değişir
     document.querySelectorAll(".tabs button").forEach((b) => {
       b.addEventListener("click", () => {
         document.querySelectorAll(".tabs button").forEach((x) => x.classList.remove("active"));
@@ -1050,6 +1145,19 @@ function updateAll() {
     const box = $("formulaBox");
     const ico = $("formulaToggle");
     const head = box && box.previousElementSibling; // .fbox'tan önceki <h2>
+    if (!box || !ico || !head) return;
+    head.addEventListener("click", () => {
+      const opening = box.style.display === "none";
+      box.style.display = opening ? "flex" : "none";
+      ico.textContent = opening ? "▾" : "▸";
+    });
+  }
+
+  // --- Toptan Bütçe "Nasıl Çalışır?" bilgi paneli aç/kapa (sadece görünürlük) ---
+  function initToptanInfoToggle() {
+    const box = $("toptanInfoBox");
+    const ico = $("toptanInfoToggle");
+    const head = box && box.previousElementSibling;
     if (!box || !ico || !head) return;
     head.addEventListener("click", () => {
       const opening = box.style.display === "none";
@@ -1428,6 +1536,7 @@ function updateAll() {
     buildTable();
     bind();
     initFormulaToggle();
+    initToptanInfoToggle();
     initColResize();
     initGridFormat();
     renderSavedMixTable();

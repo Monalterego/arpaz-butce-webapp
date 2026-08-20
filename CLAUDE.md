@@ -401,6 +401,91 @@ Sol menü sırası: **TEŞKİLAT → ÜRÜN HİYERARŞİSİ → PERİYOT**.
 
 ---
 
+# CLAUDE.md — EK BÖLÜM: Toptan (Sell-in) Bütçe Köprüsü
+
+> Bu bölümü mevcut CLAUDE.md'nin sonuna, "Sıradaki Adımlar"dan ÖNCE ekle.
+> Toptan bütçesi mantığı artık projenin kalıcı parçasıdır.
+
+---
+
+## 13) Perakende → Toptan Köprüsü (Sell-out → Sell-in)
+
+### 13.1 Problem
+Şimdiye kadar ekran, bayinin yerine geçerek **Perakende (sell-out) bütçesi** kuruyordu.
+Ancak Arpaz için asıl kritik olan **Toptan (sell-in) bütçesi**: Arçelik'in bayilere
+**sevk edeceği** adet. Perakende bütçesinden toptan bütçesine geçmek için bilimsel,
+açıklanabilir bir yöntem gerekiyordu.
+
+### 13.2 Yöntem — Envanter Akış Kimliği (ANA YÖNTEM)
+Fiziksel kimlik (adet bazında):
+```
+Toptan_t  ≈  Perakende_t  +  ΔBayiStok_t
+ΔBayiStok_t = BayiStok_t − BayiStok_(t−1)
+```
+Yani bayiye sevk = bayinin sattığı + bayi deposundaki stok değişimi. Bayi sezon
+öncesi stoklar (toptan > perakende), sezon sonu eritir (toptan < perakende).
+
+**DOĞRULANDI (historical veri, 2022-01 → 2026-03, 19.043 satır, 34 ÜH2, 411 ÜH4):**
+- Korelasyon(beklenen toptan, gerçek toptan) = **0.894** (çok güçlü)
+- Sapma oranı (ÜH4/aylık) = %34.6 → ÜH2/çeyrek bazında toplandığında çok azalır.
+- Sonuç: kimlik güçlü; toptan'ı fiziksel köprüyle türetmek sağlam ve savunulabilir.
+
+**Ekranla mükemmel uyum:** Kullanıcı zaten **Hedef Cover** giriyor →
+Hedef Bayi Stok'u belirliyor → ΔStok otomatik çıkıyor → Toptan otomatik türeniyor.
+Ekstra parametre gerekmez.
+
+### 13.3 Yöntem — Mevsimsel Katsayı (KONTROL / DOĞRULAMA)
+İkincil, çapraz-kontrol yöntemi:
+```
+Toptan Bütçe(ÜH2, ay) = Perakende Bütçe × KATSAYI(ÜH2, ay)
+```
+Katsayılar historical Toptan/Perakende oranından ÜH2 × ay bazında üretildi
+(`toptan_katsayi.js` → `TOPTAN_KATSAYI[uh2][ay]`).
+
+**Gözlemlenen desenler (yönetime anlatım için):**
+- **Aralık = evrensel eritme:** neredeyse tüm kategoriler < 1 (yıl sonu stok kapama).
+- **Klima:** Oca-May 1.7–2.5 (sezon öncesi dolum) → Tem ~0.8 (eritme).
+- **Dondurucu:** Oca-Nis 2.8–5.0 (yaz öncesi dolum) → Ağu-Eyl ~0.5 (eritme).
+- **Isıtıcılar:** Ağu-Eyl 3.2–3.7 (kış öncesi dolum).
+- **Çekirdek beyaz eşya** (soğutucu/çamaşır/bulaşık): ılımlı dolum 1.1–1.7, yıl sonu ~0.85.
+
+**Lead-Lag bulgusu:** Toptan, perakendeyi ~**2 ay önden** besliyor
+(cross-correlation en güçlü lag = −2, r = +0.633). Yani sezon planlamasında
+toptan bütçesi perakendeye göre öne çekilmelidir.
+
+### 13.4 Outlier / Güvenilirlik Kuralları
+Mevsimsel katsayıda ELE / DİKKAT:
+- ELE: SOLAR ENERJI (rasyo yüzlerce/binlerce — perakende≈0), tüm (İPTAL) ÜH2'ler,
+  GRUPSUZ (0), HAVALANDIRMA/HIJYEN/PROFESYONEL GÖRÜNTÜLEME (yeni rampa, 4–41).
+- KIRP: katsayıyı 0.5–2.0 aralığına sıkıştır (aşırı uçları makul sınıra çek).
+- Yıllık rasyo oynaklığı ~%56-59 (makro sell-in/sell-out döngüsü) → düz yıllık
+  ortalamaya GÜVENME; envanter kimliğini veya aylık katsayıyı kullan.
+
+### 13.5 Ekran Formülü (Toptan Bütçe sekmesi)
+```
+Toptan Bütçe(ÜH4, ay) = Perakende Bütçe + (Hedef Bayi Stok − Mevcut Bayi Stok)
+  Hedef Bayi Stok = Hedef Cover × (aylık Perakende Bütçe)
+  Mevcut Bayi Stok = son LY stok (stok_adet)
+
+Kontrol kolonu (mevsimsel):
+  Mevsimsel Toptan = Perakende Bütçe × TOPTAN_KATSAYI[uh2][ay]
+  → İki değer yakınsa yöntemler birbirini doğruluyor (✓).
+```
+
+### 13.6 Veri/Dosya Notları
+- `assets/toptan_katsayi.js`: `const TOPTAN_KATSAYI = { "ÜH2": { "1":kat, ... "12":kat } }`
+  (index.html'de app.js'ten ÖNCE yüklenir).
+- Katsayılar Colab analizinden üretildi (historical Perakende-Toptan.xlsx).
+- Envanter kimliği için ekstra veri gerekmez; mevcut stok_adet + hedef cover yeter.
+
+### 13.7 Son Kullanıcıya Anlatım İlkesi (ÖNEMLİ)
+Ekranda toptan mantığı MUTLAKA sade Türkçe ile açıklanmalı (bkz. "Nasıl Çalışır?"
+bilgi paneli). Son kullanıcı formülün ARDINDAKİ MANTIĞI anlamalı:
+"Bayiye ne kadar mal göndereceğiz? = Bayinin satacağı kadar + bayinin deposunu
+hedeflediğimiz seviyeye getirmek için gereken fark." Teknik jargon değil, sezgi ver.
+
+
+
 ## 11) Sıradaki Adımlar (Öncelik Sırası)
 1. **Senaryo kaydı Hedef Cover setini tutmuyor.** `currentScenario()` sadece parametreleri
    ve toplamları saklıyor, `state.covers` saklanmıyor; senaryo kaydedilirken elle girilen
