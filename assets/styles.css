@@ -128,8 +128,10 @@ tfoot td{background:#eef3f8;font-weight:700;border-top:2px solid var(--navy)}
 #toptanGrid th.tgrp-stok{background:#13315c;text-align:center}
 #toptanGrid th.tgrp-sonuc{background:var(--accent2);text-align:center}
 /* table-layout:auto genişlikleri öngörülemez sıkıştırıyor (bkz. #grid/.saved-mix-table
-   yorumları) — table-layout:fixed + width, colgroup'taki 17 <col> genişliğinin TOPLAMI
-   olmalı: 68+164+140+240+262+260+85+85+100+80+70+105+105+100+120+110+90 = 2184px. */
+   yorumları) — table-layout:fixed KORUNUR, sadece genişlik artık SABİT değil: her
+   render'da app.js'teki autoFitToptanColumns() gerçek hücre içeriğini ölçüp <colgroup>
+   ve bu width'i günceller (bkz. o fonksiyonun yorumu). Buradaki 2184px sadece JS
+   çalışmadan önceki İLK boya (paint) için bir başlangıç değeri/yedek. */
 #toptanGrid{table-layout:fixed;width:2184px}
 /* Sütunlar arası dikey ayırıcı (ana #grid'deki ile aynı desen, bkz. o bloktaki yorum) */
 #toptanGrid td:not(:first-child):not(:last-child),

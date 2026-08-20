@@ -1066,6 +1066,55 @@ function updateAll() {
   function uyumBadge(uyumlu) {
     return uyumlu ? '<span class="badge b-green">✓ uyumlu</span>' : '<span class="badge b-amber">⚠ farklı</span>';
   }
+
+  // --- Toptan Bütçe tablosu: sütun genişlikleri hücre içeriğine göre otomatik ---
+  // Ana #grid'in aksine (elle ölçülüp sabitlenmiş genişlikler + kullanıcı sürükleme),
+  // bu tablonun içeriği seçime göre çok değişken (farklı ÜH4 adları, farklı büyüklükte
+  // sayılar) — bu yüzden HER render'da GERÇEK içerikten yeniden ölçülür. table-layout:
+  // fixed KORUNUR (table-layout:auto #grid'de öngörülemez sıkışmaya yol açtığı için
+  // reddedilmişti, bkz. #grid{width:...} yorumu) — sadece <colgroup>'taki piksel
+  // değerleri ve tablo genişliği JS ile güncellenir. Satır yüksekliği zaten HTML
+  // tablolarının doğal davranışıyla içeriğe göre otomatik (hiçbir yerde sabit
+  // yükseklik verilmedi), bu yüzden ayrı bir satır-yüksekliği hesabı gerekmiyor.
+  const TOPTAN_COL_MIN = 40;
+  const TOPTAN_COL_MAX = 340;
+  const TOPTAN_CELL_PAD = 20;   // th/td yatay padding (8+8) + güvenlik payı
+  const TOPTAN_BADGE_PAD = 22;  // .badge kendi padding-inline'ı (9+9) için ek pay
+  function measureToptanColumnWidths() {
+    const table = $("toptanGrid");
+    if (!table) return null;
+    const headerThs = table.querySelectorAll("thead tr:last-child th");
+    if (!headerThs.length) return null;
+    const headerFont = "600 11px 'Segoe UI', Arial, sans-serif";
+    const cellFont = "400 12px 'Segoe UI', Arial, sans-serif";
+    const boldCellFont = "700 12px 'Segoe UI', Arial, sans-serif";
+    const widths = Array.from(headerThs).map((th) =>
+      measureTextWidth(th.textContent.trim(), headerFont) + TOPTAN_CELL_PAD);
+    table.querySelectorAll("tbody tr, tfoot tr").forEach((tr) => {
+      Array.from(tr.children).forEach((td, i) => {
+        if (i >= widths.length) return;
+        const badge = td.querySelector(".badge");
+        const text = (badge ? badge.textContent : td.textContent).trim();
+        const bold = td.classList.contains("num-cell") || td.classList.contains("toptan-highlight");
+        const pad = badge ? TOPTAN_CELL_PAD + TOPTAN_BADGE_PAD : TOPTAN_CELL_PAD;
+        const w = measureTextWidth(text, bold ? boldCellFont : cellFont) + pad;
+        if (w > widths[i]) widths[i] = w;
+      });
+    });
+    return widths.map((w) => Math.max(TOPTAN_COL_MIN, Math.min(TOPTAN_COL_MAX, Math.round(w))));
+  }
+  function applyToptanColumnWidths(widths) {
+    const table = $("toptanGrid");
+    if (!table || !widths) return;
+    table.querySelectorAll("colgroup col").forEach((col, i) => {
+      if (widths[i] != null) col.style.width = widths[i] + "px";
+    });
+    table.style.width = widths.reduce((a, b) => a + b, 0) + "px";
+    syncToptanHeaderOffset(); // genişlik değişince başlık satırının yüksekliği de değişebilir
+  }
+  function autoFitToptanColumns() {
+    applyToptanColumnWidths(measureToptanColumnWidths());
+  }
   function renderToptan(m) {
     const tbody = $("toptanRows");
     if (!tbody) return;
@@ -1113,6 +1162,7 @@ function updateAll() {
       <td class="num-cell toptan-highlight">${fmtN(data.T.toptanButce)}</td>
       <td class="num-cell">${fmtN(data.T.mevsimselKontrol)}</td>
       <td>${uyumBadge(data.T.uyumlu)}</td>`;
+    autoFitToptanColumns();
   }
 
   function renderForecast(model) {
