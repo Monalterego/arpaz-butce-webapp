@@ -366,7 +366,9 @@ function updateAll() {
     $("sb_" + i).textContent = fmtN(r.salesBudget);
     const fiyatEl = $("tyfiyat_" + i);
     if (fiyatEl && document.activeElement !== fiyatEl) fiyatEl.value = String(Math.round(r.tyFiyat));
-    $("ciro_" + i).textContent = fmtN(r.tyRevenue);
+    // Display Ciro Bütçe using the rounded displayed sales budget × TY fiyat so UI matches what user sees
+    const displayCiro = Math.round(r.salesBudget) * (r.tyFiyat || 0);
+    $("ciro_" + i).textContent = fmtN(displayCiro);
     const lflEl = $("lfl_" + i); if (lflEl) { lflEl.textContent = fmtP0(r.lfl); lflEl.className = r.lfl >= 0 ? "up" : "down"; }
     const rlflEl = $("rlfl_" + i); if (rlflEl) { rlflEl.textContent = fmtP0(r.rlfl); rlflEl.className = r.rlfl >= 0 ? "up" : "down"; }
     const sgEl = $("sg_" + i); if (sgEl) { sgEl.textContent = fmtP0(r.stockGrowth); sgEl.className = r.stockGrowth >= 0 ? "up" : "down"; }
@@ -587,6 +589,12 @@ function updateAll() {
     lfl: fmtP0, rlfl: fmtP0, stockGrowth: fmtP0,
   };
   function savedMixDisplayValue(row, key) {
+    // Special-case tyRevenue: display should show rounded salesBudget × tyFiyat
+    if (key === "tyRevenue") {
+      const sb = typeof row.salesBudget === "number" ? Math.round(row.salesBudget) : 0;
+      const tf = typeof row.tyFiyat === "number" ? row.tyFiyat : 0;
+      return fmtN(sb * tf);
+    }
     const raw = row[key];
     const fmt = SAVED_MIX_VALUE_FORMATTERS[key];
     if (fmt) return fmt(typeof raw === "number" ? raw : 0);
@@ -844,7 +852,7 @@ function updateAll() {
         <td>${fmtD(r.hedefCover)}</td>
         <td>${fmtN(r.salesBudget)}</td>
         <td>${fmtN(r.tyFiyat)}</td>
-        <td>${fmtN(r.tyRevenue)}</td>
+        <td>${fmtN(Math.round(r.salesBudget) * (r.tyFiyat || 0))}</td>
         <td class="${r.lfl >= 0 ? "up" : "down"}">${fmtP0(r.lfl)}</td>
         <td class="${r.rlfl >= 0 ? "up" : "down"}">${fmtP0(r.rlfl)}</td>
         <td class="${r.stockGrowth >= 0 ? "up" : "down"}">${fmtP0(r.stockGrowth)}</td>
