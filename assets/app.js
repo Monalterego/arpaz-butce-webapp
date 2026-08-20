@@ -146,6 +146,7 @@
     // başlık kolon adı
     $("grpColHead").textContent = "ÜH4";
     attachUh4ResizeHandle(); // textContent ataması ÜH4 hücresindeki resize tutamacını sildi, yeniden ekle
+    updateSaveButtonState(); // seçim değişti — "Kaydet"/"Revize Et" eşleşmesi yeniden değerlendirilsin
   }
   function updateSelInfo() {
     const path = [state.sel.uh1, state.sel.uh2, state.sel.uh3].filter(Boolean).join(" › ");
@@ -413,7 +414,8 @@ function updateAll() {
   renderKpis(m);
   renderDurumKpis(m);
   renderForecast(m);
-  renderToptan(m);
+  // NOT: renderToptan(m) BURADAN KALDIRILDI — Toptan Bütçe artık canlı sidebar/parametre
+  // değişikliklerine değil, Kayıtlar'a bağlı (bkz. renderToptanFromSaved, saveCurrentMixSet).
 }
 
   function heat(v, lo, hi) {
@@ -874,6 +876,8 @@ function updateAll() {
         const next = loadSavedMixSets().filter((item) => item.id !== id);
         saveSavedMixSets(next);
         renderSavedMixTable();
+        updateSaveButtonState();
+        renderToptanFromSaved(); // Kayıtlar değişti — Toptan Bütçe bundan besleniyor
       });
     });
   }
@@ -949,6 +953,44 @@ function updateAll() {
 
     renderSavedMixRows();
   }
+  // --- "Revize Et" eşleşmesi ---
+  // Eşleşme anahtarı: Satış Teşkilatı + Şube/Bölge + ÜH1 + ÜH2 + ÜH3 + Baz Periyot +
+  // Hedef Periyot — ÜH4 DAHİL DEĞİL (bir kayıt zaten o ÜH3'ün tüm ÜH4'lerini tutuyor).
+  function currentDimensionKey() {
+    return {
+      salesOrg: ($("h_org") && $("h_org").value) || "",
+      region: ($("h_region") && $("h_region").value) || "",
+      uh1: state.sel.uh1 || "",
+      uh2: state.sel.uh2 || "",
+      uh3: state.sel.uh3 || "",
+      baseperiod: ($("h_baseperiod") && $("h_baseperiod").value) || "",
+      targetperiod: ($("h_targetperiod") && $("h_targetperiod").value) || "",
+    };
+  }
+  function findMatchingSavedSet() {
+    const cur = currentDimensionKey();
+    return loadSavedMixSets().find((set) => {
+      const d = set.dimensions || set.filters || {};
+      return (d.salesOrg || "") === cur.salesOrg && (d.region || "") === cur.region &&
+        (d.uh1 || "") === cur.uh1 && (d.uh2 || "") === cur.uh2 && (d.uh3 || "") === cur.uh3 &&
+        (d.baseperiod || "") === cur.baseperiod && (d.targetperiod || "") === cur.targetperiod;
+    }) || null;
+  }
+  // Kaydet/Revize Et butonunun metnini + notunu CANLI günceller — sidebar seçimi
+  // (ÜH1/ÜH2/ÜH3/periyot) her değiştiğinde çağrılır (bkz. rebuild(), bind()).
+  function updateSaveButtonState() {
+    const btn = $("saveMixSetBtn");
+    if (!btn) return;
+    const note = $("saveMixSetNote");
+    const match = findMatchingSavedSet();
+    if (match) {
+      btn.textContent = "🔁 Revize Et";
+      if (note) note.textContent = `Bu grup için kayıt var: ${match.savedAt}`;
+    } else {
+      btn.textContent = "💾 Kaydet";
+      if (note) note.textContent = "";
+    }
+  }
   function saveCurrentMixSet() {
     // "Seçim yok" görünen kayıtların kök nedeni: bu beş boyuttan biri boşken
     // kaydediliyordu. Guard: hiçbiri boş olmadan kayıt oluşturulamaz.
@@ -957,10 +999,21 @@ function updateAll() {
     if (!salesOrg || !region || !state.sel.uh1 || !state.sel.uh2 || !state.sel.uh3) return;
     const payload = buildCurrentMixRecord();
     if (!payload.rows.length) return;
+    const match = findMatchingSavedSet();
     const next = loadSavedMixSets();
-    next.unshift(payload);
-    saveSavedMixSets(next.slice(0, 25));
+    if (match) {
+      // Revize Et: YENİ set eklenmez, aynı id korunarak eşleşen set'in içeriği
+      // (rows/savedAt/dimensions vb.) YERİNDE üzerine yazılır — sırası değişmez.
+      const idx = next.findIndex((s) => s.id === match.id);
+      if (idx !== -1) next[idx] = { ...payload, id: next[idx].id };
+      saveSavedMixSets(next);
+    } else {
+      next.unshift(payload);
+      saveSavedMixSets(next.slice(0, 25));
+    }
     renderSavedMixTable();
+    updateSaveButtonState();
+    renderToptanFromSaved(); // Kayıtlar değişti — Toptan Bütçe bundan besleniyor
   }
 
   // --- Senaryo yönetimi ---
@@ -1010,11 +1063,11 @@ function updateAll() {
     "OCAK": 1, "ŞUBAT": 2, "MART": 3, "NİSAN": 4, "MAYIS": 5, "HAZİRAN": 6,
     "TEMMUZ": 7, "AĞUSTOS": 8, "EYLÜL": 9, "EKİM": 10, "KASIM": 11, "ARALIK": 12,
   };
-  // Hedef Periyot seçiminden ay çıkarır (ör. "2027 Ocak" → 1); "Tam Yıl" / bilinmeyen → null (yıllık ortalamaya düşer)
-  function getSelectedAy() {
-    const el = $("h_targetperiod");
-    const val = el ? el.value : "";
-    const lastWord = val.toLocaleUpperCase("tr-TR").trim().split(/\s+/).pop();
+  // Bir periyot etiketinden (ör. "2027 Ocak" → 1, "2027 Tam Yıl" → null) ay çıkarır.
+  // Her kayıtlı satırın KENDİ targetperiod'undan çağrılır (bkz. computeToptanFromSaved) —
+  // artık tek bir global sidebar seçimi değil, satır bazlı.
+  function monthFromPeriodLabel(label) {
+    const lastWord = String(label || "").toLocaleUpperCase("tr-TR").trim().split(/\s+/).pop();
     return TR_MONTH_NUM[lastWord] || null;
   }
   // Güvenilmez/uç ÜH2'ler (rasyo yüzlerce/binlerce, yeni rampa, İPTAL, GRUPSUZ) — katsayı yerine 1,0 kullan
@@ -1037,18 +1090,17 @@ function updateAll() {
     if (raw == null || !isFinite(raw)) return 1;
     return Math.max(0.5, Math.min(2, raw));
   }
-  function computeToptan(m) {
-    const ay = getSelectedAy();
-    const uh2 = state.sel.uh2;
-    const katsayi = getToptanKatsayi(uh2, ay);
-    // Kimlik/periyot boyutları mevcut seçimle SABİT — her satırda tekrarlanır (bkz. CLAUDE.md 13)
-    const org = ($("h_org") && $("h_org").value) || "—";
-    const region = ($("h_region") && $("h_region").value) || "—";
-    const uh1 = state.sel.uh1 || "—";
-    const uh3 = state.sel.uh3 || "—";
-    const baseperiod = ($("h_baseperiod") && $("h_baseperiod").value) || "—";
-    const targetperiod = ($("h_targetperiod") && $("h_targetperiod").value) || "—";
-    const rows = m.rows.map((r) => {
+  // Toptan Bütçe artık CANLI sidebar seçiminden DEĞİL, Kayıtlar'daki (loadSavedMixSets)
+  // KAYITLI/dondurulmuş satırlardan besleniyor — buildFlatRows() (Kayıtlar sekmesiyle
+  // AYNI düzleştirme) her satırın kendi salesBudget/hedefCover/stock/uh2/targetperiod
+  // değerini taşıyor; global parametreler (Hedef Stok Büyümesi % vb.) burayı ETKİLEMEZ,
+  // sadece yeniden Kaydet/Revize Et yapılan gruplar güncellenir (bkz. CLAUDE.md 13).
+  function computeToptanFromSaved() {
+    const flat = buildFlatRows();
+    const rows = flat.map((r) => {
+      // Mevsimsel katsayı için ay artık HER SATIRIN KENDİ Hedef Periyot'undan türetiliyor
+      const ay = monthFromPeriodLabel(r.targetperiod);
+      const katsayi = getToptanKatsayi(r.uh2, ay);
       const hedefBayiStok = r.hedefCover * r.salesBudget;
       const mevcutBayiStok = r.stock;
       const deltaStok = hedefBayiStok - mevcutBayiStok;
@@ -1056,20 +1108,24 @@ function updateAll() {
       const toptanButce = Math.max(0, r.salesBudget + deltaStok);
       const mevsimselKontrol = r.salesBudget * katsayi;
       const uyumlu = Math.abs(toptanButce - mevsimselKontrol) / Math.max(1, toptanButce) < 0.2;
-      return { name: r.name, org, region, uh1, uh2, uh3, baseperiod, targetperiod,
+      return {
+        org: r.salesOrg, region: r.region, uh1: r.uh1, uh2: r.uh2, uh3: r.uh3, name: r.name,
+        baseperiod: r.baseperiod, targetperiod: r.targetperiod, stock: r.stock, sales: r.sales,
         salesBudget: r.salesBudget, hedefCover: r.hedefCover, lyCover: r.lyCover,
-        mevcutBayiStok, hedefBayiStok, deltaStok, toptanButce, mevsimselKontrol, uyumlu };
+        mevcutBayiStok, hedefBayiStok, deltaStok, toptanButce, mevsimselKontrol, uyumlu,
+      };
     });
-    // TOPLAM = kırpılmış satır değerlerinin toplamı (önce kırp, sonra topla)
+    // TOPLAM = TÜM kayıtlı satırların (kırpılmış) toplamı (önce kırp, sonra topla)
     const T = rows.reduce((a, r) => {
+      a.stock += r.stock; a.sales += r.sales;
       a.salesBudget += r.salesBudget; a.mevcutBayiStok += r.mevcutBayiStok;
       a.hedefBayiStok += r.hedefBayiStok; a.deltaStok += r.deltaStok;
       a.toptanButce += r.toptanButce; a.mevsimselKontrol += r.mevsimselKontrol;
       return a;
-    }, { salesBudget: 0, mevcutBayiStok: 0, hedefBayiStok: 0, deltaStok: 0, toptanButce: 0, mevsimselKontrol: 0 });
+    }, { stock: 0, sales: 0, salesBudget: 0, mevcutBayiStok: 0, hedefBayiStok: 0, deltaStok: 0, toptanButce: 0, mevsimselKontrol: 0 });
     T.uyumlu = Math.abs(T.toptanButce - T.mevsimselKontrol) / Math.max(1, T.toptanButce) < 0.2;
-    T.cover = m.T.cover; // ana tablodaki Stock Cover toplamıyla aynı (çapraz kontrol)
-    return { rows, T, katsayi };
+    T.cover = T.sales ? T.stock / T.sales : 0; // ana tablodaki footCover ile AYNI yöntem (ağırlıklı toplam)
+    return { rows, T };
   }
   function uyumBadge(uyumlu) {
     return uyumlu ? '<span class="badge b-green">✓ uyumlu</span>' : '<span class="badge b-amber">⚠ farklı</span>';
@@ -1123,13 +1179,14 @@ function updateAll() {
   function autoFitToptanColumns() {
     applyToptanColumnWidths(measureToptanColumnWidths());
   }
-  function renderToptan(m) {
+  function renderToptanFromSaved() {
     const tbody = $("toptanRows");
     if (!tbody) return;
-    const data = computeToptan(m);
+    const data = computeToptanFromSaved();
     if (!data.rows.length) {
-      tbody.innerHTML = `<tr><td colspan="17" style="text-align:center;color:var(--grey);padding:18px">Bu seçim için veri bulunamadı.</td></tr>`;
+      tbody.innerHTML = `<tr><td colspan="17" style="text-align:center;color:var(--grey);padding:18px">Henüz kayıtlı bir çalışma yok. Önce Bütçe &amp; Stok Miks ekranından bir kombinasyon çalışıp kaydedin.</td></tr>`;
       $("toptanFoot").innerHTML = "";
+      autoFitToptanColumns();
       return;
     }
     tbody.innerHTML = data.rows.map((r) => `
@@ -1205,15 +1262,22 @@ function updateAll() {
         updateAll();
       }));
     $("fcMethod").addEventListener("change", () => renderForecast());
+    // Baz/Hedef Periyot artık Toptan'ı CANLI etkilemiyor (bkz. renderToptanFromSaved) —
+    // ama "Kaydet"/"Revize Et" eşleşme anahtarının bir parçası, değişince buton güncellensin.
+    const basePeriodEl = $("h_baseperiod");
+    if (basePeriodEl) basePeriodEl.addEventListener("change", updateSaveButtonState);
     const targetPeriodEl = $("h_targetperiod");
-    if (targetPeriodEl) targetPeriodEl.addEventListener("change", updateAll); // Mevsimsel Kontrol ay seçimine göre değişir
+    if (targetPeriodEl) targetPeriodEl.addEventListener("change", updateSaveButtonState);
     document.querySelectorAll(".tabs button").forEach((b) => {
       b.addEventListener("click", () => {
         document.querySelectorAll(".tabs button").forEach((x) => x.classList.remove("active"));
         b.classList.add("active");
         const t = b.dataset.tab;
         document.querySelectorAll(".tabpane").forEach((p) => (p.style.display = p.dataset.pane === t ? "" : "none"));
-        if (t === "toptan") syncToptanHeaderOffset(); // sekme az önce görünür oldu, gizliyken 0 ölçülen yükseklik şimdi düzeltilir
+        if (t === "toptan") {
+          renderToptanFromSaved(); // sekme her açıldığında Kayıtlar'ın GÜNCEL halini yansıt
+          syncToptanHeaderOffset(); // sekme az önce görünür oldu, gizliyken 0 ölçülen yükseklik şimdi düzeltilir
+        }
       });
     });
     $("saveSc").onclick = () => {
@@ -1643,6 +1707,8 @@ function updateAll() {
     renderSavedMixTable();
     updateAll();
     updateSelInfo();
+    updateSaveButtonState();
+    renderToptanFromSaved(); // ilk yüklemede de Kayıtlar'ın o anki hali gösterilsin
     renderCalendar();
     renderRatio();
   });

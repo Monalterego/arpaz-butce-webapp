@@ -117,6 +117,10 @@ tfoot td{background:#eef3f8;font-weight:700;border-top:2px solid var(--navy)}
 .toptan-info-box ul{margin:0 0 10px;padding-left:18px}
 .toptan-info-box li{margin:4px 0}
 .toptan-formula-box{background:var(--bluebg);border:1px solid rgba(0,119,182,.25);border-radius:var(--radius-md);padding:12px 14px;margin:0 0 12px;text-align:center;font-weight:700;color:var(--navy);font-size:13px;letter-spacing:.2px}
+/* "Toptan artık kayıtlı planlardan besleniyor, canlı değil" — dikkat çekmesi için
+   amber (uyarı) teması, ekranın geri kalanındaki .badge b-amber/Hedef Cover ile
+   AYNI renk dili (bkz. Bölüm 9 token kuralı — yeni ham renk YAZILMADI). */
+.toptan-note-callout{background:var(--amberbg);border:1px solid rgba(178,106,0,.3);border-radius:var(--radius-md);padding:10px 14px;margin:0 0 12px;color:var(--amber);font-size:12px;line-height:1.55}
 /* Toptan Bütçe tablosu — ana #grid ile AYNI görsel dil: gruplu iki satırlı başlık,
    dikey ayırıcılar. Periyot kolonları (7-8) soluk gri gösterilir. Dondurma
    (freeze pane) YOK — denendi, sonra kaldırıldı (kullanıcı talebi); ÜH4 diğer
