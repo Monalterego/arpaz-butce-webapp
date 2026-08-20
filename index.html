@@ -298,12 +298,19 @@
           </colgroup>
           <thead>
             <tr>
+              <th colspan="5" class="tgrp-secim">TEŞKİLAT &amp; ÜRÜN</th>
+              <th rowspan="2" id="toptanUh4Head" title="ÜH4">ÜH4</th>
+              <th colspan="2" class="tgrp-periyot">PERİYOT</th>
+              <th colspan="2" class="tgrp-perakende">PERAKENDE BÜTÇE</th>
+              <th colspan="4" class="tgrp-stok">BAYİ STOK DURUMU</th>
+              <th colspan="3" class="tgrp-sonuc">TOPTAN SONUCU</th>
+            </tr>
+            <tr>
               <th>Satış Teşkilatı</th>
               <th>Şube / Bölge</th>
               <th>ÜH1</th>
               <th>ÜH2</th>
               <th>ÜH3</th>
-              <th>ÜH4</th>
               <th>Baz Periyot (LY)</th>
               <th>Hedef Periyot (TY)</th>
               <th title="Perakende Satış Bütçe">Perakende Bütçe</th>
@@ -312,7 +319,7 @@
               <th title="Mevcut Bayi Stok (LY stok adet)">Mevcut Bayi Stok</th>
               <th title="Hedef Bayi Stok = Hedef Cover × Perakende Bütçe">Hedef Bayi Stok</th>
               <th title="Δ Stok = Hedef Bayi Stok − Mevcut Bayi Stok">Δ Stok</th>
-              <th title="Toptan Bütçe = Perakende Bütçe + Δ Stok (0'ın altına kırpılır)" class="toptan-highlight">TOPTAN BÜTÇE</th>
+              <th title="Toptan Bütçe = Perakende Bütçe + Δ Stok (0'ın altına kırpılır)">TOPTAN BÜTÇE</th>
               <th title="Mevsimsel Kontrol = Perakende Bütçe × ÜH2/ay katsayısı">Mevsimsel Kontrol</th>
               <th title="İki yöntem yakınsa (fark < %20) uyumlu">Uyum</th>
             </tr>
@@ -320,6 +327,10 @@
           <tbody id="toptanRows"></tbody>
           <tfoot><tr id="toptanFoot"></tr></tfoot>
         </table>
+        </div>
+        <div class="legend">
+          <span class="badge b-green">✓ uyumlu — iki yöntem yakın</span>
+          <span class="badge b-amber">⚠ farklı — fark %20'yi aşıyor</span>
         </div>
         <div class="note">TOPTAN BÜTÇE = Perakende Bütçe + (Hedef Bayi Stok − Mevcut Bayi Stok), 0'ın altına düşerse 0'da kırpılır (bayiye eksi adet sevk edilemez). Mevsimsel Kontrol, geçmiş yılların ÜH2×ay bazlı toptan/perakende oranından türetilir; çapraz-doğrulama amaçlıdır, bütçeye dahil edilmez.</div>
       </div>

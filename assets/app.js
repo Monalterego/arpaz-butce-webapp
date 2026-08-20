@@ -1155,6 +1155,7 @@ function updateAll() {
         b.classList.add("active");
         const t = b.dataset.tab;
         document.querySelectorAll(".tabpane").forEach((p) => (p.style.display = p.dataset.pane === t ? "" : "none"));
+        if (t === "toptan") syncToptanHeaderOffset(); // sekme az önce görünür oldu, gizliyken 0 ölçülen yükseklik şimdi düzeltilir
       });
     });
     $("saveSc").onclick = () => {
@@ -1318,6 +1319,20 @@ function updateAll() {
     const row2Ths = document.querySelectorAll("#grid thead tr:last-child th");
     if (!row1 || !row2Ths.length) return;
     const h = row1.getBoundingClientRect().height;
+    row2Ths.forEach((th) => { th.style.top = h + "px"; });
+  }
+
+  // Toptan Bütçe tablosu için AYNI mantık (bkz. syncHeaderStickyOffset yorumu) —
+  // ÜH4 rowspan=2 olduğundan bu hesaba dahil değil (tüm başlık yüksekliğini zaten
+  // kendi sticky top:0'ıyla kapsıyor, main #grid'deki ÜH4/Durum/Aksiyon gibi).
+  // Sekme varsayılan gizli (display:none) geldiğinden ilk yüklemede 0 ölçülür —
+  // zararsız, sekme ilk açıldığında (bkz. bind() tab click) yeniden çağrılır.
+  function syncToptanHeaderOffset() {
+    const row1 = document.querySelector("#toptanGrid thead tr:first-child");
+    const row2Ths = document.querySelectorAll("#toptanGrid thead tr:last-child th");
+    if (!row1 || !row2Ths.length) return;
+    const h = row1.getBoundingClientRect().height;
+    if (!h) return;
     row2Ths.forEach((th) => { th.style.top = h + "px"; });
   }
 
@@ -1554,6 +1569,7 @@ function updateAll() {
 
     // başlık metni farklı satıra bölünüp yüksekliği değişebilir (pencere yeniden boyutlanınca)
     window.addEventListener("resize", syncHeaderStickyOffset);
+    window.addEventListener("resize", syncToptanHeaderOffset);
   }
 
   document.addEventListener("DOMContentLoaded", () => {

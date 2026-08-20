@@ -117,13 +117,59 @@ tfoot td{background:#eef3f8;font-weight:700;border-top:2px solid var(--navy)}
 .toptan-info-box ul{margin:0 0 10px;padding-left:18px}
 .toptan-info-box li{margin:4px 0}
 .toptan-formula-box{background:var(--bluebg);border:1px solid rgba(0,119,182,.25);border-radius:var(--radius-md);padding:12px 14px;margin:0 0 12px;text-align:center;font-weight:700;color:var(--navy);font-size:13px;letter-spacing:.2px}
-/* Toptan Bütçe tablosu — TOPTAN BÜTÇE kolonu vurgulu */
-#toptanGrid th.toptan-highlight{background:#0b6e4f}
+/* Toptan Bütçe tablosu — ana #grid ile AYNI görsel dil: gruplu iki satırlı başlık,
+   donmuş kimlik bloğu (kolon 1-6, ÜH4 dahil), dikey ayırıcılar. Periyot kolonları
+   (7-8) soluk gri gösterilir; göz doğrudan değişen ÜH4 + hesap kolonlarına gitsin
+   diye — veri şeması/kolon sırası DEĞİŞMEDİ, sadece görsel hiyerarşi eklendi. */
 #toptanGrid td.toptan-highlight{background:var(--bluebg);font-weight:700;color:var(--navy)}
+#toptanGrid th.tgrp-secim,#toptanGrid th.tgrp-periyot{background:#33475b;text-align:center}
+#toptanGrid th.tgrp-perakende{background:#0b6e4f;text-align:center}
+#toptanGrid th.tgrp-stok{background:#13315c;text-align:center}
+#toptanGrid th.tgrp-sonuc{background:var(--accent2);text-align:center}
 /* table-layout:auto genişlikleri öngörülemez sıkıştırıyor (bkz. #grid/.saved-mix-table
    yorumları) — table-layout:fixed + width, colgroup'taki 17 <col> genişliğinin TOPLAMI
    olmalı: 68+164+140+240+262+260+85+85+100+80+70+105+105+100+120+110+90 = 2184px. */
 #toptanGrid{table-layout:fixed;width:2184px}
+/* Sütunlar arası dikey ayırıcı (ana #grid'deki ile aynı desen, bkz. o bloktaki yorum) */
+#toptanGrid td:not(:first-child):not(:last-child),
+#toptanGrid thead tr:first-child th:not(:last-child),
+#toptanGrid thead tr:last-child th{border-right:1px solid var(--line)}
+/* Periyot kolonları (7-8) soluk gri — bu değerler her satırda aynı. */
+#toptanGrid tbody td:nth-child(7),
+#toptanGrid tbody td:nth-child(8){color:var(--grey)}
+/* Freeze pane: donmuş kimlik bloğu (kolon 1-6: Satış Teşkilatı...ÜH4) — #grid'deki
+   ÜH4 dondurma bloğuyla AYNI teknik (sticky + box-shadow + z-index katmanı).
+   ÖNEMLİ: dondurulan sütunlar tablonun GERÇEK sol kenarından başlayan KESİNTİSİZ bir
+   blok olmak ZORUNDA — sadece ÜH4'ü (kolon 6) tek başına dondurmak denendi ve
+   ÇALIŞMADI: solundaki kolonlar donunca da donmasa da, kolon 6'nın sticky left'i
+   sabit bir viewport x'ine oturuyor, ama sağındaki kolon 7+ scroll'la aynı x'e doğru
+   kayıp ALTINDAN/ÜSTÜNDEN geçerek görsel çakışma yaratıyor (gerçek scroll testiyle
+   doğrulandı — ekran görüntüsünde "ÜH4" ve "Perakende Bütçe" metinleri üst üste
+   bindi). Çözüm: 1-6 arası TÜM kolonları tek parça donan bir blok yap (Excel/#grid
+   freeze-pane mantığıyla birebir aynı kural). Sol offsetler colgroup toplamlarından:
+   kolon1=0, 2=68, 3=232, 4=372, 5=612, 6(ÜH4)=874. */
+/* #grid'de olduğu gibi TÜM başlık hücreleri (frozen olsun olmasın) z-index alır —
+   çünkü bare `th{position:sticky;top:0}` kuralı HER th'i "positioned" yapıyor; z-index
+   verilmezse (auto) donmamış başlıklar donmuş bloğun z-index'inin ALTINDA kalmayabiliyor
+   (test edildi: z-index'siz "Perakende Bütçe" başlığı donmuş ÜH4 hücresinin üzerinden
+   göründü). tbody'de bu sorun yok (sadece donmuş td'ler positioned, statik td'ler her
+   zaman positioned'ın altında kalır) — bu yüzden td tarafında ek kural gerekmedi. */
+#toptanGrid thead th{z-index:2}
+#toptanGrid thead tr:first-child th.tgrp-secim{position:sticky;left:0;z-index:3}
+#toptanGrid thead tr:first-child th#toptanUh4Head{position:sticky;left:874px;z-index:4}
+#toptanGrid thead tr:last-child th:nth-child(1){position:sticky;left:0;z-index:3}
+#toptanGrid thead tr:last-child th:nth-child(2){position:sticky;left:68px;z-index:3}
+#toptanGrid thead tr:last-child th:nth-child(3){position:sticky;left:232px;z-index:3}
+#toptanGrid thead tr:last-child th:nth-child(4){position:sticky;left:372px;z-index:3}
+#toptanGrid thead tr:last-child th:nth-child(5){position:sticky;left:612px;z-index:3}
+#toptanGrid td:nth-child(1){position:sticky;left:0;background:#fff;z-index:1}
+#toptanGrid td:nth-child(2){position:sticky;left:68px;background:#fff;z-index:1}
+#toptanGrid td:nth-child(3){position:sticky;left:232px;background:#fff;z-index:1}
+#toptanGrid td:nth-child(4){position:sticky;left:372px;background:#fff;z-index:1}
+#toptanGrid td:nth-child(5){position:sticky;left:612px;background:#fff;z-index:1}
+#toptanGrid td:nth-child(6){position:sticky;left:874px;background:#fff;z-index:1;box-shadow:2px 0 4px rgba(0,0,0,.08)}
+#toptanGrid tfoot td:nth-child(-n+6){background:#eef3f8}
+#toptanGrid tbody tr:hover td:nth-child(-n+6){background:#f0f7fb}
 /* gruplu başlık */
 #grid th.grp-real{background:#13315c;text-align:center}
 #grid th.grp-plan{background:#0b6e4f;text-align:center}
