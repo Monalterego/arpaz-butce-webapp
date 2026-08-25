@@ -121,6 +121,14 @@ tfoot td{background:#eef3f8;font-weight:700;border-top:2px solid var(--navy)}
    amber (uyarı) teması, ekranın geri kalanındaki .badge b-amber/Hedef Cover ile
    AYNI renk dili (bkz. Bölüm 9 token kuralı — yeni ham renk YAZILMADI). */
 .toptan-note-callout{background:var(--amberbg);border:1px solid rgba(178,106,0,.3);border-radius:var(--radius-md);padding:10px 14px;margin:0 0 12px;color:var(--amber);font-size:12px;line-height:1.55}
+/* Tablonun ÜSTÜNDEKİ tek özet şerit — satır bazlı ✓uyumlu/⚠farklı rozetinin
+   YERİNE geçti (bkz. görev). Yeşil/amber tonları mevcut --green/--amber
+   token'larından, yeni ham renk YOK. Boş (kayıt yoksa) gizlenir. */
+.toptan-convergence{display:none;align-items:center;gap:10px;border-radius:var(--radius-md);padding:10px 14px;margin:0 0 12px;font-size:13px;font-weight:700}
+.toptan-convergence.good,.toptan-convergence.bad{display:flex}
+.toptan-convergence.good{background:var(--greenbg);color:var(--green)}
+.toptan-convergence.bad{background:var(--amberbg);color:var(--amber)}
+.toptan-convergence-sub{font-size:11px;font-weight:400;color:var(--grey)}
 /* Toptan Bütçe tablosu — ana #grid ile AYNI görsel dil: gruplu iki satırlı başlık,
    dikey ayırıcılar. Periyot kolonları (7-8) soluk gri gösterilir. Dondurma
    (freeze pane) YOK — denendi, sonra kaldırıldı (kullanıcı talebi); ÜH4 diğer

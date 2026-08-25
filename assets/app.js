@@ -1383,15 +1383,17 @@ function updateAll() {
       const hedefBayiStok = r.hedefCover * r.salesBudget;
       const mevcutBayiStok = r.stock;
       const deltaStok = hedefBayiStok - mevcutBayiStok;
-      // Bayiye eksi adet sevk edilemez — 0'ın altına düşen toplam TOPTAN BÜTÇE burada kırpılır.
-      const toptanButce = Math.max(0, r.salesBudget + deltaStok);
+      // Bayiye eksi adet sevk edilemez — 0'ın altına düşen ham değer burada kırpılır.
+      // toptanButceClipped: hücrede "Sevki durdur" etiketi mi, yoksa sayı mı gösterilecek.
+      const toptanButceRaw = r.salesBudget + deltaStok;
+      const toptanButce = Math.max(0, toptanButceRaw);
+      const toptanButceClipped = toptanButceRaw < 0;
       const mevsimselKontrol = r.salesBudget * katsayi;
-      const uyumlu = Math.abs(toptanButce - mevsimselKontrol) / Math.max(1, toptanButce) < 0.2;
       return {
         org: r.salesOrg, region: r.region, uh1: r.uh1, uh2: r.uh2, uh3: r.uh3, name: r.name,
         baseperiod: r.baseperiod, targetperiod: r.targetperiod, stock: r.stock, sales: r.sales,
         salesBudget: r.salesBudget, hedefCover: r.hedefCover, lyCover: r.lyCover,
-        mevcutBayiStok, hedefBayiStok, deltaStok, toptanButce, mevsimselKontrol, uyumlu,
+        mevcutBayiStok, hedefBayiStok, deltaStok, toptanButce, toptanButceClipped, mevsimselKontrol,
       };
     });
     // TOPLAM = TÜM kayıtlı satırların (kırpılmış) toplamı (önce kırp, sonra topla)
@@ -1402,12 +1404,30 @@ function updateAll() {
       a.toptanButce += r.toptanButce; a.mevsimselKontrol += r.mevsimselKontrol;
       return a;
     }, { stock: 0, sales: 0, salesBudget: 0, mevcutBayiStok: 0, hedefBayiStok: 0, deltaStok: 0, toptanButce: 0, mevsimselKontrol: 0 });
-    T.uyumlu = Math.abs(T.toptanButce - T.mevsimselKontrol) / Math.max(1, T.toptanButce) < 0.2;
     T.cover = T.sales ? T.stock / T.sales : 0; // ana tablodaki footCover ile AYNI yöntem (ağırlıklı toplam)
     return { rows, T };
   }
-  function uyumBadge(uyumlu) {
-    return uyumlu ? '<span class="badge b-green">✓ uyumlu</span>' : '<span class="badge b-amber">⚠ farklı</span>';
+  // Δ Stok negatif olup TOPTAN BÜTÇE 0'a kırpıldığında sayı yerine gösterilecek etiket.
+  function toptanClippedBadge() {
+    return '<span class="badge b-red" title="Perakende Bütçe + Δ Stok < 0: bayi zaten hedef stok seviyesinin üzerinde, bu dönem için ek sevkiyat gerekmiyor">Sevki durdur (bayi fazla stoklu)</span>';
+  }
+  // Envanter-köprüsü toptanı (T.toptanButce) ile mevsimsel kontrol toptanının
+  // (T.mevsimselKontrol) ÜH2 toplam düzeyinde yakınsama yüzdesi (0-100).
+  // Satır bazlı ✓uyumlu/⚠farklı karşılaştırmasının YERİNE geçen tek özet metrik.
+  function computeToptanYakinsama(T) {
+    const a = T.toptanButce, b = T.mevsimselKontrol;
+    const maxAB = Math.max(a, b);
+    return maxAB > 0 ? Math.max(0, 100 - Math.abs(a - b) / maxAB * 100) : 100;
+  }
+  function renderToptanConvergence(T, hasRows) {
+    const el = $("toptanConvergence");
+    if (!el) return;
+    if (!hasRows) { el.className = "toptan-convergence"; el.innerHTML = ""; return; }
+    const yakinsama = computeToptanYakinsama(T);
+    const good = yakinsama >= 80;
+    el.className = "toptan-convergence " + (good ? "good" : "bad");
+    el.innerHTML = `<span>${good ? "✓" : "⚠"} Bu seçimde iki yöntem ÜH2 düzeyinde %${Math.round(yakinsama)} yakınsıyor</span>
+      <span class="toptan-convergence-sub">Envanter Köprüsü: ${fmtN(T.toptanButce)} adet · Mevsimsel Kontrol: ${fmtN(T.mevsimselKontrol)} adet</span>`;
   }
 
   // --- Toptan Bütçe tablosu: sütun genişlikleri hücre içeriğine göre otomatik ---
@@ -1463,8 +1483,9 @@ function updateAll() {
     if (!tbody) return;
     const data = computeToptanFromSaved();
     if (!data.rows.length) {
-      tbody.innerHTML = `<tr><td colspan="17" style="text-align:center;color:var(--grey);padding:18px">Henüz kayıtlı bir çalışma yok. Önce Bütçe &amp; Stok Miks ekranından bir kombinasyon çalışıp kaydedin.</td></tr>`;
+      tbody.innerHTML = `<tr><td colspan="16" style="text-align:center;color:var(--grey);padding:18px">Henüz kayıtlı bir çalışma yok. Önce Bütçe &amp; Stok Miks ekranından bir kombinasyon çalışıp kaydedin.</td></tr>`;
       $("toptanFoot").innerHTML = "";
+      renderToptanConvergence(data.T, false);
       autoFitToptanColumns();
       return;
     }
@@ -1484,9 +1505,8 @@ function updateAll() {
         <td class="num-cell">${fmtN(r.mevcutBayiStok)}</td>
         <td class="num-cell">${fmtN(r.hedefBayiStok)}</td>
         <td class="num-cell ${r.deltaStok >= 0 ? "up" : "down"}">${r.deltaStok >= 0 ? "+" : ""}${fmtN(r.deltaStok)}</td>
-        <td class="num-cell toptan-highlight">${fmtN(r.toptanButce)}</td>
+        <td class="num-cell toptan-highlight">${r.toptanButceClipped ? toptanClippedBadge() : fmtN(r.toptanButce)}</td>
         <td class="num-cell">${fmtN(r.mevsimselKontrol)}</td>
-        <td>${uyumBadge(r.uyumlu)}</td>
       </tr>`).join("");
     $("toptanFoot").innerHTML = `
       <td>TOPLAM</td>
@@ -1504,8 +1524,8 @@ function updateAll() {
       <td class="num-cell">${fmtN(data.T.hedefBayiStok)}</td>
       <td class="num-cell ${data.T.deltaStok >= 0 ? "up" : "down"}">${data.T.deltaStok >= 0 ? "+" : ""}${fmtN(data.T.deltaStok)}</td>
       <td class="num-cell toptan-highlight">${fmtN(data.T.toptanButce)}</td>
-      <td class="num-cell">${fmtN(data.T.mevsimselKontrol)}</td>
-      <td>${uyumBadge(data.T.uyumlu)}</td>`;
+      <td class="num-cell">${fmtN(data.T.mevsimselKontrol)}</td>`;
+    renderToptanConvergence(data.T, true);
     autoFitToptanColumns();
   }
 

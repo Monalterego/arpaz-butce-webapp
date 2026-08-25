@@ -270,13 +270,14 @@
             <li><b>Bayi Deposunu Doldurma (Δ Stok):</b> Bayinin deposunu, hedeflediğimiz stok seviyesine (Hedef Cover) getirmek için gereken ek sevk. Depoyu dolduruyorsak toptan artar; eritiyorsak azalır.</li>
           </ul>
           <p><b>Örnek:</b> Bir bayi ayda 100 adet satıyorsa ve biz deposunda 3 aylık stok (300 adet) olmasını istiyorsak; deposunda şu an 200 varsa, bu ay ona 100 (satış) + 100 (depo farkı) = 200 adet göndeririz.</p>
-          <p>Bu yöntem şirketin geçmiş verisiyle test edildi ve <b>%89 oranında doğrulandı</b> — yani bilimsel olarak güvenilir. Ayrıca "Mevsimsel Kontrol" kolonu, geçmiş yılların ay bazlı toptan/perakende oranıyla sonucu çapraz-kontrol eder; iki sayı yakınsa (✓) tahminimiz sağlam demektir.</p>
+          <p>Bu yöntem şirketin geçmiş verisiyle test edildi ve <b>%89 oranında doğrulandı</b> — yani bilimsel olarak güvenilir. Ayrıca "Mevsimsel Kontrol" kolonu, geçmiş yılların ay bazlı toptan/perakende oranıyla sonucu çapraz-kontrol eder; tablonun üstündeki özet şerit, iki yöntemin ÜH2 toplam düzeyinde ne kadar yakınsadığını (%) gösterir — yüksek yakınsama tahminimizin sağlam olduğu anlamına gelir.</p>
           <p style="margin:0"><b>Not:</b> Toptan sevk genelde perakende satıştan yaklaşık 2 ay önce olur (bayi önce alır, sonra satar). Sezon planlamasında bunu göz önünde tut.</p>
         </div>
       </div>
 
       <div class="panel">
         <h2>Toptan Bütçe Tablosu <span class="pill">Sell-in</span></h2>
+        <div id="toptanConvergence" class="toptan-convergence"></div>
         <div style="max-height:520px;overflow:auto">
         <table id="toptanGrid">
           <colgroup>
@@ -296,7 +297,6 @@
             <col style="width:100px"> <!-- Δ Stok -->
             <col style="width:120px"> <!-- TOPTAN BÜTÇE -->
             <col style="width:110px"> <!-- Mevsimsel Kontrol -->
-            <col style="width:90px">  <!-- Uyum -->
           </colgroup>
           <thead>
             <tr>
@@ -304,7 +304,7 @@
               <th colspan="2" class="tgrp-periyot">PERİYOT</th>
               <th colspan="2" class="tgrp-perakende">PERAKENDE BÜTÇE</th>
               <th colspan="4" class="tgrp-stok">BAYİ STOK DURUMU</th>
-              <th colspan="3" class="tgrp-sonuc">TOPTAN SONUCU</th>
+              <th colspan="2" class="tgrp-sonuc">TOPTAN SONUCU</th>
             </tr>
             <tr>
               <th>Satış Teşkilatı</th>
@@ -321,9 +321,8 @@
               <th title="Mevcut Bayi Stok (LY stok adet)">Mevcut Bayi Stok</th>
               <th title="Hedef Bayi Stok = Hedef Cover × Perakende Bütçe">Hedef Bayi Stok</th>
               <th title="Δ Stok = Hedef Bayi Stok − Mevcut Bayi Stok">Δ Stok</th>
-              <th title="Toptan Bütçe = Perakende Bütçe + Δ Stok (0'ın altına kırpılır)">TOPTAN BÜTÇE</th>
+              <th title="Toptan Bütçe = Perakende Bütçe + Δ Stok (0'ın altına kırpılırsa 'Sevki durdur' etiketi gösterilir)">TOPTAN BÜTÇE</th>
               <th title="Mevsimsel Kontrol = Perakende Bütçe × ÜH2/ay katsayısı">Mevsimsel Kontrol</th>
-              <th title="İki yöntem yakınsa (fark < %20) uyumlu">Uyum</th>
             </tr>
           </thead>
           <tbody id="toptanRows"></tbody>
@@ -331,10 +330,9 @@
         </table>
         </div>
         <div class="legend">
-          <span class="badge b-green">✓ uyumlu — iki yöntem yakın</span>
-          <span class="badge b-amber">⚠ farklı — fark %20'yi aşıyor</span>
+          <span class="badge b-red">Sevki durdur (bayi fazla stoklu) — TOPTAN BÜTÇE 0'a kırpıldı</span>
         </div>
-        <div class="note">TOPTAN BÜTÇE = Perakende Bütçe + (Hedef Bayi Stok − Mevcut Bayi Stok), 0'ın altına düşerse 0'da kırpılır (bayiye eksi adet sevk edilemez). Mevsimsel Kontrol, geçmiş yılların ÜH2×ay bazlı toptan/perakende oranından (satırın kendi Hedef Periyot ayı kullanılarak) türetilir; çapraz-doğrulama amaçlıdır, bütçeye dahil edilmez. Kaynak: Kayıtlar sekmesindeki tüm kayıtlı gruplar (bkz. yukarıdaki "Önemli" notu).</div>
+        <div class="note">TOPTAN BÜTÇE = Perakende Bütçe + (Hedef Bayi Stok − Mevcut Bayi Stok), 0'ın altına düşerse 0'da kırpılır (bayiye eksi adet sevk edilemez) ve hücrede "Sevki durdur" etiketiyle gösterilir. Mevsimsel Kontrol, geçmiş yılların ÜH2×ay bazlı toptan/perakende oranından (satırın kendi Hedef Periyot ayı kullanılarak) türetilir; çapraz-doğrulama amaçlıdır, bütçeye dahil edilmez — iki yöntemin genel yakınsaması yukarıdaki özet şeritte, ÜH2 toplam düzeyinde gösterilir. Kaynak: Kayıtlar sekmesindeki tüm kayıtlı gruplar (bkz. yukarıdaki "Önemli" notu).</div>
       </div>
     </div>
 
