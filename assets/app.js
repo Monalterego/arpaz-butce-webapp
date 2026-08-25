@@ -415,6 +415,7 @@ function updateAll() {
   renderKpis(m);
   renderDurumKpis(m);
   renderForecast(m);
+  renderRollup(); // "Perakende Bütçe" sekmesindeki Özet/Rollup paneli — CANLI (bkz. tanım)
   // NOT: renderToptan(m) BURADAN KALDIRILDI — Toptan Bütçe artık canlı sidebar/parametre
   // değişikliklerine değil, Kayıtlar'a bağlı (bkz. renderToptanFromSaved, saveCurrentMixSet).
 }
@@ -474,6 +475,168 @@ function updateAll() {
         <div class="val">${c.count}</div>
         <div class="sub">${fmtP0(c.pct)}</div>
       </div>`).join("");
+  }
+
+  // --- "Perakende Bütçe" sekmesi: Özet / Rollup Paneli ---
+  // ÜH4'te çalışılan bütçenin ÜH1→ÜH2→ÜH3 alt-toplamda LY→TY özeti. Mevcut
+  // computeFromData YENİDEN FORMÜL YAZILMADAN kullanılır: her "yaprak" ÜH3'ün
+  // ÜH4 satırları computeFromData ile hesaplanır, sonuçlar (r.sales,
+  // r.salesBudget, r.stock, r.planStock, r.lyFiyat, r.tyRevenue) istenen
+  // kırılım seviyesinde (ÜH1/ÜH2/ÜH3) toplanır. Bu panel CANLIDIR — global
+  // parametre veya Hedef Cover değişince (updateAll() üzerinden) yeniden
+  // hesaplanır; Toptan Bütçe'nin aksine "dondurulmuş" DEĞİLDİR (bilinçli
+  // fark — bu panel sonuç/izleme ekranı, Toptan Bütçe kayıtlı plan arşivi).
+  const rollupState = { level: "uh2" };
+
+  // HIERARCHY ağacında verilen kırılım seviyesindeki tüm "yaprak" ÜH3
+  // üçlülerini (uh1,uh2,uh3) + hangi rollup grubuna (groupKey) ait
+  // olduklarını döndürür. ÜH1 seviyesi TÜM hiyerarşiyi tarar (global);
+  // ÜH2/ÜH3 seviyeleri sidebar'daki mevcut state.sel.uh1/(uh2) altını tarar.
+  function rollupLeafTriples(level) {
+    const leaves = [];
+    if (level === "uh1") {
+      Object.keys(HIERARCHY).forEach((uh1) => {
+        const uh2node = HIERARCHY[uh1] || {};
+        Object.keys(uh2node).forEach((uh2) => {
+          Object.keys(uh2node[uh2] || {}).forEach((uh3) => leaves.push({ uh1, uh2, uh3, groupKey: uh1 }));
+        });
+      });
+    } else if (level === "uh2") {
+      const uh1 = state.sel.uh1;
+      const uh2node = HIERARCHY[uh1] || {};
+      Object.keys(uh2node).forEach((uh2) => {
+        Object.keys(uh2node[uh2] || {}).forEach((uh3) => leaves.push({ uh1, uh2, uh3, groupKey: uh2 }));
+      });
+    } else {
+      const uh1 = state.sel.uh1, uh2 = state.sel.uh2;
+      const uh3node = (HIERARCHY[uh1] || {})[uh2] || {};
+      Object.keys(uh3node).forEach((uh3) => leaves.push({ uh1, uh2, uh3, groupKey: uh3 }));
+    }
+    return leaves;
+  }
+
+  // Bir yaprağın ÜH4 satırlarını computeFromData ile hesaplar. Hedef Cover/TY
+  // Fiyat/Plan Stok% elle-girişleri SADECE o an sidebar'da GÖRÜNEN (state.sel
+  // ile TAM eşleşen) yaprağa uygulanır — uygulamada başka hiçbir ÜH3'ün elle
+  // girişleri hafızada tutulmuyor zaten (bkz. buildTable/state.covers), bu
+  // yüzden diğer yapraklar kendi LY cover/otomatik fiyatlarına döner (aynı
+  // computeFromData'nın hiçbir override verilmediğinde yaptığı varsayılan).
+  function computeRollupLeaf(leaf, params) {
+    const rows = DataService.loadMixFor({ uh1: leaf.uh1, uh2: leaf.uh2, uh3: leaf.uh3 }, "uh4");
+    if (!rows.length) return null;
+    const isCurrent = leaf.uh1 === state.sel.uh1 && leaf.uh2 === state.sel.uh2 && leaf.uh3 === state.sel.uh3;
+    const covers = isCurrent ? state.covers : null;
+    const tyFiyat = isCurrent ? state.tyFiyat : null;
+    // computeFromData Plan Stok% override'ını PARAMETRE olarak almıyor, doğrudan
+    // dış state.planPctOverrides'ı okuyor — başka bir yaprak için çağırırken bu
+    // diziyi geçici olarak kapatıyoruz, yoksa index çakışıp yanlış satıra uygulanır.
+    const savedOverrides = state.planPctOverrides;
+    if (!isCurrent) state.planPctOverrides = null;
+    const model = computeFromData(rows, params, covers, tyFiyat);
+    state.planPctOverrides = savedOverrides;
+    return model;
+  }
+
+  function rollupBlankAcc(name) {
+    return { name, lySales: 0, tyBudget: 0, lyStock: 0, tyPlanStock: 0, lyValue: 0, tyRevenue: 0 };
+  }
+  function rollupAddRow(acc, r) {
+    acc.lySales += r.sales; acc.tyBudget += r.salesBudget;
+    acc.lyStock += r.stock; acc.tyPlanStock += r.planStock;
+    acc.lyValue += r.sales * r.lyFiyat; acc.tyRevenue += r.tyRevenue;
+  }
+  // Toplanan Σ alanlarından (LY Satış, TY Bütçe, LY Stok, TY Plan Stok, LY/TY
+  // ciro) grup metriklerini türetir — formüller görev tanımındakiyle AYNI.
+  function rollupFinalize(acc) {
+    const lfl = acc.lySales ? acc.tyBudget / acc.lySales - 1 : 0;
+    const stokD = acc.lyStock ? acc.tyPlanStock / acc.lyStock - 1 : 0;
+    const lyCover = acc.lySales ? acc.lyStock / acc.lySales : 0;
+    const tyCover = acc.tyBudget ? acc.tyPlanStock / acc.tyBudget : 0;
+    const rlfl = (acc.tyPlanStock && acc.lySales && acc.lyStock)
+      ? (acc.tyBudget / acc.tyPlanStock) / (acc.lySales / acc.lyStock) - 1 : 0;
+    const lyFiyat = acc.lySales ? acc.lyValue / acc.lySales : 0;
+    const tyFiyat = acc.tyBudget ? acc.tyRevenue / acc.tyBudget : 0;
+    const fiyatD = lyFiyat ? tyFiyat / lyFiyat - 1 : 0;
+    return { name: acc.name, lySales: acc.lySales, tyBudget: acc.tyBudget, lfl, rlfl, stokD,
+      lyCover, tyCover, lyFiyat, tyFiyat, fiyatD };
+  }
+  function computeRollup(level) {
+    const params = readParams();
+    const leaves = rollupLeafTriples(level);
+    const groups = new Map();
+    const totalAcc = rollupBlankAcc("TOPLAM");
+    leaves.forEach((leaf) => {
+      const model = computeRollupLeaf(leaf, params);
+      if (!model) return;
+      if (!groups.has(leaf.groupKey)) groups.set(leaf.groupKey, rollupBlankAcc(leaf.groupKey));
+      const g = groups.get(leaf.groupKey);
+      model.rows.forEach((r) => { rollupAddRow(g, r); rollupAddRow(totalAcc, r); });
+    });
+    return { rows: Array.from(groups.values()).map(rollupFinalize), total: rollupFinalize(totalAcc) };
+  }
+
+  function rollupDeltaSpan(v) {
+    const cls = v >= 0 ? "up" : "down";
+    const arrow = v >= 0 ? "▲" : "▼";
+    return `<span class="${cls}">${arrow} ${fmtP0(v)}</span>`;
+  }
+  function rollupLflBar(lfl) {
+    const widthPct = Math.min(50, Math.abs(lfl) * 100);
+    const cls = lfl >= 0 ? "pos" : "neg";
+    return `<div class="rollup-lfl-track"><div class="rollup-lfl-fill ${cls}" style="width:${widthPct}%"></div></div>`;
+  }
+  function renderRollupKpis(t) {
+    const el = $("rollupKpis");
+    if (!el) return;
+    const kpis = [
+      ["Satış Bütçe (TY)", fmtN(t.tyBudget), "adet · LFL " + fmtP0(t.lfl), t.lfl >= 0 ? "up" : "down"],
+      ["R-LFL", fmtP0(t.rlfl), "stoktan arındırılmış büyüme", t.rlfl >= 0 ? "up" : "down"],
+      ["Stok Büyümesi", fmtP0(t.stokD), "TY Plan Stok / LY Stok − 1", t.stokD >= 0 ? "up" : "down"],
+      ["Bayi Stok Ay (Cover)", `${fmtD(t.lyCover)} → ${fmtD(t.tyCover)}`, "LY → TY ay", ""],
+      ["Ort. Fiyat Değişimi", fmtP0(t.fiyatD), "ağırlıklı ortalama fiyat", t.fiyatD >= 0 ? "up" : "down"],
+    ];
+    el.innerHTML = kpis.map((k) => `<div class="kpi"><div class="lbl">${k[0]}</div>
+      <div class="val">${k[1]}</div><div class="sub ${k[3]}">${k[2]}</div></div>`).join("");
+  }
+  function renderRollupTable(data) {
+    const tbody = $("rollupRows");
+    if (!tbody) return;
+    if (!data.rows.length) {
+      tbody.innerHTML = `<tr><td colspan="10" style="text-align:center;color:var(--grey);padding:18px">Bu seçim için veri bulunamadı.</td></tr>`;
+      $("rollupFoot").innerHTML = "";
+      return;
+    }
+    tbody.innerHTML = data.rows.map((r) => `
+      <tr>
+        <td>${r.name}</td>
+        <td class="num-cell">${fmtN(r.lySales)}</td>
+        <td class="num-cell">${fmtN(r.tyBudget)}</td>
+        <td>${rollupDeltaSpan(r.lfl)}${rollupLflBar(r.lfl)}</td>
+        <td class="${r.rlfl >= 0 ? "up" : "down"}">${fmtP0(r.rlfl)}</td>
+        <td class="${r.stokD >= 0 ? "up" : "down"}">${fmtP0(r.stokD)}</td>
+        <td>${fmtD(r.lyCover)} → ${fmtD(r.tyCover)}</td>
+        <td class="num-cell">${fmtN(r.lyFiyat)}</td>
+        <td class="num-cell">${fmtN(r.tyFiyat)}</td>
+        <td class="${r.fiyatD >= 0 ? "up" : "down"}">${fmtP0(r.fiyatD)}</td>
+      </tr>`).join("");
+    const t = data.total;
+    $("rollupFoot").innerHTML = `
+      <td>TOPLAM</td>
+      <td class="num-cell">${fmtN(t.lySales)}</td>
+      <td class="num-cell">${fmtN(t.tyBudget)}</td>
+      <td class="${t.lfl >= 0 ? "up" : "down"}">${fmtP0(t.lfl)}</td>
+      <td class="${t.rlfl >= 0 ? "up" : "down"}">${fmtP0(t.rlfl)}</td>
+      <td class="${t.stokD >= 0 ? "up" : "down"}">${fmtP0(t.stokD)}</td>
+      <td>${fmtD(t.lyCover)} → ${fmtD(t.tyCover)}</td>
+      <td class="num-cell">${fmtN(t.lyFiyat)}</td>
+      <td class="num-cell">${fmtN(t.tyFiyat)}</td>
+      <td class="${t.fiyatD >= 0 ? "up" : "down"}">${fmtP0(t.fiyatD)}</td>`;
+  }
+  function renderRollup() {
+    if (!$("rollupKpis") || !state.sel) return;
+    const data = computeRollup(rollupState.level);
+    renderRollupKpis(data.total);
+    renderRollupTable(data);
   }
 
   // --- Kayıtlı ÜH3 / ÜH4 miks kayıtları ---
@@ -1384,6 +1547,18 @@ function updateAll() {
     if (basePeriodEl) basePeriodEl.addEventListener("change", updateSaveButtonState);
     const targetPeriodEl = $("h_targetperiod");
     if (targetPeriodEl) targetPeriodEl.addEventListener("change", updateSaveButtonState);
+    // Özet/Rollup paneli — kırılım seçici (ÜH1/ÜH2/ÜH3) + kendi (bağımsız) periyot seçicileri
+    document.querySelectorAll("#rollupLevelSeg [data-level]").forEach((btn) => {
+      btn.addEventListener("click", () => {
+        rollupState.level = btn.dataset.level;
+        document.querySelectorAll("#rollupLevelSeg [data-level]").forEach((b) => b.classList.toggle("is-on", b === btn));
+        renderRollup();
+      });
+    });
+    const rollupBaseEl = $("rollup_baseperiod");
+    if (rollupBaseEl) rollupBaseEl.addEventListener("change", renderRollup);
+    const rollupTargetEl = $("rollup_targetperiod");
+    if (rollupTargetEl) rollupTargetEl.addEventListener("change", renderRollup);
     document.querySelectorAll(".tabs button").forEach((b) => {
       b.addEventListener("click", () => {
         document.querySelectorAll(".tabs button").forEach((x) => x.classList.remove("active"));

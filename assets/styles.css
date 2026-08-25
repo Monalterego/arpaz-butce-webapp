@@ -361,3 +361,23 @@ tfoot td{background:#eef3f8;font-weight:700;border-top:2px solid var(--navy)}
   .kanit-bar-value{text-align:left}
 }
 .child-row td{font-size:12px}
+
+/* ===== "Perakende Bütçe" sekmesi — Özet/Rollup paneli =====
+   Mevcut .panel/.kpis/.kpi/.segmented/table kabuğu yeniden kullanılıyor,
+   sadece bu panele özel kontrol şeridi ve mini LFL bar burada. */
+.rollup-controls{display:flex;justify-content:space-between;align-items:flex-end;flex-wrap:wrap;gap:16px;margin-bottom:14px}
+.rollup-period{display:flex;gap:16px;flex-wrap:wrap}
+.rollup-period label{display:block;font-size:11px;color:var(--grey);margin-bottom:4px}
+.rollup-period select{padding:6px 8px;border:1px solid var(--line);border-radius:6px;font-size:12px;color:var(--ink)}
+.rollup-kpis{grid-template-columns:repeat(5,1fr)}
+/* LFL% hücresindeki mini yatay bar — sıfır çizgisinden sağa (pozitif/yeşil)
+   veya solda kalan boşluk kadar (negatif algısı metinle zaten veriliyor,
+   bar sadece BÜYÜKLÜĞÜ gösterir) uzanır. */
+.rollup-lfl-track{position:relative;height:5px;background:#eef1f5;border-radius:3px;margin-top:4px;overflow:hidden}
+.rollup-lfl-fill{position:absolute;top:0;bottom:0;left:0;border-radius:3px}
+.rollup-lfl-fill.pos{background:var(--green)}
+.rollup-lfl-fill.neg{background:var(--red)}
+#rollupTable td:first-child{font-weight:600}
+@media (max-width:900px){
+  .rollup-kpis{grid-template-columns:1fr 1fr}
+}
