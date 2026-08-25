@@ -1189,6 +1189,11 @@ function updateAll() {
   }
   function renderScenarios() {
     const tb = $("scRows"); tb.innerHTML = "";
+    // Kayıt yokken tabloyu (dolayısıyla başlık şeridini) tamamen gizle, yerine
+    // ince gri bilgi satırını göster (bkz. styles.css .sc-empty).
+    const wrap = $("scTableWrap"), empty = $("scEmpty");
+    if (wrap) wrap.style.display = scenarios.length ? "block" : "none";
+    if (empty) empty.style.display = scenarios.length ? "none" : "block";
     scenarios.forEach((s, i) => {
       const p = s.p;
       const campF = CAMP.reduce((a, k) => a * (1 + p.camp[k] / 100), 1) * (1 + p.pazar / 100);

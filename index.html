@@ -87,16 +87,19 @@
         </div>
         <div class="params params-weights">
           <div class="pgroup pgroup-weights">
-            <div class="ptitle">Plan Stok % Ağırlıkları</div>
-            <div class="prow"><label class="wK">Kâr ağırlığı</label><input type="number" id="w_kar" value="40" step="5"></div>
-            <div class="prow"><label class="wS">Satış ağırlığı</label><input type="number" id="w_satis" value="30" step="5"></div>
-            <div class="prow"><label class="wSt">Stok ağırlığı</label><input type="number" id="w_stok" value="30" step="5"></div>
+            <div class="ptitle">🎯 Plan Stok % Ağırlıkları</div>
+            <div class="weights-grid">
+              <div class="prow"><label class="wK">Kâr ağırlığı</label><input type="number" id="w_kar" value="40" step="5"></div>
+              <div class="prow"><label class="wS">Satış ağırlığı</label><input type="number" id="w_satis" value="30" step="5"></div>
+              <div class="prow"><label class="wSt">Stok ağırlığı</label><input type="number" id="w_stok" value="30" step="5"></div>
+            </div>
+            <div class="weights-note">Gelecek yıl stok payını belirleyen ağırlıklar. Kâr önceliklidir (varsayılan 40/30/20).</div>
           </div>
         </div>
       </div>
 
       <!-- SENARYO -->
-      <div class="panel" style="padding:12px 16px">
+      <div class="panel">
         <h2>Senaryo Yönetimi <span class="pill">Kaydet &amp; Karşılaştır</span></h2>
         <div class="scenario-bar">
           <input id="scName" placeholder="Senaryo adı (ör. Karlı-Agresif)">
@@ -104,7 +107,8 @@
           <button id="clearSc" class="btn ghost">🗑️ Temizle</button>
           <span class="note" style="margin:0">Parametre + Hedef Cover setini kaydeder, yan yana kıyaslar.</span>
         </div>
-        <div style="overflow:auto;margin-top:12px">
+        <div class="sc-empty" id="scEmpty">Henüz senaryo kaydedilmedi.</div>
+        <div class="sc-table-wrap" id="scTableWrap" style="display:none">
           <table id="scTable"><thead><tr>
             <th>Senaryo</th><th>Stok Büy.%</th><th>Pazar.%</th><th>Ağırlık K/S/St</th><th>Çarpan</th>
             <th>Toplam Satış Bütçe</th><th>Toplam Plan Stok</th><th>LFL %</th><th></th>

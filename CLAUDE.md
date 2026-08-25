@@ -228,7 +228,54 @@ bkz. Bölüm 4/8 — ÜH3 child satır render'ı yoktur).
 ---
 
 ## 7) Arayüz (index.html) — Bölümler
-- **Tasarım tutarlılığı ("AI slop" geçişi, SADECE kabuk katmanı):** Başlık emoji'leri
+
+### 7.0 Tasarım Sistemi (2. tur — "nefes + tek accent", SADECE kabuk katmanı)
+Ana tablonun (`#grid`) kolon/satır/hesap yapısına DOKUNULMADI; tüm değişiklik
+stil + sarmalayıcı yapı katmanındadır.
+- **Tek vurgu rengi:** `--accent:#0077b6` (`--accent2` aynı değere alias, geriye
+  dönük uyumluluk). Durum renkleri (`--good/--warn/--bad/--info` = mevcut
+  `--green/--amber/--red/--blue`) SADECE tabloda ve rozetlerde kullanılır.
+  `--navy/--navy2` artık yalnızca **marka/yapı** rengi: header gradyanı, tablo
+  başlık şeritleri, `.segmented button.is-on`. Yeni bir vurgu rengi EKLEME.
+- **8px boşluk gridi:** `--s1:8px --s2:16px --s3:24px --s4:32px`. Yeni ham piksel
+  boşluk YAZMA. Panel padding = `--s3`, paneller arası = `--s3`, kart arası = `--s2`.
+- **Tipografi ölçeği:** `--f-hero:22px` (KPI rakamı) · `--f-h1:18px` (panel başlığı,
+  `.panel h2`) · `--f-h2:13px` (kart başlığı, `.params .pgroup .ptitle`) ·
+  `--f-body:13px` · `--f-label:11px` (uppercase micro-etiket: `.side h3`,
+  `.kpi .lbl`, `.weights-note`).
+- **`--radius:12px` + `--shadow`** tek tip kabuk; mevcut `--radius-sm/md/pill` ve
+  `--shadow-sm/md` ince ayrımlar için KORUNDU. Gölge ve kenarlık aynı anda güçlü
+  olmasın: hafif gölge + 1px `--line` yeter.
+- **KPI şeridi KOMPAKT:** `#kpis` kartlarında etiket üstte, BÜYÜK rakam ile
+  birim/alt-not AYNI satırda (grid alan atamasıyla, baseline hizalı) → kart
+  yüksekliği ~yarıya indi. Bu düzen SADECE `#kpis`'e uygulanır — `.rollup-kpis`
+  ve `.kanit-kpis`'in `.sub`'ı tam cümledir, onlar dikey (yığılmış) kalır.
+  `renderKpis()` DEĞİŞMEDİ, salt CSS.
+- **Durum Dağılımı artık DEV KART DEĞİL:** `#durumKpis` 4 dev kart yerine KPI
+  şeridinin hemen altında tek satırlık ince pill şeridi (rozet + sayı + pay,
+  aralarında ince ayraç). `renderDurumKpis()` DEĞİŞMEDİ, salt CSS (`.kpi` kabuğu
+  sıfırlanıp satır içine indirgeniyor).
+- **Sekme çubuğu:** aktif sekme dolu `--accent` zemin + beyaz yazı; pasifler beyaz
+  zemin + ince `--line` kenar; altında 1px ayraç.
+- **"Bütçe Kurgusu — Nasıl Hesaplanıyor?" accordion varsayılan KAPALI** (`▸`),
+  başlığa tıklayınca açılır (`initFormulaToggle()`). Toptan'ın "Nasıl Çalışır?"
+  paneli KASITLI olarak açık (`▾`) kalır — orası yöntemin kendisini anlatır.
+- **Planlama Parametreleri:** Satır 1 = 3 eşit kart (Global Hedefler · Kampanya
+  Çarpanları · Gam & Kota, sade `--surface`), Satır 2 = tek ve VURGULU
+  "🎯 Plan Stok % Ağırlıkları" kartı (`--accent-bg` zemin, `border-left:4px solid
+  var(--accent)`, `--shadow-md`). Üç ağırlık girişi `.weights-grid` ile 3 eşit
+  sütunda YATAY dizilir; `.prow`'un varsayılan `space-between`'i burada
+  `flex-start`'a çekilmiştir, aksi halde etiket–input arası ~300px dev boşluk
+  oluşuyordu (ekran görüntüsüyle doğrulandı). Kartın altında gri açıklama
+  (`.weights-note`).
+  NOT: 🎯 ikonu, önceki turda başlıklardan emoji temizleme kararının bilinçli bir
+  ISTISNASIdır (kullanıcı bu kartın öne çıkmasını açıkça istedi).
+- **"Toplam Çarpan"** tam genişlik şerit değil, accent zeminli küçük pill rozet.
+- **Senaryo Yönetimi:** kayıt yokken tablo (dolayısıyla dev lacivert boş başlık
+  şeridi) tamamen gizlenir, yerine ince gri "Henüz senaryo kaydedilmedi." satırı
+  (`#scEmpty` / `#scTableWrap`, `renderScenarios()` ikisini takas eder).
+
+- **Tasarım tutarlılığı (1. tur — "AI slop" geçişi, SADECE kabuk katmanı):** Başlık emoji'leri
   (📊🧠⚙️💾🧮📅⚖️🔮🎨) tamamen kaldırıldı — başlık metni direkt kelimeyle başlar (bazı
   buton emoji'leri, ör. ➕/🗑️/↺, kasıtlı olarak dokunulmadan bırakıldı, kapsam dışıydı).
   `:root`'a ortak tasarım token'ları eklendi: `--radius-sm/--radius-md/--radius-pill`,
@@ -346,9 +393,12 @@ Sol menü sırası: **TEŞKİLAT → ÜRÜN HİYERARŞİSİ → PERİYOT**.
   (Grup 1 + GERÇEKLEŞEN 9 + GELECEK YIL PLANI 9 + Durum 1 + Aksiyon 1).
 - **Cerrahi düzenleme yap** (mümkünse tüm dosyayı değil ilgili bloğu değiştir).
 - Küçük, sık commit al. Geri dönülebilir olsun.
-- **Yeni border-radius/box-shadow/spacing değeri eklerken önce `:root`'taki mevcut
-  token'ları kullan** (`--radius-sm/--radius-md/--radius-pill`, `--shadow-sm/--shadow-md`),
-  yeni ham değer YAZMA. Kabuk (panel/kart/badge/buton) katmanı bu token'lardan besleniyor;
+- **Yeni renk/boşluk/tipografi/radius/gölge değeri eklerken önce `:root`'taki mevcut
+  token'ları kullan** (bkz. Bölüm 7.0 — `--accent/--accent-bg`, `--s1..--s4`,
+  `--f-hero/--f-h1/--f-h2/--f-body/--f-label`, `--radius`, `--shadow`; ince ayrımlar
+  için `--radius-sm/--radius-md/--radius-pill`, `--shadow-sm/--shadow-md`),
+  yeni ham değer YAZMA. **İkiden fazla vurgu rengi kullanma** — accent mavi +
+  durum renkleri (sadece rozet/tabloda); `--navy` marka/yapı rengidir, vurgu değil. Kabuk (panel/kart/badge/buton) katmanı bu token'lardan besleniyor;
   `#grid` içindeki tablo-özel değerler (`--grid-row-pad` vb., bkz. Bölüm 8) bu token'lardan
   AYRI ve kasıtlı olarak farklı bir mekanizma — birbirine karıştırılmasın.
 
