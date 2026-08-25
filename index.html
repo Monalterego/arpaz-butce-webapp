@@ -295,8 +295,8 @@
             <col style="width:105px"> <!-- Mevcut Bayi Stok -->
             <col style="width:105px"> <!-- Hedef Bayi Stok -->
             <col style="width:100px"> <!-- Δ Stok -->
+            <col style="width:150px"> <!-- Durum -->
             <col style="width:120px"> <!-- TOPTAN BÜTÇE -->
-            <col style="width:110px"> <!-- Mevsimsel Kontrol -->
           </colgroup>
           <thead>
             <tr>
@@ -321,8 +321,8 @@
               <th title="Mevcut Bayi Stok (LY stok adet)">Mevcut Bayi Stok</th>
               <th title="Hedef Bayi Stok = Hedef Cover × Perakende Bütçe">Hedef Bayi Stok</th>
               <th title="Δ Stok = Hedef Bayi Stok − Mevcut Bayi Stok">Δ Stok</th>
-              <th title="Toptan Bütçe = Perakende Bütçe + Δ Stok (0'ın altına kırpılırsa 'Sevki durdur' etiketi gösterilir)">TOPTAN BÜTÇE</th>
-              <th title="Mevsimsel Kontrol = Perakende Bütçe × ÜH2/ay katsayısı">Mevsimsel Kontrol</th>
+              <th title="Sevkiyat durumu — TOPTAN BÜTÇE 0'a kırpıldıysa 'Sevki durdur' gösterilir">Durum</th>
+              <th title="Toptan Bütçe = Perakende Bütçe + Δ Stok (0'ın altına düşerse 0)">TOPTAN BÜTÇE</th>
             </tr>
           </thead>
           <tbody id="toptanRows"></tbody>
@@ -330,9 +330,10 @@
         </table>
         </div>
         <div class="legend">
-          <span class="badge b-red">Sevki durdur (bayi fazla stoklu) — TOPTAN BÜTÇE 0'a kırpıldı</span>
+          <span class="badge b-red">Sevki durdur (bayi fazla stoklu)</span>
+          <span class="badge b-grey">Sevk et</span>
         </div>
-        <div class="note">TOPTAN BÜTÇE = Perakende Bütçe + (Hedef Bayi Stok − Mevcut Bayi Stok), 0'ın altına düşerse 0'da kırpılır (bayiye eksi adet sevk edilemez) ve hücrede "Sevki durdur" etiketiyle gösterilir. Mevsimsel Kontrol, geçmiş yılların ÜH2×ay bazlı toptan/perakende oranından (satırın kendi Hedef Periyot ayı kullanılarak) türetilir; çapraz-doğrulama amaçlıdır, bütçeye dahil edilmez — iki yöntemin genel yakınsaması yukarıdaki özet şeritte, ÜH2 toplam düzeyinde gösterilir. Kaynak: Kayıtlar sekmesindeki tüm kayıtlı gruplar (bkz. yukarıdaki "Önemli" notu).</div>
+        <div class="note">TOPTAN BÜTÇE = Perakende Bütçe + (Hedef Bayi Stok − Mevcut Bayi Stok), 0'ın altına düşerse 0'da kırpılır (bayiye eksi adet sevk edilemez); bu durumda Durum kolonunda "Sevki durdur" uyarısı gösterilir, TOPTAN BÜTÇE her zaman sayısal kalır. Mevsimsel Kontrol, geçmiş yılların ÜH2×ay bazlı toptan/perakende oranından (satırın kendi Hedef Periyot ayı kullanılarak) türetilir; artık ayrı bir kolon olarak gösterilmiyor, sadece çapraz-doğrulama için yukarıdaki özet şeritte ÜH2 toplam düzeyinde kullanılıyor. Kaynak: Kayıtlar sekmesindeki tüm kayıtlı gruplar (bkz. yukarıdaki "Önemli" notu).</div>
       </div>
     </div>
 

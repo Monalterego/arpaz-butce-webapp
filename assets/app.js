@@ -1407,9 +1407,16 @@ function updateAll() {
     T.cover = T.sales ? T.stock / T.sales : 0; // ana tablodaki footCover ile AYNI yöntem (ağırlıklı toplam)
     return { rows, T };
   }
-  // Δ Stok negatif olup TOPTAN BÜTÇE 0'a kırpıldığında sayı yerine gösterilecek etiket.
-  function toptanClippedBadge() {
-    return '<span class="badge b-red" title="Perakende Bütçe + Δ Stok < 0: bayi zaten hedef stok seviyesinin üzerinde, bu dönem için ek sevkiyat gerekmiyor">Sevki durdur (bayi fazla stoklu)</span>';
+  // Durum kolonu: TOPTAN BÜTÇE artık HER ZAMAN sayısal (bkz. renderToptanFromSaved) —
+  // kırpma durumu/sevkiyat aksiyonu buraya, ayrı bir rozet kolonuna taşındı.
+  // Kırpıldıysa (ham değer <0) kırmızı uyarı; pozitif sevkiyat varsa nötr "Sevk et";
+  // ham değer tam olarak 0'sa (kırpma değil, gerçek sıfır talep) rozet YOK.
+  function toptanDurumBadge(r) {
+    if (r.toptanButceClipped) {
+      return '<span class="badge b-red" title="Perakende Bütçe + Δ Stok < 0: bayi zaten hedef stok seviyesinin üzerinde, bu dönem için ek sevkiyat gerekmiyor">Sevki durdur (bayi fazla stoklu)</span>';
+    }
+    if (r.toptanButce > 0) return '<span class="badge b-grey">Sevk et</span>';
+    return "";
   }
   // Envanter-köprüsü toptanı (T.toptanButce) ile mevsimsel kontrol toptanının
   // (T.mevsimselKontrol) ÜH2 toplam düzeyinde yakınsama yüzdesi (0-100).
@@ -1505,8 +1512,8 @@ function updateAll() {
         <td class="num-cell">${fmtN(r.mevcutBayiStok)}</td>
         <td class="num-cell">${fmtN(r.hedefBayiStok)}</td>
         <td class="num-cell ${r.deltaStok >= 0 ? "up" : "down"}">${r.deltaStok >= 0 ? "+" : ""}${fmtN(r.deltaStok)}</td>
-        <td class="num-cell toptan-highlight">${r.toptanButceClipped ? toptanClippedBadge() : fmtN(r.toptanButce)}</td>
-        <td class="num-cell">${fmtN(r.mevsimselKontrol)}</td>
+        <td>${toptanDurumBadge(r)}</td>
+        <td class="num-cell toptan-highlight">${fmtN(r.toptanButce)}</td>
       </tr>`).join("");
     $("toptanFoot").innerHTML = `
       <td>TOPLAM</td>
@@ -1523,8 +1530,8 @@ function updateAll() {
       <td class="num-cell">${fmtN(data.T.mevcutBayiStok)}</td>
       <td class="num-cell">${fmtN(data.T.hedefBayiStok)}</td>
       <td class="num-cell ${data.T.deltaStok >= 0 ? "up" : "down"}">${data.T.deltaStok >= 0 ? "+" : ""}${fmtN(data.T.deltaStok)}</td>
-      <td class="num-cell toptan-highlight">${fmtN(data.T.toptanButce)}</td>
-      <td class="num-cell">${fmtN(data.T.mevsimselKontrol)}</td>`;
+      <td>—</td>
+      <td class="num-cell toptan-highlight">${fmtN(data.T.toptanButce)}</td>`;
     renderToptanConvergence(data.T, true);
     autoFitToptanColumns();
   }
