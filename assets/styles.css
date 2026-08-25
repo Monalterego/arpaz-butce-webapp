@@ -38,9 +38,25 @@ select[disabled]{opacity:.5;cursor:not-allowed}
 .panel h2 .pill{font-size:10px;background:var(--bluebg);color:var(--blue);padding:2px 8px;border-radius:var(--radius-pill);font-weight:600}
 .panel.formula h2{cursor:pointer}
 .toggle-ico{margin-left:auto;font-size:11px;color:var(--grey)}
-.params{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:14px;align-items:start}
+.params{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:14px;align-items:start}
 .params > .pgroup{background:#f8fafc;border:1px solid var(--line);border-radius:var(--radius-md);padding:10px 12px;box-shadow:var(--shadow-sm);position:static;width:auto;z-index:auto;min-width:0}
 .params .pgroup .ptitle{font-size:11px;color:var(--grey);margin-bottom:6px;font-weight:600;text-transform:uppercase;letter-spacing:.4px}
+/* "Plan Stok % Ağırlıkları" diğer 3 karttan (Global Hedefler/Kampanya/Gam &
+   Kota) fiziksel olarak ayrı, kendi satırında — grid sütun sayısı 1'e
+   indirilip tek .pgroup tam genişliğe yayılıyor, böylece üstteki satırla
+   AYNI sol/sağ kenardan hizalanıyor (aynı .panel içinde, aynı .params
+   grid mantığı). İki blok arası boşluk için .params + .params margin-top. */
+.params + .params{margin-top:14px}
+.params-weights{grid-template-columns:1fr}
+/* Hafif vurgu: "bağımsız ama aynı ailenin parçası" — mavi accent arka plan +
+   sol renkli şerit, diğer kartlarla AYNI boyut/köşe/gölge korunuyor (sadece
+   renk/sol-şerit override, bkz. Bölüm 9 token kuralı — yeni ham renk yok,
+   mevcut --bluebg/--accent2). Sol padding, eklenen 3px border'ı dengelemek
+   için 12px'ten 9px'e düşürüldü (iç metin hizası diğer kartlarla aynı kalsın).
+   Seçici `.params > .pgroup.pgroup-weights` (üç sınıf/kombinatör) KASITLI —
+   düz `.pgroup-weights` (tek sınıf) `.params > .pgroup`'un (iki sınıf)
+   ÖNÜNE geçemiyordu, renk hiç uygulanmıyordu (test edildi, doğrulandı). */
+.params > .pgroup.pgroup-weights{background:var(--bluebg);border:1px solid rgba(0,119,182,.25);border-left:3px solid var(--accent2);padding-left:9px}
 .params + .action-row,
 .action-row{display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:12px;margin-top:12px}
 .action-row > .action-card{background:#f8fafc;border:1px solid var(--line);border-radius:8px;padding:10px 12px;min-width:0}
