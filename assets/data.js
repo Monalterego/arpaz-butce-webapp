@@ -18,14 +18,6 @@ const CALENDAR = [
   ["Kasım",  "Efsane Cuma",        "Kampanya",   "Yıl Sonu Büyük İndirim",    "Paro +18%",  "1,35x"],
   ["Aralık", "Yılbaşı",            "Event",      "Hediyelik / TV",            "Event +14%", "1,18x"],
 ];
-const RATIO = [
-  ["2021", 38, 62, "Pandemi çıkışı, toptan ağırlıklı"],
-  ["2022", 42, 58, "Perakende toparlanıyor"],
-  ["2023", 46, 54, "Dengelenme"],
-  ["2024", 49, 51, "Perakende payı artışta"],
-  ["2025", 52, 48, "Perakende çoğunlukta"],
-  ["2026", 54, 46, "Trend yukarı"],
-];
 const MONTHS = ['Oca','Şub','Mar','Nis','May','Haz','Tem','Ağu','Eyl','Eki','Kas','Ara'];
 const SEASONAL_INDEX = [0.9, 0.85, 1.05, 1.10, 1.05, 1.20, 1.15, 0.95, 1.00, 0.95, 1.35, 1.15];
 
@@ -35,7 +27,6 @@ const DataService = {
   _region: "",  // "" | bölge adı
 
   loadCalendar() { return CALENDAR; },
-  loadRatio()    { return RATIO; },
   months()       { return MONTHS; },
   seasonal()     { return SEASONAL_INDEX; },
   orgs()         { return (typeof ORGS !== "undefined") ? ORGS : []; },

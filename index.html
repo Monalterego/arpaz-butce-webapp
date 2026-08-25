@@ -41,7 +41,7 @@
       <button class="active" data-tab="miks">Bütçe &amp; Stok Miks</button>
       <button data-tab="toptan">Toptan Bütçe</button>
       <button data-tab="takvim">Kampanya / Özel Gün Takvimi</button>
-      <button data-tab="rasyo">Perakende/Toptan Rasyo</button>
+      <button data-tab="rasyo">Perakende → Toptan (Kanıt)</button>
       <button data-tab="forecast">Tahmin (Forecast)</button>
       <button data-tab="kayitlar">Kayıtlar</button>
     </div>
@@ -349,15 +349,47 @@
       </div>
     </div>
 
-    <!-- ========== TAB: RASYO ========== -->
+    <!-- ========== TAB: KANIT (Perakende → Toptan Bilimsel Temel) ========== -->
     <div class="tabpane" data-pane="rasyo" style="display:none">
       <div class="panel">
-        <h2>Perakende / Toptan Satış Rasyosu <span class="pill">Pandemi Sonrası</span></h2>
-        <table id="ratioTable"><thead><tr>
-          <th>Yıl</th><th>Perakende %</th><th>Toptan %</th><th>Rasyo (Per/Top)</th><th>Yorum</th>
-        </tr></thead><tbody id="ratioRows"></tbody></table>
-        <div class="note">2021+ veriyle perakende ağırlığı takip edilir; bütçe dağılımında kanal miksini belirler.</div>
+        <h2>🔬 Perakende Bütçesinden Toptan Bütçesine: Bilimsel Temel</h2>
+        <p class="kanit-intro">Bayilere ne göndereceğimizi (toptan) tahmin etmek için şu fiziksel kuralı
+          kullanıyoruz: <b>Toptan = Perakende + Bayi Stok Değişimi</b>. Bu kuralı şirketin son 4 yıllık
+          gerçek verisiyle test ettik. İşte kanıtlar:</p>
       </div>
+
+      <div class="kpis kanit-kpis" id="kanitKpis"></div>
+
+      <div class="panel">
+        <h2>Toptan, Perakendeyi Ne Zaman Besliyor?</h2>
+        <div id="kanitLeadLag" class="kanit-leadlag"></div>
+        <div class="note" id="kanitLeadLagNote"></div>
+      </div>
+
+      <div class="panel">
+        <h2>Hangi Ay Dolum, Hangi Ay Eritme? (Toptan/Perakende)</h2>
+        <div style="overflow:auto">
+          <table id="kanitHeatmap"></table>
+        </div>
+        <div class="legend">
+          <span><span class="kanit-swatch" style="background:#2e7d32"></span>&lt; 1 — eritme</span>
+          <span><span class="kanit-swatch" style="background:#b26a00"></span>~ 1 — dengeli</span>
+          <span><span class="kanit-swatch" style="background:#c62828"></span>&gt; 1 — dolum</span>
+        </div>
+        <div class="note">Değerler 0,5–2,0 aralığına kırpılmıştır. SOLAR ENERJİ, HAVALANDIRMA, HİJYEN, PROFESYONEL GÖRÜNTÜLEME ve (İPTAL)/GRUPSUZ gruplar uç/güvenilmez rasyo nedeniyle gösterilmez.</div>
+      </div>
+
+      <div class="panel">
+        <h2>Kategori Bazında Ortalama Toptan/Perakende</h2>
+        <div id="kanitYillikRasyo" class="kanit-barlist"></div>
+      </div>
+
+      <div class="panel">
+        <h2>Mevsim İmzaları</h2>
+        <div class="action-row" id="kanitMevsim"></div>
+      </div>
+
+      <div class="foot" id="kanitFootnote"></div>
     </div>
 
     <!-- ========== TAB: FORECAST ========== -->
@@ -394,6 +426,7 @@
 <script src="assets/realdata.js"></script>
 <script src="assets/data.js"></script>
 <script src="assets/toptan_katsayi.js"></script>
+<script src="assets/kanit.js"></script>
 <script src="assets/app.js"></script>
 </body>
 </html>

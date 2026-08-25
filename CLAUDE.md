@@ -87,7 +87,7 @@ Küçük ev aletleri/kişisel bakım %30-45 · Aksesuar/yedek parça ~%48.
   satır şemasına indirir: **`[ Ad, StokAdet, SatışAdet, SatışTutar, Marj%, İndirim% ]`**
   - `sel = { uh1, uh2, uh3 }`, `level ∈ {"uh4","uh3","uh2"}`
 - `loadMix()` = mevcut seçim için wrapper
-- `loadCalendar()`, `loadRatio()`, `months()`, `seasonal()`
+- `loadCalendar()`, `months()`, `seasonal()`
 
 **Gerçek veriye geçiş (IT için):** `loadMixFor` içi `fetch('/api/miks?...')`'e çevrilir;
 şema aynı kalır. Beklenen alanlar yukarıdaki gibi.
@@ -245,8 +245,10 @@ Sol menü sırası: **TEŞKİLAT → ÜRÜN HİYERARŞİSİ → PERİYOT**.
   `setOrg/setRegion` + `rebuild()`. Başlangıç "Tümü" (value="").
 - **Ürün Hiyerarşisi:** `#h_uh1`, `#h_uh2`, `#h_uh3` (kaskad).
 - **Periyot (like-for-like):** Baz (LY) / Hedef (TY) — şimdilik görsel.
-- Sekmeler: **Bütçe & Stok Miks** (ana) · Kampanya/Özel Gün Takvimi (2021+) ·
-  Perakende/Toptan Rasyo · Tahmin (Forecast: LFL / Mevsimsel / 3-Aylık Hareketli Ort.).
+- Sekmeler: **Bütçe & Stok Miks** (ana) · Toptan Bütçe (bkz. Bölüm 13) ·
+  Kampanya/Özel Gün Takvimi (2021+) · **Perakende → Toptan (Kanıt)** (bkz. Bölüm 13.9,
+  eski "Perakende/Toptan Rasyo" — statik infografik vitrini, RATIO verisi kaldırıldı) ·
+  Tahmin (Forecast: LFL / Mevsimsel / 3-Aylık Hareketli Ort.) · Kayıtlar.
 - Ana tablo blokları: **GERÇEKLEŞEN (LY)** [Stok Adet, Stok%, Satış Adet, Satış%,
   Brüt Kâr (₺), Kâr%, Cover, Turnover, **Ortalama Satış Fiyatı** — 9 kolon] ve
   **GELECEK YIL PLANI (TY)** [Plan Stok %, Plan Stok Adet, Hedef Cover(elle), Satış Bütçe,
@@ -285,9 +287,9 @@ Sol menü sırası: **TEŞKİLAT → ÜRÜN HİYERARŞİSİ → PERİYOT**.
 - `actionTag(...)` — 2×2 matris (bkz. Bölüm 6).
 - `renderDurumKpis(m)` — actionTag'in ürettiği 4 duruma göre grup sayısını ve payını
   `#durumKpis` şeridine yazar (kategori adları actionTag'ten türetilir, hardcode değil).
-- `renderKpis / renderScenarios / renderCalendar / renderRatio / renderForecast`.
+- `renderKpis / renderScenarios / renderCalendar / renderKanit / renderForecast`.
 - Biçimleyiciler: `fmtN` (tr-TR tam sayı), `fmtP`/`fmtP0` (yüzde), `fmtX` (çarpan),
-  `fmtD`/`fmtD2` (ondalık). Türkçe locale ZORUNLU.
+  `fmtD`/`fmtD2`/`fmtD3` (ondalık, 1/2/3 basamak). Türkçe locale ZORUNLU.
 - **`initColResize()`** — `#grid` başlık hücrelerine sürüklenebilir kenar tutamacı
   (`.col-resize-handle`) ekler; sütun genişliğini `<colgroup>`'taki ilgili `<col>`'a yazar.
   `GRID_COLS_KEY` ("arpaz_grid_col_widths") ile localStorage'a kaydedilir. Sütun bazlı
@@ -527,3 +529,35 @@ kurulmadan ÖNCE kaydedilmiş yinelenen (duplicate) satırlar Kayıtlar'da hâl�
 bunlar Toptan Bütçe'de çift sayıma yol açar. Kayıtlar'ın mevcut "Sil" butonuyla elle
 temizlenebilir; ayrı bir "Tekilleştir" (aynı 7 alanı paylaşan kayıtlardan en yenisini
 tutup eskilerini silen) özelliği henüz YOK, talep gelirse eklenebilir.
+
+### 13.9 "Perakende → Toptan (Kanıt)" Sekmesi — Statik İnfografik Vitrini
+Eski "Perakende/Toptan Rasyo" sekmesi (yıl bazlı temsili `RATIO` tablosu — kaldırıldı,
+`assets/data.js`'te artık yok) **gerçek analiz kanıtlarını** gösteren bir vitrine
+dönüştürüldü. Amaç: son kullanıcı "toptan neden bu formülle hesaplanıyor" sorusuna
+somut, ölçülmüş kanıtla cevap bulsun (bkz. Bölüm 13.2 envanter kimliği doğrulaması).
+
+**Veri:** `assets/kanit.js` → `const KANIT` (özet istatistikler + lead-lag korelasyon
+dizisi + ÜH2 yıllık rasyo listesi + mevsim imzası kartları — hepsi Colab analizinden
+üretilmiş GERÇEK, sabit/geçmiş değerler, sidebar seçimine bağlı DEĞİL). Aylık ısı
+haritası için ayrı veri gerekmedi, mevcut `assets/toptan_katsayi.js` (`TOPTAN_KATSAYI`)
+tekrar kullanıldı. İkisi de `index.html`'de `app.js`'ten ÖNCE yüklenir.
+
+**Render:** `renderKanit()` (app.js) tek seferde DOMContentLoaded'da çalışır — hiçbir
+alt fonksiyonu `updateAll()`'a bağlı değildir, sidebar/parametre değişikliği bu
+sekmeyi ETKİLEMEZ (bilinçli, çünkü veri zaten sabit/geçmiş). Alt fonksiyonlar:
+- `renderKanitKpis()` — 3 KPI kartı (Doğruluk %89, Lead-Time −2 Ay, Test Kapsamı).
+- `renderKanitLeadLag()` — lag −3..+3 bar grafik, saf CSS flexbox (canvas YOK); her
+  kolon üstte pozitif bölge (sıfır çizgisinden yukarı büyür), altta ince negatif bölge
+  (sıfır çizgisinden aşağı büyür); en güçlü lag (`KANIT.ozet.lead_lag_en_guclu`) yeşil
+  vurgulu.
+- `heatDiverge(v)` + `renderKanitHeatmap()` — ÜH2×ay ısı haritası; `isToptanOutlierUh2()`
+  (Bölüm 13.4'teki AYNI fonksiyon, tekrar yazılmadı) ile outlier ÜH2'ler elenir, değerler
+  0,5–2,0'a kırpılır, renk 1,0 pivotlu diverging skala (yeşil→amber→kırmızı, `heat()`
+  ana tablodaki gibi iki-renk lineer interpolasyon, burada iki bacaklı).
+- `renderKanitYillikRasyo()` — `KANIT.yillik_rasyo` yatay bar liste, 1,0 referans çizgili.
+- `renderKanitMevsim()` — `KANIT.mevsim`, mevcut `.action-row`/`.action-card` kabuğu
+  (önceden kullanılmayan, dead CSS idi) yeniden kullanılarak 4 kart.
+- `renderKanitFootnote()` — sabit dipnot metni.
+
+**KISIT (bilinçli):** Bu sekme SADECE görsel/kanıt — bütçe hesaplarına (computeFromData,
+computeToptanFromSaved) dokunmaz, hiçbir kullanıcı girdisi almaz.

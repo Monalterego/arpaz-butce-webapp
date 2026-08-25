@@ -18,6 +18,7 @@
   const fmtX = (n) => n.toFixed(2).replace(".", ",") + "x";
   const fmtD = (n) => n.toFixed(1).replace(".", ",");
   const fmtD2 = (n) => n.toFixed(2).replace(".", ",");
+  const fmtD3 = (n) => n.toFixed(3).replace(".", ",");
 
   const CAMP = ["paro", "bundle", "event", "gam", "kota"];
   const OLU_STOK_CARPANI = 3; // sabit: grup medyanının 3 katı (kullanıcı ayarlamıyor)
@@ -1052,10 +1053,125 @@ function updateAll() {
         <td><span class="badge b-blue">${c[2]}</span></td><td>${c[3]}</td>
         <td><span class="badge b-amber">${c[4]}</span></td><td class="up">${c[5]}</td></tr>`).join("");
   }
-  function renderRatio() {
-    $("ratioRows").innerHTML = DataService.loadRatio()
-      .map((r) => `<tr><td>${r[0]}</td><td>${r[1]}%</td><td>${r[2]}%</td>
-        <td><b>${fmtD2(r[1] / r[2])}</b></td><td>${r[3]}</td></tr>`).join("");
+  // --- Perakende → Toptan (Kanıt) — statik infografik vitrini ---
+  // KANIT (assets/kanit.js) ve TOPTAN_KATSAYI (assets/toptan_katsayi.js) sabit/geçmiş
+  // veridir, sidebar seçimine bağlı DEĞİLDİR — bu yüzden bir kez render edilir (bkz.
+  // DOMContentLoaded), updateAll()'a bağlı değildir. Bütçe hesaplarına dokunmaz, SADECE
+  // görsel/kanıt sekmesidir (bkz. CLAUDE.md Bölüm 13.9).
+  function renderKanitKpis() {
+    const el = $("kanitKpis");
+    if (!el || typeof KANIT === "undefined") return;
+    const o = KANIT.ozet;
+    const dogruluk = Math.round(o.korelasyon * 100);
+    const leadAbs = Math.abs(o.lead_lag_en_guclu);
+    const kpis = [
+      ["Doğruluk", "%" + dogruluk, `Fiziksel kural gerçek toptanla %${dogruluk} korelasyon gösterdi`],
+      ["Lead-Time", `−${leadAbs} Ay`, `Toptan sevk, perakende satıştan ~${leadAbs} ay önce gerçekleşiyor (bayi önce alır, sonra satar)`],
+      ["Test Kapsamı", fmtN(o.satir) + " Kayıt", `${o.donem}, ${o.uh2} ürün grubu, ${o.uh4} alt grup ile test edildi`],
+    ];
+    el.innerHTML = kpis.map((k) => `<div class="kpi"><div class="lbl">${k[0]}</div>
+      <div class="val">${k[1]}</div><div class="sub">${k[2]}</div></div>`).join("");
+  }
+  function renderKanitLeadLag() {
+    const el = $("kanitLeadLag");
+    if (!el || typeof KANIT === "undefined") return;
+    const data = KANIT.leadlag;
+    const bestLag = KANIT.ozet.lead_lag_en_guclu;
+    const maxAbs = Math.max(...data.map((d) => Math.abs(d.r)));
+    const POS_H = 140, NEG_H = 34;
+    el.innerHTML = `<div class="kanit-leadlag-chart">` + data.map((d) => {
+      const highlight = d.lag === bestLag;
+      const posH = d.r > 0 ? Math.round((d.r / maxAbs) * POS_H) : 0;
+      const negH = d.r < 0 ? Math.round((Math.abs(d.r) / maxAbs) * NEG_H) : 0;
+      const valTxt = fmtD3(d.r);
+      return `
+        <div class="kanit-leadlag-col">
+          <div class="kanit-leadlag-val">${d.r > 0 ? valTxt : "&nbsp;"}</div>
+          <div class="kanit-leadlag-pos"><div class="kanit-leadlag-bar${highlight ? " highlight" : ""}" style="height:${posH}px" title="lag ${d.lag}: r=${valTxt}"></div></div>
+          <div class="kanit-leadlag-zeroline"></div>
+          <div class="kanit-leadlag-neg"><div class="kanit-leadlag-bar-neg" style="height:${negH}px" title="lag ${d.lag}: r=${valTxt}"></div></div>
+          <div class="kanit-leadlag-val-neg">${d.r < 0 ? valTxt : "&nbsp;"}</div>
+          <div class="kanit-leadlag-lbl">${d.lag > 0 ? "+" : ""}${d.lag}</div>
+        </div>`;
+    }).join("") + `</div>`;
+    $("kanitLeadLagNote").textContent =
+      `En güçlü ilişki ${bestLag} ayda: toptan, perakendeyi ${Math.abs(bestLag)} ay önden götürür.`;
+  }
+  // Diverging renk skalası: 0,5(yeşil) → 1,0(amber) → 2,0(kırmızı). Ana #grid'in `heat()`
+  // fonksiyonuyla AYNI ruh (iki renk arası lineer interpolasyon), burada iki bacaklı
+  // (pivot 1,0'da) çünkü "<1 iyi/eritme, >1 dolum" anlamı ortadan ikiye ayrılıyor.
+  function heatDiverge(v) {
+    const GREEN = [46, 125, 50], AMBER = [178, 106, 0], RED = [198, 40, 40];
+    const clipped = Math.max(0.5, Math.min(2.0, v));
+    const lerp = (a, b, t) => Math.round(a + (b - a) * t);
+    const c = clipped <= 1
+      ? GREEN.map((g, i) => lerp(g, AMBER[i], (clipped - 0.5) / 0.5))
+      : AMBER.map((a, i) => lerp(a, RED[i], clipped - 1));
+    return `rgb(${c[0]},${c[1]},${c[2]})`;
+  }
+  function renderKanitHeatmap() {
+    const table = $("kanitHeatmap");
+    if (!table || typeof TOPTAN_KATSAYI === "undefined") return;
+    const months = DataService.months();
+    const uh2List = Object.keys(TOPTAN_KATSAYI)
+      .filter((u) => !isToptanOutlierUh2(u))
+      .sort((a, b) => a.localeCompare(b, "tr-TR"));
+    const thead = `<thead><tr><th>ÜH2</th>${months.map((m) => `<th>${m}</th>`).join("")}</tr></thead>`;
+    const tbody = "<tbody>" + uh2List.map((uh2) => {
+      const node = TOPTAN_KATSAYI[uh2] || {};
+      const cells = months.map((_, i) => {
+        const raw = node[String(i + 1)];
+        if (raw == null) return `<td class="kanit-heat-cell kanit-heat-empty">—</td>`;
+        const clipped = Math.max(0.5, Math.min(2.0, raw));
+        return `<td class="kanit-heat-cell" style="background:${heatDiverge(raw)}" title="${uh2} — ${months[i]}: ${fmtD2(clipped)}">${fmtD2(clipped)}</td>`;
+      }).join("");
+      return `<tr><td class="kanit-heat-rowlabel">${uh2}</td>${cells}</tr>`;
+    }).join("") + "</tbody>";
+    table.innerHTML = thead + tbody;
+  }
+  function renderKanitYillikRasyo() {
+    const el = $("kanitYillikRasyo");
+    if (!el || typeof KANIT === "undefined") return;
+    const data = KANIT.yillik_rasyo;
+    const maxVal = Math.max(...data.map((d) => d.r), 1) * 1.15;
+    const refPct = (1 / maxVal) * 100;
+    el.innerHTML = data.map((d) => {
+      const barPct = (d.r / maxVal) * 100;
+      const cls = d.r >= 1 ? "over" : "under";
+      return `
+        <div class="kanit-bar-row">
+          <div class="kanit-bar-label" title="${d.uh2}">${d.uh2}</div>
+          <div class="kanit-bar-track">
+            <div class="kanit-bar-fill ${cls}" style="width:${barPct}%"></div>
+            <div class="kanit-bar-refline" style="left:${refPct}%" title="1,0 referans"></div>
+          </div>
+          <div class="kanit-bar-value">${fmtD2(d.r)}</div>
+        </div>`;
+    }).join("");
+  }
+  function renderKanitMevsim() {
+    const el = $("kanitMevsim");
+    if (!el || typeof KANIT === "undefined") return;
+    el.innerHTML = KANIT.mevsim.map((m) => `
+      <div class="action-card">
+        <b>${m.baslik}</b>
+        <div style="margin-top:4px;font-size:12px;color:#33475b;line-height:1.5">${m.metin}</div>
+      </div>`).join("");
+  }
+  function renderKanitFootnote() {
+    const el = $("kanitFootnote");
+    if (!el) return;
+    el.textContent = "Not: Bu analiz geçmiş gerçek veriden üretildi. Sapmanın bir kısmı, " +
+      "siparişle satışın aynı aya denk gelmemesinden (2 aylık gecikme) kaynaklanır; ürün " +
+      "grubu ve çeyrek bazında toplandığında doğruluk daha da artar.";
+  }
+  function renderKanit() {
+    renderKanitKpis();
+    renderKanitLeadLag();
+    renderKanitHeatmap();
+    renderKanitYillikRasyo();
+    renderKanitMevsim();
+    renderKanitFootnote();
   }
   // --- Toptan (Sell-in) Bütçe — Envanter Akış Kimliği (bkz. CLAUDE.md Bölüm 13) ---
   // Toptan = Perakende Bütçe + (Hedef Bayi Stok − Mevcut Bayi Stok)
@@ -1710,6 +1826,6 @@ function updateAll() {
     updateSaveButtonState();
     renderToptanFromSaved(); // ilk yüklemede de Kayıtlar'ın o anki hali gösterilsin
     renderCalendar();
-    renderRatio();
+    renderKanit();
   });
 })();

@@ -107,7 +107,7 @@ tfoot td{background:#eef3f8;font-weight:700;border-top:2px solid var(--navy)}
 .fc-controls select{padding:6px;border:1px solid var(--line);border-radius:6px}
 #scTable td,#scTable th{text-align:center}
 #scTable td:first-child{text-align:left;font-weight:600}
-#ratioRows td:last-child,#calRows td:nth-child(2){text-align:left}
+#calRows td:nth-child(2){text-align:left}
 /* formül kutusu */
 .panel.formula .fbox{display:flex;flex-direction:column;gap:6px;font-size:12px;background:#f8fafc;border:1px dashed var(--line);border-radius:8px;padding:10px 12px;line-height:1.5}
 .wK{color:#8e44ad;font-weight:600}.wS{color:#0077b6;font-weight:600}.wSt{color:#5b6b7c;font-weight:600}.wH{color:#b26a00;font-weight:600}
@@ -312,4 +312,52 @@ tfoot td{background:#eef3f8;font-weight:700;border-top:2px solid var(--navy)}
 /* Child rows (ÜH4 under ÜH3) - subtle grey tone and slight indent */
 .child-row td:first-child{padding-left:18px;background:#fbfcfd;color:var(--grey)}
 .child-row{background:linear-gradient(180deg,#fbfcfd,#f7f8fa)}
+
+/* ===== Perakende → Toptan (Kanıt) sekmesi — statik infografik vitrini =====
+   Saf HTML/CSS (canvas yok); mevcut .kpi/.panel/.action-row/.legend/.foot
+   kabuğu yeniden kullanılıyor, sadece bu sekmeye özel grafik parçaları burada. */
+.kanit-intro{font-size:12px;color:#33475b;line-height:1.6;margin:0}
+.kanit-kpis{grid-template-columns:repeat(3,1fr)}
+.kanit-kpis .kpi .val{font-size:22px}
+.kanit-swatch{display:inline-block;width:10px;height:10px;border-radius:3px}
+
+/* Lead-lag bar grafik: her kolon üstte pozitif bölge (sıfır çizgisine göre
+   alttan büyür), altta ince negatif bölge (sıfır çizgisinden aşağı büyür). */
+.kanit-leadlag-chart{display:flex;gap:8px;align-items:stretch}
+.kanit-leadlag-col{flex:1;display:flex;flex-direction:column;align-items:center;min-width:0}
+.kanit-leadlag-pos{height:140px;width:100%;display:flex;align-items:flex-end;justify-content:center}
+.kanit-leadlag-neg{height:34px;width:100%;display:flex;align-items:flex-start;justify-content:center}
+.kanit-leadlag-bar{width:60%;max-width:36px;border-radius:4px 4px 0 0;background:var(--navy2)}
+.kanit-leadlag-bar.highlight{background:var(--green)}
+.kanit-leadlag-bar-neg{width:60%;max-width:36px;border-radius:0 0 4px 4px;background:var(--grey)}
+.kanit-leadlag-zeroline{width:100%;border-top:1px solid var(--line)}
+.kanit-leadlag-val,.kanit-leadlag-val-neg{font-size:11px;font-weight:700;color:var(--navy);font-variant-numeric:tabular-nums}
+.kanit-leadlag-val{margin-bottom:2px}
+.kanit-leadlag-val-neg{margin-top:2px;color:var(--grey)}
+.kanit-leadlag-lbl{font-size:11px;color:var(--grey);margin-top:6px;font-weight:600}
+
+/* Mevsimsel ısı haritası tablosu — genel table/th/td kabuğunu miras alır,
+   sadece hücre renklendirmesi ve ÜH2 satır etiketi burada özelleştirilir. */
+#kanitHeatmap{min-width:760px}
+#kanitHeatmap th{text-align:center}
+.kanit-heat-rowlabel{text-align:left;white-space:nowrap;font-size:11px;color:#33475b}
+.kanit-heat-cell{text-align:center;color:#fff;font-weight:700;font-size:11px;font-variant-numeric:tabular-nums}
+.kanit-heat-empty{color:var(--grey);background:#f4f6f9;font-weight:400}
+
+/* ÜH2 yıllık rasyo yatay bar listesi — 1,0 referans çizgili */
+.kanit-barlist{display:flex;flex-direction:column;gap:7px}
+.kanit-bar-row{display:grid;grid-template-columns:180px 1fr 46px;align-items:center;gap:10px}
+.kanit-bar-label{font-size:12px;color:#33475b;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.kanit-bar-track{position:relative;height:16px;background:#eef1f5;border-radius:4px;overflow:hidden}
+.kanit-bar-fill{position:absolute;left:0;top:0;bottom:0;border-radius:4px}
+.kanit-bar-fill.over{background:var(--red)}
+.kanit-bar-fill.under{background:var(--green)}
+.kanit-bar-refline{position:absolute;top:-2px;bottom:-2px;width:2px;background:var(--navy)}
+.kanit-bar-value{font-size:12px;font-weight:700;color:var(--navy);text-align:right;font-variant-numeric:tabular-nums}
+
+@media (max-width:900px){
+  .kanit-kpis{grid-template-columns:1fr}
+  .kanit-bar-row{grid-template-columns:1fr;gap:4px}
+  .kanit-bar-value{text-align:left}
+}
 .child-row td{font-size:12px}
