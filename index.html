@@ -192,20 +192,6 @@
         <div class="note">Kâr % = grup kârının alt-toplamdaki payı (Kâr = Satış Tutarı × Marj). Hedef Cover hücresi bütçe sahibinin uzman yargısıdır — değeri değiştir, Satış Bütçe/LFL anında güncellenir.</div>
       </div>
 
-      <div class="kpis" id="kpis"></div>
-      <div class="durum-kpis" id="durumKpis"></div>
-
-      <!-- FORMÜL AÇIKLAMA -->
-      <div class="panel formula">
-        <h2>Bütçe Kurgusu — Nasıl Hesaplanıyor? <span class="toggle-ico" id="formulaToggle">▸</span></h2>
-        <div class="fbox" id="formulaBox" style="display:none">
-          <div><b>1) Plan Stok %</b> = ( <span class="wK">Kâr%×W</span> + <span class="wS">Satış%×W</span> + <span class="wSt">Stok%×W</span> ) → 100'e normalize</div>
-          <div><b>2) Plan Stok Adet</b> = ( Toplam Stok × Hedef Stok Büyümesi ) × Plan Stok %</div>
-          <div><b>3) Satış Bütçe</b> = ( Plan Stok Adet ÷ <span class="wH">Hedef Cover [elle]</span> ) × Pazarlama Büyümesi × Çarpanlar</div>
-          <div><b>4)</b> LFL = Bütçe/LY Satış−1 · R-LFL = (Bütçe/PlanStok)/(LY Satış/LY Stok)−1 · Stok Büyümesi = PlanStok/LY Stok−1</div>
-        </div>
-      </div>
-
       <!-- PARAMETRELER -->
       <div class="panel">
         <h2>Planlama Parametreleri <span class="pill">Kullanıcı Girişi</span></h2>
@@ -239,6 +225,20 @@
             </div>
             <div class="weights-note">Gelecek yıl stok payını belirleyen ağırlıklar. Kâr önceliklidir (varsayılan 40/30/20).</div>
           </div>
+        </div>
+      </div>
+
+      <div class="kpis" id="kpis"></div>
+      <div class="durum-kpis" id="durumKpis"></div>
+
+      <!-- FORMÜL AÇIKLAMA -->
+      <div class="panel formula">
+        <h2>Bütçe Kurgusu — Nasıl Hesaplanıyor? <span class="toggle-ico" id="formulaToggle">▸</span></h2>
+        <div class="fbox" id="formulaBox" style="display:none">
+          <div><b>1) Plan Stok %</b> = ( <span class="wK">Kâr%×W</span> + <span class="wS">Satış%×W</span> + <span class="wSt">Stok%×W</span> ) → 100'e normalize</div>
+          <div><b>2) Plan Stok Adet</b> = ( Toplam Stok × Hedef Stok Büyümesi ) × Plan Stok %</div>
+          <div><b>3) Satış Bütçe</b> = ( Plan Stok Adet ÷ <span class="wH">Hedef Cover [elle]</span> ) × Pazarlama Büyümesi × Çarpanlar</div>
+          <div><b>4)</b> LFL = Bütçe/LY Satış−1 · R-LFL = (Bütçe/PlanStok)/(LY Satış/LY Stok)−1 · Stok Büyümesi = PlanStok/LY Stok−1</div>
         </div>
       </div>
 
