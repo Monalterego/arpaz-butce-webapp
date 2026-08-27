@@ -12,49 +12,40 @@ Kullanıcı bütçeyi ÜH4'te çalışıyor; bu panel üst kırılımda (ÜH1→
 göre nereden nereye geldi?" sorusunu cevaplar. "Perakende Bütçe" (data-pane="kayitlar")
 sekmesinde, "Çalışılmış Bütçe ve Stok Karışım" (Kayıtlar) panelinin ÜSTÜNDE yer alır.
 
-### 14.2 Mimari — YENİDEN FORMÜL YOK, mevcut computeFromData'yı ÇOKLU ÇAĞIRIR
-Rollup, bütçe formülünü ASLA yeniden yazmaz. Bunun yerine:
-1. `rollupLeafTriples(level)` — HIERARCHY ağacında kırılım seviyesine göre taranacak
-   tüm "yaprak" (uh1,uh2,uh3) üçlülerini + hangi rollup grubuna (groupKey) ait
-   olduklarını çıkarır. `level="uh1"` TÜM hiyerarşiyi tarar (global, 7 ÜH1); `"uh2"`
-   sidebar'ın mevcut `state.sel.uh1`'i altını tarar; `"uh3"` `state.sel.uh1/uh2`
-   altını tarar. **data.js'e HİÇ dokunulmadı** — `DataService.loadMixFor({uh1,uh2,uh3},
-   "uh4")` zaten TEK bir ÜH3'ün ÜH4 satırlarını döndürüyordu, rollup bunu her yaprak
-   için ayrı ayrı çağırır (ana ekranın `buildTable()`'ının yaptığının AYNISI, sadece
-   döngüde).
-2. `computeRollupLeaf(leaf, params)` — her yaprağın ÜH4 satırlarını **computeFromData**
-   ile hesaplar (aynı fonksiyon, ana ekranla BİREBİR). Hedef Cover/TY Fiyat elle-giriş
-   override'ları SADECE `state.sel` ile TAM eşleşen (o an sidebar'da GÖRÜNEN) yaprağa
-   uygulanır — uygulamada zaten başka hiçbir ÜH3'ün elle-girişleri hafızada tutulmuyor
-   (`state.covers`/`state.tyFiyat` her ÜH3 değişiminde sıfırlanıyor, bkz. `rebuild()`),
-   bu yüzden diğer yapraklar computeFromData'nın override'sız varsayılanına (LY cover,
-   LY fiyat × Fiyat Büyümesi %) döner — bilinçli, mevcut mimariyle tutarlı.
-   **DİKKAT:** `computeFromData` Plan Stok% override'ını PARAMETRE olarak almıyor,
-   doğrudan dış `state.planPctOverrides`'ı okuyor (satır index'iyle) — başka bir
-   yaprak için çağrılırken bu dizi geçici olarak `null`'a çekilip hesap sonrası GERİ
-   YÜKLENİR, yoksa mevcut ÜH3'ün override index'leri YANLIŞ yaprağın satırlarına
-   uygulanıp sessiz bir hesap hatası yaratırdı (kod incelemesiyle bulundu, düzeltildi).
-3. Her yaprağın `model.rows`'u (`r.sales, r.salesBudget, r.stock, r.planStock,
-   r.lyFiyat, r.tyRevenue`) hem kendi rollup grubuna (`groupKey`) hem GENEL TOPLAM'a
-   toplanır (`rollupAddRow`); grup metrikleri (`rollupFinalize`) bu Σ alanlarından
-   LFL/R-LFL/Stok Δ/Cover/Ort.Fiyat Δ formülleriyle türetilir — formüller ana ekrandaki
-   TOPLAM satırının (bkz. `updateAll()` `tfoot`) AYNI mantığıyla (ağırlıklı toplam,
-   satır bazlı ortalama DEĞİL).
+### 14.2 KAYNAK: "Çalışılmış Bütçe ve Stok Karışım" kayıtları (savedMixSets)
+Panel, `loadSavedMixSets()` ile localStorage'taki KAYITLI çalışmaları okur ve kırılım
+seviyesine göre gruplar. Kayıt satırları (`set.rows`, bkz. `buildCurrentMixRecord`)
+toplama fonksiyonunun beklediği alan adlarını (`sales`, `salesBudget`, `stock`,
+`planStock`, `lyFiyat`, `tyRevenue`) ZATEN birebir taşır — bu yüzden `rollupAddRow` /
+`rollupFinalize` DEĞİŞMEDEN kullanılır ve bütçe formülü burada YENİDEN YAZILMAZ.
 
-**Doğrulama (iç tutarlılık testiyle kanıtlandı):** ÜH1 görünümünde "BEYAZ EŞYA"
-satırının LY/TY toplamı, ÜH2 görünümünün TOPLAM satırıyla BİREBİR eşleşiyor; ÜH2
-görünümünde "ASPİRATÖR - DAVLUMBAZ" satırı ÜH3 görünümünün TOPLAM'ıyla eşleşiyor —
-rollup'ın iç içe geçmiş kırılımlar arasında matematiksel olarak tutarlı olduğunu
-kanıtlar (headless test, bkz. commit).
+- Gruplama anahtarı: `level="uh1"` → `set.uh1`, `"uh2"` → `set.uh2`, `"uh3"` → `set.uh3`.
+- Kırılım seçici SADECE gruplama derinliğini belirler; sidebar seçimine göre kapsam
+  DARALTILMAZ — kayıtlı işlerin tamamı özetlenir. (Kaynak artık o anki seçim değil,
+  kayıt listesi; sidebar'a göre süzmek kayıtları gizlerdi.)
+- Çift sayım YOK: aynı boyut anahtarı (org/bölge/ÜH1/ÜH2/ÜH3/periyot) için "Revize Et"
+  kaydı YERİNDE günceller, yeni kayıt EKLEMEZ (bkz. `saveCurrentMixSet`).
+- Kayıt yokken tablo "Henüz kayıt yok — ... Kaydet'e bastığında çalışman burada
+  özetlenir." mesajını gösterir.
 
-### 14.3 CANLI mı, DONDURULMUŞ mu? — CANLI (Toptan Bütçe'nin TAM TERSİ)
-Bu panel `updateAll()` içinden `renderRollup()` ile çağrılır — global parametre
-(Hedef Stok Büyümesi % vb.) VEYA herhangi bir Hedef Cover elle-değişikliği ANINDA
-rollup'a yansır (test edildi: bir ÜH4'ün Hedef Cover'ı 16→2 yapılınca SADECE o ÜH4'ün
-ait olduğu grup güncellendi, diğer gruplar değişmedi; global Hedef Stok Büyümesi %
--10→80 yapılınca TÜM gruplar güncellendi). Bu, **Bölüm 13.8'deki Toptan Bütçe'nin TAM
-TERSİDİR** — Toptan Bütçe kayıtlı/dondurulmuş planları gösterir, bu panel ise CANLI
-sonuç/izleme ekranıdır. İkisini birbirine KARIŞTIRMA.
+**TARİHÇE (artık geçersiz):** Panel bir dönem CANLI idi — `rollupLeafTriples()` ile
+HIERARCHY ağacını tarayıp her yaprak için `computeRollupLeaf()` → `computeFromData`
+çağırıyor, sidebar seçimi + parametrelerden ANLIK hesaplıyordu. Kullanıcı kaynağın
+Kayıtlar olmasını istediği için bu iki fonksiyon SİLİNDİ. Geri getirilecekse bilinmesi
+gereken tuzak: `computeFromData` Plan Stok% override'ını parametre olarak ALMAZ,
+doğrudan dış `state.planPctOverrides`'ı okur — başka bir yaprak için çağrılırken bu
+dizi geçici olarak `null`'a çekilip hesap sonrası geri yüklenmeliydi, yoksa mevcut
+ÜH3'ün override index'leri YANLIŞ yaprağın satırlarına uygulanıyordu.
+
+### 14.3 DONDURULMUŞ — Toptan Bütçe ile AYNI mantık (eskiden CANLI idi)
+Panel `updateAll()` içinden ÇAĞRILMAZ. Yenilenme tetikleyicileri Toptan Bütçe ile
+AYNI: kayıt eklendiğinde/revize edildiğinde (`saveCurrentMixSet`), kayıt silindiğinde,
+"Perakende Bütçe" sekmesi açıldığında (`showTab`) ve ilk yüklemede. Global parametre
+veya Hedef Cover oynatmak paneli DEĞİŞTİRMEZ — önce Kaydet/Revize Et gerekir.
+
+Doğrulandı (headless test): kayıt yokken boş mesaj · kaydedince rollup LY Satış =
+ana tablo TOPLAM satırı (birebir) · Hedef Stok Büyümesi %-10→60 yapıldığında rollup
+DEĞİŞMEDİ · Revize Et sonrası güncellendi ve satır sayısı ARTMADI (çift sayım yok).
 
 ### 14.4 Kırılım Seçici + Bağımsız Periyot Seçici
 - `#rollupLevelSeg` — 3 buton (segmented control, mevcut `.segmented` kabuğu), `rollupState.level`

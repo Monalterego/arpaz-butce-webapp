@@ -591,8 +591,10 @@ kanıt vitrini render fonksiyonlarının TAM detayı:
 
 ## 14) "Perakende Bütçe" Sekmesi — Rollup Paneli — DETAY AYRI DOSYADA
 
-ÜH1→ÜH2→ÜH3 özet/rollup panelinin mimarisi (computeFromData'yı yeniden
-yazmadan çoklu çağırma, planPctOverrides izolasyonu, CANLI davranış,
-periyot seçicileri) için TAM detay:
+ÜH1→ÜH2→ÜH3 özet/rollup paneli. **KAYNAK: "Çalışılmış Bütçe ve Stok Karışım"
+kayıtları (savedMixSets) — CANLI sidebar seçimi DEĞİL.** Yani panel Toptan
+Bütçe ile aynı mantıkta DONDURULMUŞtur: parametre oynatmak değiştirmez, önce
+Kaydet/Revize Et gerekir. (Bir dönem CANLI idi, kullanıcı isteğiyle değişti.)
+Gruplama, tetikleyiciler, kırılım/periyot seçicileri için TAM detay:
 
 **→ `docs/ROLLUP_PANELI.md`** (SADECE bu panele dokunurken oku)

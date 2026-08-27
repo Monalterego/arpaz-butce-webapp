@@ -413,7 +413,6 @@ function updateAll() {
 
   renderKpis(m);
   renderForecast(m);
-  renderRollup(); // "Perakende Bütçe" sekmesindeki Özet/Rollup paneli — CANLI (bkz. tanım)
   // NOT: renderToptan(m) BURADAN KALDIRILDI — Toptan Bütçe artık canlı sidebar/parametre
   // değişikliklerine değil, Kayıtlar'a bağlı (bkz. renderToptanFromSaved, saveCurrentMixSet).
 }
@@ -459,51 +458,6 @@ function updateAll() {
   // üçlülerini (uh1,uh2,uh3) + hangi rollup grubuna (groupKey) ait
   // olduklarını döndürür. ÜH1 seviyesi TÜM hiyerarşiyi tarar (global);
   // ÜH2/ÜH3 seviyeleri sidebar'daki mevcut state.sel.uh1/(uh2) altını tarar.
-  function rollupLeafTriples(level) {
-    const leaves = [];
-    if (level === "uh1") {
-      Object.keys(HIERARCHY).forEach((uh1) => {
-        const uh2node = HIERARCHY[uh1] || {};
-        Object.keys(uh2node).forEach((uh2) => {
-          Object.keys(uh2node[uh2] || {}).forEach((uh3) => leaves.push({ uh1, uh2, uh3, groupKey: uh1 }));
-        });
-      });
-    } else if (level === "uh2") {
-      const uh1 = state.sel.uh1;
-      const uh2node = HIERARCHY[uh1] || {};
-      Object.keys(uh2node).forEach((uh2) => {
-        Object.keys(uh2node[uh2] || {}).forEach((uh3) => leaves.push({ uh1, uh2, uh3, groupKey: uh2 }));
-      });
-    } else {
-      const uh1 = state.sel.uh1, uh2 = state.sel.uh2;
-      const uh3node = (HIERARCHY[uh1] || {})[uh2] || {};
-      Object.keys(uh3node).forEach((uh3) => leaves.push({ uh1, uh2, uh3, groupKey: uh3 }));
-    }
-    return leaves;
-  }
-
-  // Bir yaprağın ÜH4 satırlarını computeFromData ile hesaplar. Hedef Cover/TY
-  // Fiyat/Plan Stok% elle-girişleri SADECE o an sidebar'da GÖRÜNEN (state.sel
-  // ile TAM eşleşen) yaprağa uygulanır — uygulamada başka hiçbir ÜH3'ün elle
-  // girişleri hafızada tutulmuyor zaten (bkz. buildTable/state.covers), bu
-  // yüzden diğer yapraklar kendi LY cover/otomatik fiyatlarına döner (aynı
-  // computeFromData'nın hiçbir override verilmediğinde yaptığı varsayılan).
-  function computeRollupLeaf(leaf, params) {
-    const rows = DataService.loadMixFor({ uh1: leaf.uh1, uh2: leaf.uh2, uh3: leaf.uh3 }, "uh4");
-    if (!rows.length) return null;
-    const isCurrent = leaf.uh1 === state.sel.uh1 && leaf.uh2 === state.sel.uh2 && leaf.uh3 === state.sel.uh3;
-    const covers = isCurrent ? state.covers : null;
-    const tyFiyat = isCurrent ? state.tyFiyat : null;
-    // computeFromData Plan Stok% override'ını PARAMETRE olarak almıyor, doğrudan
-    // dış state.planPctOverrides'ı okuyor — başka bir yaprak için çağırırken bu
-    // diziyi geçici olarak kapatıyoruz, yoksa index çakışıp yanlış satıra uygulanır.
-    const savedOverrides = state.planPctOverrides;
-    if (!isCurrent) state.planPctOverrides = null;
-    const model = computeFromData(rows, params, covers, tyFiyat);
-    state.planPctOverrides = savedOverrides;
-    return model;
-  }
-
   function rollupBlankAcc(name) {
     return { name, lySales: 0, tyBudget: 0, lyStock: 0, tyPlanStock: 0, lyValue: 0, tyRevenue: 0 };
   }
@@ -527,17 +481,26 @@ function updateAll() {
     return { name: acc.name, lySales: acc.lySales, tyBudget: acc.tyBudget, lfl, rlfl, stokD,
       lyCover, tyCover, lyFiyat, tyFiyat, fiyatD };
   }
+  // KAYNAK: "Çalışılmış Bütçe ve Stok Karışım" kayıtları (savedMixSets) — CANLI
+  // sidebar seçimi DEĞİL. Kayıtların satırları (`set.rows`) rollupAddRow'ın
+  // beklediği alan adlarını (sales/salesBudget/stock/planStock/lyFiyat/tyRevenue)
+  // zaten birebir taşıyor (bkz. buildCurrentMixRecord), bu yüzden toplama ve
+  // metrik türetme fonksiyonları DEĞİŞMEDEN kullanılır.
+  // Kırılım seviyesi sadece GRUPLAMA derinliğini belirler; sidebar seçimine göre
+  // kapsam DARALTILMAZ — kayıtlı işlerin tamamı özetlenir (bilinçli: kaynak artık
+  // o anki seçim değil, kayıt listesi).
+  // Aynı boyut anahtarı için "Revize Et" kaydı YERİNDE günceller (bkz.
+  // saveCurrentMixSet), bu yüzden çift sayım OLMAZ.
   function computeRollup(level) {
-    const params = readParams();
-    const leaves = rollupLeafTriples(level);
+    const sets = loadSavedMixSets();
     const groups = new Map();
     const totalAcc = rollupBlankAcc("TOPLAM");
-    leaves.forEach((leaf) => {
-      const model = computeRollupLeaf(leaf, params);
-      if (!model) return;
-      if (!groups.has(leaf.groupKey)) groups.set(leaf.groupKey, rollupBlankAcc(leaf.groupKey));
-      const g = groups.get(leaf.groupKey);
-      model.rows.forEach((r) => { rollupAddRow(g, r); rollupAddRow(totalAcc, r); });
+    sets.forEach((set) => {
+      const groupKey = level === "uh1" ? set.uh1 : level === "uh2" ? set.uh2 : set.uh3;
+      if (!groupKey || !Array.isArray(set.rows)) return;
+      if (!groups.has(groupKey)) groups.set(groupKey, rollupBlankAcc(groupKey));
+      const g = groups.get(groupKey);
+      set.rows.forEach((r) => { rollupAddRow(g, r); rollupAddRow(totalAcc, r); });
     });
     return { rows: Array.from(groups.values()).map(rollupFinalize), total: rollupFinalize(totalAcc) };
   }
@@ -569,7 +532,8 @@ function updateAll() {
     const tbody = $("rollupRows");
     if (!tbody) return;
     if (!data.rows.length) {
-      tbody.innerHTML = `<tr><td colspan="10" style="text-align:center;color:var(--grey);padding:18px">Bu seçim için veri bulunamadı.</td></tr>`;
+      // Kaynak artık Kayıtlar olduğu için boş durum "veri yok" değil "henüz kayıt yok".
+      tbody.innerHTML = `<tr><td colspan="10" style="text-align:center;color:var(--grey);padding:18px">Henüz kayıt yok — "Bütçe &amp; Stok Karışımı" ekranında <b>Kaydet</b>'e bastığında çalışman burada özetlenir.</td></tr>`;
       $("rollupFoot").innerHTML = "";
       return;
     }
@@ -1009,6 +973,7 @@ function updateAll() {
         renderSavedMixTable();
         updateSaveButtonState();
         renderToptanFromSaved(); // Kayıtlar değişti — Toptan Bütçe bundan besleniyor
+        renderRollup();          // Özet/Rollup da Kayıtlar'dan besleniyor
       });
     });
   }
@@ -1145,6 +1110,7 @@ function updateAll() {
     renderSavedMixTable();
     updateSaveButtonState();
     renderToptanFromSaved(); // Kayıtlar değişti — Toptan Bütçe bundan besleniyor
+    renderRollup();          // Özet/Rollup da Kayıtlar'dan besleniyor
   }
 
   // --- Sekme geçişi (hem navbar butonları hem programatik çağrı kullanır) ---
@@ -1155,6 +1121,7 @@ function updateAll() {
       x.classList.toggle("active", x.dataset.tab === t));
     document.querySelectorAll(".tabpane").forEach((p) =>
       (p.style.display = p.dataset.pane === t ? "" : "none"));
+    if (t === "kayitlar") renderRollup(); // sekme açılınca Kayıtlar'ın GÜNCEL hali
     if (t === "toptan") {
       renderToptanFromSaved(); // sekme her açıldığında Kayıtlar'ın GÜNCEL halini yansıt
       syncToptanHeaderOffset(); // sekme az önce görünür oldu, gizliyken 0 ölçülen yükseklik şimdi düzeltilir
@@ -2056,6 +2023,7 @@ function updateAll() {
     updateSelInfo();
     updateSaveButtonState();
     renderToptanFromSaved(); // ilk yüklemede de Kayıtlar'ın o anki hali gösterilsin
+    renderRollup();          // Özet/Rollup da ilk yüklemede Kayıtlar'ı yansıtsın
     renderCalendar();
     renderKanit();
   });
