@@ -5,6 +5,9 @@
   --navy:#0b2545;--navy2:#13315c;
   /* TEK accent (mavi). --accent2 geriye dönük uyumluluk için aynı değere alias. */
   --accent:#0077b6;--accent2:#0077b6;--accent-bg:#eef5fb;
+  /* Pay (%) sütunlarının hücre vurgusu. YARI SAYDAM olması kasıtlı: opak bir
+     renk `tbody tr:hover` zeminini ezip satır vurgusunu öldürüyordu. */
+  --accent-tint:rgba(0,119,182,.06);
   /* Durum renkleri — SADECE tabloda/rozetlerde. --good/--warn/--bad/--info
      mevcut --green/--amber/--red/--blue ile AYNI değerlerin anlamsal adları. */
   --green:#2e7d32;--greenbg:#e6f4ea;--red:#c62828;--redbg:#fdecea;
@@ -550,3 +553,9 @@ tfoot td{background:#eef3f8;font-weight:700;border-top:2px solid var(--navy)}
 .params > .pgroup{display:flex;flex-direction:column}
 .params > .pgroup .mult-total,.params > .pgroup .weights-note{margin-top:auto}
 .params > .pgroup .mult-total{align-self:flex-start}
+
+/* Pay sütunları (Stok Adet % · Satış Adet % · Brüt Kâr %) — bu üç kolon aynı
+   alt-toplama göre kıyaslanır ve Durum/Aksiyon matrisini besler, bu yüzden
+   görsel olarak birlikte okunmaları gerekir. Yarı saydam tint: satır hover'ı
+   ve TOPLAM satırının kendi zemini altından görünmeye devam eder. */
+#grid td.pct-hl{background:var(--accent-tint)}

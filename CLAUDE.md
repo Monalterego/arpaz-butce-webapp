@@ -375,6 +375,13 @@ Sol menü sırası: **TEŞKİLAT → ÜRÜN HİYERARŞİSİ → PERİYOT**.
   LY Fiyat = SatışTutar/SatışAdet (gerçek veri). TY Fiyat elle girilebilir (boşaltılırsa
   LY Fiyat × Fiyat Büyümesi %'ye otomatik döner, Hedef Cover ile AYNI desen — bkz. Bölüm 8).
   Ciro Bütçe = Satış Bütçe × TY Fiyat.
+- **Pay (%) kolonlarının hücre vurgusu:** Stok Adet % · Satış Adet % · Brüt Kâr %
+  hücreleri `.pct-hl` sınıfıyla hafif mavi tint alır (`--accent-tint`), TOPLAM
+  satırı dahil. Bu üç kolon aynı alt-toplama göre kıyaslanır ve Durum/Aksiyon
+  2×2 matrisini besler (bkz. Bölüm 6) — birlikte okunmaları için gruplanmıştır.
+  Tint YARI SAYDAM olmalı: opak bir renk `tbody tr:hover` zeminini ezip satır
+  vurgusunu öldürüyor. Kâr % hücresindeki `.heat` pill'i KORUNDU, tint onun
+  altında durur.
 - KPI kartları (üst şerit, `#kpis`, 6 kart): Toplam Stok, Toplam Satış (LY), Toplam Kâr
   (LY ₺), Bayi Stok Ay (Cover), Toplam Satış Bütçe (TY), LFL Büyüme.
 - **Senaryo Karşılaştırma** (`data-pane="senaryo"`, AYRI SEKME — miks ekranında

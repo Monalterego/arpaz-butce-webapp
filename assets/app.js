@@ -305,10 +305,10 @@
       const tr = document.createElement("tr");
       tr.innerHTML = `
         <td>${d[0]}</td>
-        <td class="num-cell" id="st_${i}"></td><td class="pct" id="stp_${i}"></td>
-        <td class="num-cell" id="sa_${i}"></td><td class="pct" id="sap_${i}"></td>
+        <td class="num-cell" id="st_${i}"></td><td class="pct pct-hl" id="stp_${i}"></td>
+        <td class="num-cell" id="sa_${i}"></td><td class="pct pct-hl" id="sap_${i}"></td>
         <td class="num-cell" id="bk_${i}"></td>
-        <td id="ktp_${i}"></td>
+        <td class="pct-hl" id="ktp_${i}"></td>
         <td id="cov_${i}"></td><td id="tov_${i}"></td>
         <td class="num-cell" id="lyciro_${i}"></td><td id="lyfiyat_${i}"></td>
         <td class="planpctcell"><input type="number" class="planpctin" id="psp_${i}" min="0" max="100" step="0.1"></td><td class="num-cell" id="psa_${i}"></td>
@@ -398,9 +398,9 @@ function updateAll() {
   const footTyFiyat = m.T.salesBudget ? m.T.tyRevenue / m.T.salesBudget : null;
   $("tfoot").innerHTML = `
     <td>TOPLAM</td>
-    <td>${fmtN(m.T.stock)}</td><td>${m.rows.length ? "100%" : "—"}</td>
-    <td>${fmtN(m.T.sales)}</td><td>${m.rows.length ? "100%" : "—"}</td>
-    <td class="num-cell">${fmtN(m.T.profit)}</td><td>${m.rows.length ? "100%" : "—"}</td>
+    <td>${fmtN(m.T.stock)}</td><td class="pct-hl">${m.rows.length ? "100%" : "—"}</td>
+    <td>${fmtN(m.T.sales)}</td><td class="pct-hl">${m.rows.length ? "100%" : "—"}</td>
+    <td class="num-cell">${fmtN(m.T.profit)}</td><td class="pct-hl">${m.rows.length ? "100%" : "—"}</td>
     <td>${fmtD(footCover)}</td><td>${fmtD2(footTurnover)}</td>
     <td>${fmtN(m.T.value)}</td><td>${fmtN(footLyFiyat)}</td>
     <td>${m.rows.length ? fmtP(m.T.planPct) : "—"}</td><td>${fmtN(m.T.planStock)}</td>
