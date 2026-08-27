@@ -448,8 +448,23 @@ Sol menü sırası: **TEŞKİLAT → ÜRÜN HİYERARŞİSİ → PERİYOT**.
   colgroup'a localStorage'den basılır ve tutamaklar render SONUNDA yeniden takılır.
   (2) CSS'te `.saved-mix-table{width:100%;min-width:3286px}` var — sabit min-width
   sürüklemeyi yutuyordu (tarayıcı farkı diğer kolonlara dağıtıyor), bu yüzden
-  `syncSavedMixTableWidth()` tablo `width`'ini VE `min-width`'ini colgroup toplamına
+  `syncSavedMixTableWidth()` tablo `width`.ini VE `min-width`.ini colgroup toplamına
   eşitler.
+- **`syncSavedMixHeaderOffset()`** — "Çalışılmış Bütçe ve Stok Karışım" tablosunda
+  DONMUŞ BAŞLIK (freeze pane). İki satır donar: kolon adları (`.saved-mix-header-row`,
+  `top:0`) ve filtre satırı (`.saved-mix-filter-row`, `top` = 1. satırın ÖLÇÜLEN
+  yüksekliği — sabit yazılamaz, kolon genişliğine göre başlık sarıp yükseliyor).
+  Ana ``#grid`'in `syncHeaderStickyOffset()`'i ile AYNI desen.
+  **Kritik ön koşul:** `.saved-mix-table-wrap` eskiden `overflow-y:hidden` idi ve
+  başlık DONMUYORDU — `position:sticky` en yakın KAYDIRILABİLİR ataya tutunur,
+  `overflow-y:hidden` sarmalayıcıyı "dikeyde kaydırılamaz" bir scroll container
+  yapıyordu. Artık `max-height:520px;overflow:auto` (ana ``#grid`'in sarmalayıcısıyla
+  aynı çözüm). Bu yüzden tablo ARTIK KENDİ İÇİNDE kayar, sayfayla birlikte değil.
+  **İkinci tuzak:** "Perakende Bütçe" sekmesi varsayılan GİZLİ geldiği için tablo
+  ilk kez gizliyken render edilir → başlık yüksekliği 0 ölçülür → filtre satırı
+  başlığın üstüne biner. Bu yüzden `showTab("kayitlar")` içinde YENİDEN çağrılır
+  (Toptan sekmesindeki `syncToptanHeaderOffset` ile birebir aynı tuzak). Ayrıca
+  sütun sürüklemede ve `window.resize`'ta da çağrılır.
 - **`initGridFormat()` / `applyGridFormat()`** — Görünüm araç çubuğunun motoru. Ayarlar
   (`rowPad, headerSize, headerBold, cellSize, cellBold, headerAlign, cellAlign`) CSS
   custom property olarak `#grid` öğesine yazılır (`--grid-row-pad`, `--grid-h-size`,

@@ -1035,6 +1035,18 @@ function updateAll() {
     table.style.width = total + "px";
     table.style.minWidth = total + "px";
   }
+  // İki satırlı donmuş başlık: 1. satır (kolon adları) top:0'da, 2. satır (filtre
+  // düğmeleri) onun ALTINDA durmalı. `top` sabit yazılamaz — başlık yüksekliği
+  // kolon genişliğine göre değişiyor (uzun etiketler sarınca satır uzuyor), bu
+  // yüzden ÖLÇÜLÜR. Ana #grid'deki syncHeaderStickyOffset ile AYNI mantık.
+  // Sütun sürükleme başlığı yeniden sardırabildiği için orada da çağrılır.
+  function syncSavedMixHeaderOffset() {
+    const row1 = document.querySelector(".saved-mix-table .saved-mix-header-row");
+    const filterThs = document.querySelectorAll(".saved-mix-table .saved-mix-filter-row th");
+    if (!row1 || !filterThs.length) return;
+    const h = row1.getBoundingClientRect().height;
+    filterThs.forEach((th) => { th.style.top = h + "px"; });
+  }
   function initSavedMixColResize(list) {
     const table = list.querySelector(".saved-mix-table");
     if (!table) return;
@@ -1058,6 +1070,7 @@ function updateAll() {
           col.style.width = Math.max(SAVED_MIX_MIN_COL_WIDTH,
             Math.round(startWidth + (ev.clientX - startX))) + "px";
           syncSavedMixTableWidth(table, cols);
+          syncSavedMixHeaderOffset(); // genişlik değişince başlık sarması, dolayısıyla yüksekliği değişebilir
         }
         function onUp() {
           document.removeEventListener("mousemove", onMove);
@@ -1075,6 +1088,7 @@ function updateAll() {
         e.stopPropagation();
         cols[i].style.width = savedMixDefaultWidths()[i] + "px";
         syncSavedMixTableWidth(table, cols);
+        syncSavedMixHeaderOffset();
         saveSavedMixColWidths(cols);
       });
       th.appendChild(handle);
@@ -1134,6 +1148,7 @@ function updateAll() {
 
     // Tablo her render'da sıfırdan kurulduğu için tutamaklar da yeniden takılır.
     initSavedMixColResize(list);
+    syncSavedMixHeaderOffset(); // donmuş başlığın 2. satırı 1. satırın ALTINA otursun
 
     renderSavedMixRows();
   }
@@ -1209,7 +1224,12 @@ function updateAll() {
       x.classList.toggle("active", x.dataset.tab === t));
     document.querySelectorAll(".tabpane").forEach((p) =>
       (p.style.display = p.dataset.pane === t ? "" : "none"));
-    if (t === "kayitlar") renderRollup(); // sekme açılınca Kayıtlar'ın GÜNCEL hali
+    if (t === "kayitlar") {
+      renderRollup();               // sekme açılınca Kayıtlar'ın GÜNCEL hali
+      syncSavedMixHeaderOffset();   // ZORUNLU: tablo sekme GİZLİyken render edildiyse
+                                    // başlık yüksekliği 0 ölçülür, filtre satırı
+                                    // başlığın üstüne biner (Toptan'dakiyle aynı tuzak)
+    }
     if (t === "toptan") {
       renderToptanFromSaved(); // sekme her açıldığında Kayıtlar'ın GÜNCEL halini yansıt
       syncToptanHeaderOffset(); // sekme az önce görünür oldu, gizliyken 0 ölçülen yükseklik şimdi düzeltilir
@@ -2093,6 +2113,7 @@ function updateAll() {
     // başlık metni farklı satıra bölünüp yüksekliği değişebilir (pencere yeniden boyutlanınca)
     window.addEventListener("resize", syncHeaderStickyOffset);
     window.addEventListener("resize", syncToptanHeaderOffset);
+    window.addEventListener("resize", syncSavedMixHeaderOffset);
   }
 
   document.addEventListener("DOMContentLoaded", () => {

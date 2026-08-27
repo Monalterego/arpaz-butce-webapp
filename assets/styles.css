@@ -338,7 +338,12 @@ tfoot td{background:#eef3f8;font-weight:700;border-top:2px solid var(--navy)}
 .saved-actions{grid-template-columns:minmax(150px,1fr) auto auto}
 .saved-mix-list{display:grid;grid-template-columns:1fr;gap:14px}
 .saved-mix-empty{padding:18px;border:1px dashed var(--line);border-radius:10px;color:var(--grey);background:#f8fafc}
-.saved-mix-table-wrap{overflow-x:auto;overflow-y:hidden;border:1px solid var(--line);margin-bottom:10px;background:#fff;border-radius:12px;box-shadow:var(--shadow-sm)}
+/* DİKKAT: overflow-y bir zamanlar `hidden` idi ve başlık DONMUYORDU. position:sticky
+   en yakın KAYDIRILABİLİR ataya tutunur; overflow-y:hidden bu sarmalayıcıyı
+   "dikeyde kaydırılamaz" bir scroll container yapıyordu, dolayısıyla th top:0'a
+   göre hiç kaymıyor, sayfa kaydıkça başlık da yukarı gidiyordu. Ana #grid'in
+   sarmalayıcısıyla AYNI çözüm: max-height + overflow:auto. */
+.saved-mix-table-wrap{max-height:520px;overflow:auto;border:1px solid var(--line);margin-bottom:10px;background:#fff;border-radius:12px;box-shadow:var(--shadow-sm)}
 /* min-width, <colgroup>'taki (app.js SAVED_MIX_COLUMNS) 31 kolon genişliğinin
    TOPLAMINA eşit olmalı (120+68+164+140+240+262+260+85+85 kimlik + 1802 metrik +
    60 Sil = 3286px) — table-layout:fixed'de tablo kendi genişliği colgroup
@@ -352,7 +357,10 @@ tfoot td{background:#eef3f8;font-weight:700;border-top:2px solid var(--navy)}
 .saved-mix-table th:first-child,.saved-mix-table td:first-child{text-align:left}
 .saved-mix-table td:first-child{white-space:normal}
 .saved-mix-header-row th{background:var(--navy);color:#fff;position:sticky;top:0;z-index:3;vertical-align:middle}
-.saved-mix-filter-row th{background:#edf3fb;color:var(--navy);padding:6px 5px;text-align:center}
+/* Filtre satırı da DONAR ama başlığın ALTINDA: `top` sabit 0 DEĞİL, 1. satırın
+   ÖLÇÜLEN yüksekliği (bkz. syncSavedMixHeaderOffset) — ana #grid ile aynı desen.
+   Zemin OPAK olmalı, yoksa altından kayan satırlar görünür. */
+.saved-mix-filter-row th{background:#edf3fb;color:var(--navy);padding:6px 5px;text-align:center;position:sticky;z-index:2}
 /* Excel AutoFilter tarzı: her kolon başlığının filtre satırında sadece küçük
    bir ▾ tetikleyici butonu var, gerçek arama/checkbox listesi paylaşılan tek
    dropdown panelinde (bkz. app.js ensureSavedMixDropdown). Aktif filtre varsa
