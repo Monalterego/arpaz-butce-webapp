@@ -60,19 +60,6 @@ select[disabled]{opacity:.5;cursor:not-allowed}
 /* Rollup/Kanıt kartları: uzun açıklama satırı rakamın ALTINDA kalır. */
 .rollup-kpis .kpi .sub,.kanit-kpis .kpi .sub{margin-top:3px;line-height:1.35}
 
-/* ===== Durum dağılımı — DEV KART DEĞİL, tek satırlık ince pill şeridi =====
-   KPI şeridinin hemen altında; her öğe: renkli rozet (etiket) + sayı + pay.
-   .kpi kabuğu korunuyor (app.js renderDurumKpis DEĞİŞMEDİ), sadece kart
-   görünümü sıfırlanıp satır içi pill'e indirgeniyor. */
-.durum-kpis{display:flex;flex-wrap:wrap;align-items:center;gap:var(--s1) var(--s2);
-  background:var(--surface);border:1px solid var(--line);border-radius:var(--radius);
-  box-shadow:var(--shadow);padding:6px var(--s2);margin-bottom:var(--s3)}
-.durum-kpis .kpi{display:inline-flex;align-items:baseline;gap:6px;padding:0;border:none;
-  background:transparent;box-shadow:none;border-radius:0}
-.durum-kpis .kpi + .kpi{border-left:1px solid var(--line);padding-left:var(--s2)}
-.durum-kpis .kpi .lbl{margin:0;text-transform:none;letter-spacing:0}
-.durum-kpis .kpi .val{font-size:var(--f-h2);font-weight:700;color:var(--ink)}
-.durum-kpis .kpi .sub{margin:0;color:var(--ink-soft)}
 .up{color:var(--green)}.down{color:var(--red)}
 .panel{background:var(--surface);border:1px solid var(--line);border-radius:var(--radius);padding:var(--s3);margin-bottom:var(--s3);box-shadow:var(--shadow)}
 .panel h2{font-size:var(--f-h1);font-weight:600;margin:0 0 var(--s2);color:var(--ink);display:flex;align-items:center;gap:var(--s1)}

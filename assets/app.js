@@ -413,7 +413,6 @@ function updateAll() {
     <td></td><td></td>`;
 
   renderKpis(m);
-  renderDurumKpis(m);
   renderForecast(m);
   renderRollup(); // "Perakende Bütçe" sekmesindeki Özet/Rollup paneli — CANLI (bkz. tanım)
   // NOT: renderToptan(m) BURADAN KALDIRILDI — Toptan Bütçe artık canlı sidebar/parametre
@@ -451,30 +450,6 @@ function updateAll() {
       return `<div class="kpi"><div class="lbl">${k[0]}</div>
         <div class="val">${k[1]}</div><div class="sub ${sc}">${k[2]}</div></div>`;
     }).join("");
-  }
-
-  // --- Durum dağılımı özet KPI'ları (2x2 matris — bkz. actionTag) ---
-  // Kategori adları/rozet sınıfları actionTag'ten üretilir, burada tekrar yazılmaz.
-  function renderDurumKpis(m) {
-    const quadrants = [
-      { stockShare: 0, salesShare: 1, profitShare: 1 }, // Hızlı & Kârlı
-      { stockShare: 1, salesShare: 2, profitShare: 0 }, // Hızlı & Kârsız
-      { stockShare: 1, salesShare: 0, profitShare: 2 }, // Yavaş & Kârlı
-      { stockShare: 1, salesShare: 0, profitShare: 0 }, // Yavaş & Kârsız
-    ];
-    const total = m.rows.length;
-    const cards = quadrants.map((q) => {
-      const tag = actionTag(q.stockShare, q.salesShare, q.profitShare);
-      const count = m.rows.filter((r) => r.tag.etiket === tag.etiket).length;
-      const pct = total ? count / total : 0;
-      return { tag, count, pct };
-    });
-    $("durumKpis").innerHTML = cards.map((c) => `
-      <div class="kpi">
-        <div class="lbl"><span class="badge ${c.tag.eCls}">${c.tag.etiket}</span></div>
-        <div class="val">${c.count}</div>
-        <div class="sub">${fmtP0(c.pct)}</div>
-      </div>`).join("");
   }
 
   // --- "Perakende Bütçe" sekmesi: Özet / Rollup Paneli ---

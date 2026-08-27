@@ -254,10 +254,11 @@ stil + sarmalayıcı yapı katmanındadır.
   yüksekliği ~yarıya indi. Bu düzen SADECE `#kpis`'e uygulanır — `.rollup-kpis`
   ve `.kanit-kpis`'in `.sub`'ı tam cümledir, onlar dikey (yığılmış) kalır.
   `renderKpis()` DEĞİŞMEDİ, salt CSS.
-- **Durum Dağılımı artık DEV KART DEĞİL:** `#durumKpis` 4 dev kart yerine KPI
-  şeridinin hemen altında tek satırlık ince pill şeridi (rozet + sayı + pay,
-  aralarında ince ayraç). `renderDurumKpis()` DEĞİŞMEDİ, salt CSS (`.kpi` kabuğu
-  sıfırlanıp satır içine indirgeniyor).
+- **Durum Dağılımı şeridi KALDIRILDI** (`#durumKpis` + `renderDurumKpis()` +
+  `.durum-kpis` CSS bloğu, hepsi silindi). Önce 4 dev kart, sonra tek satırlık ince
+  pill şeridiydi; kullanıcı isteğiyle tamamen çıkarıldı — bilgi zaten tablodaki
+  Durum kolonunda var. `actionTag()` DURUYOR (tablo kolonu onu kullanıyor).
+  Geri isteniyorsa yeniden yazılmalı, gizli kod YOK.
 - **Sekme çubuğu ÜST NAVY BAR'IN İÇİNDE** (`<nav class="tabs">`, `<header>` içinde,
   "Web App · Prototip" rozetinden sonra — `<main>`'de DEĞİL). Navbar dili: pasif
   sekmeler şeffaf zemin + `rgba(255,255,255,.7)` metin (kenarlık YOK), hover'da
@@ -325,9 +326,6 @@ Sol menü sırası: **TEŞKİLAT → ÜRÜN HİYERARŞİSİ → PERİYOT**.
   Ciro Bütçe = Satış Bütçe × TY Fiyat.
 - KPI kartları (üst şerit, `#kpis`, 6 kart): Toplam Stok, Toplam Satış (LY), Toplam Kâr
   (LY ₺), Bayi Stok Ay (Cover), Toplam Satış Bütçe (TY), LFL Büyüme.
-- Durum Dağılımı şeridi (`#durumKpis`, ayrı grid, 4 kart): actionTag'in 2×2 matrisindeki
-  dört durumun (Hızlı&Kârlı/Kârsız, Yavaş&Kârlı/Kârsız) grup sayısı ve toplam içindeki payı
-  — rozet renkleri `.badge b-green/b-amber/b-blue/b-red` ile aynı.
 - Senaryo Yönetimi: parametre + hedef cover setini kaydet/karşılaştır; en iyi LFL yeşil.
 - **Ana tablo (`#grid`) — Görünüm araç çubuğu** ("Görünüm" butonu, `#gridFormatPanel`):
   PowerBI tarzı, SADECE bu tabloyu etkiler. Satır yüksekliği (sürükle veya +/-), başlık/
@@ -351,8 +349,6 @@ Sol menü sırası: **TEŞKİLAT → ÜRÜN HİYERARŞİSİ → PERİYOT**.
   (`keys[0]`) otomatik seçer; boş/"Tümü" option'ı YOKTUR, ÜH3 seçimi zorunludur.
 - `updateAll()` — hücreleri yeniden hesaplayıp yazar; tfoot TOPLAM; KPI; forecast.
 - `actionTag(...)` — 2×2 matris (bkz. Bölüm 6).
-- `renderDurumKpis(m)` — actionTag'in ürettiği 4 duruma göre grup sayısını ve payını
-  `#durumKpis` şeridine yazar (kategori adları actionTag'ten türetilir, hardcode değil).
 - `renderKpis / renderScenarios / renderCalendar / renderKanit / renderForecast`.
 - Biçimleyiciler: `fmtN` (tr-TR tam sayı), `fmtP`/`fmtP0` (yüzde), `fmtX` (çarpan),
   `fmtD`/`fmtD2`/`fmtD3` (ondalık, 1/2/3 basamak). Türkçe locale ZORUNLU.
@@ -443,7 +439,8 @@ Sol menü sırası: **TEŞKİLAT → ÜRÜN HİYERARŞİSİ → PERİYOT**.
   - Boş seçim koruması: org/bölge/ÜH filtresi 0 satır dönerse tabloda "Bu seçim için
     veri bulunamadı." bilgi satırı çıkar; tfoot/KPI'lar NaN/Infinity yerine 0 veya "—"
     gösterir.
-  - R-LFL kolonu ve Durum Dağılımı KPI şeridi (bkz. Bölüm 5.1 ve 7).
+  - R-LFL kolonu (bkz. Bölüm 5.1). Durum Dağılımı KPI şeridi eklenmiş, sonra
+    kullanıcı isteğiyle KALDIRILMIŞTIR (bkz. Bölüm 7.0).
   - Ölü stok işaretleme — KARAR VERİLDİ ve UYGULANDI (bkz. Bölüm 5.2): göreli eşik
     (çarpan × görünen satırların medyanı, min 12 ay), SADECE görsel rozet, bütçeye etkisi yok.
   - TARİHÇE (artık geçersiz) — bir ara dönemde `syncLevel()` `state.sel.uh3`'e göre
