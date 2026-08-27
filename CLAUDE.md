@@ -258,8 +258,21 @@ stil + sarmalayıcı yapı katmanındadır.
   şeridinin hemen altında tek satırlık ince pill şeridi (rozet + sayı + pay,
   aralarında ince ayraç). `renderDurumKpis()` DEĞİŞMEDİ, salt CSS (`.kpi` kabuğu
   sıfırlanıp satır içine indirgeniyor).
-- **Sekme çubuğu:** aktif sekme dolu `--accent` zemin + beyaz yazı; pasifler beyaz
-  zemin + ince `--line` kenar; altında 1px ayraç.
+- **Sekme çubuğu ÜST NAVY BAR'IN İÇİNDE** (`<nav class="tabs">`, `<header>` içinde,
+  "Web App · Prototip" rozetinden sonra — `<main>`'de DEĞİL). Navbar dili: pasif
+  sekmeler şeffaf zemin + `rgba(255,255,255,.7)` metin (kenarlık YOK), hover'da
+  `rgba(255,255,255,.14)` zemin + tam beyaz, **aktif sekme dolu BEYAZ pill +
+  `--navy` metin** (navy zeminde en yüksek kontrastlı ayrım). 6 uzun Türkçe etiket
+  sığmazsa çubuk İKİNCİ SATIRA SARAR (yatay scroll değil — scroll'da sekmelerin bir
+  kısmı görünmez kalırdı); `@media (max-width:1100px)` altında `margin-left:auto`
+  kalkar, çubuk kendi satırında SOLDAN başlar. `header` bu yüzden `flex-wrap:wrap`.
+  JS seçicileri (`.tabs button`, `.tabpane`) document geneli olduğundan taşımadan
+  ETKİLENMEDİ — `<div>` → `<nav>` değişimi de güvenli.
+- **Header yüksekliği artık DEĞİŞKEN** (sekmeler sarabilir). Bu yüzden `.wrap`'teki
+  eski `min-height:calc(100vh - 52px)` sabiti KALDIRILDI; yerine `body` dikey flex
+  (`display:flex;flex-direction:column;min-height:100vh`) + `.wrap{flex:1}` geldi.
+  Header'a yükseklik ekleyen bir değişiklik yaparsan bu mekanizma kendiliğinden
+  uyum sağlar, sabit piksel HESAPLAMA.
 - **"Bütçe Kurgusu — Nasıl Hesaplanıyor?" accordion varsayılan KAPALI** (`▸`),
   başlığa tıklayınca açılır (`initFormulaToggle()`). Toptan'ın "Nasıl Çalışır?"
   paneli KASITLI olarak açık (`▾`) kalır — orası yöntemin kendisini anlatır.
@@ -295,8 +308,8 @@ Sol menü sırası: **TEŞKİLAT → ÜRÜN HİYERARŞİSİ → PERİYOT**.
   `setOrg/setRegion` + `rebuild()`. Başlangıç "Tümü" (value="").
 - **Ürün Hiyerarşisi:** `#h_uh1`, `#h_uh2`, `#h_uh3` (kaskad).
 - **Periyot (like-for-like):** Baz (LY) / Hedef (TY) — şimdilik görsel.
-- Sekmeler (soldan sağa, GÜNCEL sıra — sadece buton metni/sırası, `data-tab` değerleri
-  DEĞİŞMEDİ): **Bütçe & Stok Karışımı** (`data-tab="miks"`, ana) · **Perakende Bütçe**
+- Sekmeler (üst navy bar içinde, soldan sağa GÜNCEL sıra — sadece buton metni/sırası,
+  `data-tab` değerleri DEĞİŞMEDİ): **Bütçe & Stok Karışımı** (`data-tab="miks"`, ana) · **Perakende Bütçe**
   (`data-tab="kayitlar"`, eski adı "Kayıtlar" — Özet/Rollup paneli + kayıtlı çalışmalar,
   bkz. Bölüm 14) · **Toptan Bütçe** (`data-tab="toptan"`, bkz. Bölüm 13) · Kampanya/Özel
   Gün Takvimi (2021+, `data-tab="takvim"`) · **Perakende → Toptan (Metodoloji)**
