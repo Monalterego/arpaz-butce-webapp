@@ -480,3 +480,26 @@ tfoot td{background:#eef3f8;font-weight:700;border-top:2px solid var(--navy)}
 @media (max-width:900px){
   .rollup-kpis{grid-template-columns:1fr 1fr}
 }
+
+/* ===== Bilgi (i) ikonu + ortalı bilgi modal'ı =====
+   "Bütçe Kurgusu — Nasıl Hesaplanıyor?" paneli kaldırıldı; içeriği artık tablo
+   başlığındaki (i) ikonuyla açılan modal'da. SADECE bilgilendirme — hesap yok. */
+.info-ico{width:18px;height:18px;flex:0 0 18px;padding:0;border-radius:50%;
+  border:1px solid var(--accent);background:var(--accent-bg);color:var(--accent);
+  font:700 11px/1 Georgia,serif;cursor:pointer;display:inline-flex;
+  align-items:center;justify-content:center}
+.info-ico:hover{background:var(--accent);color:#fff}
+.modal-overlay{position:fixed;inset:0;z-index:100;background:rgba(11,37,69,.45);
+  display:flex;align-items:center;justify-content:center;padding:var(--s3)}
+.modal-overlay[hidden]{display:none}
+.modal-box{background:var(--surface);border:1px solid var(--line);
+  border-radius:var(--radius);box-shadow:var(--shadow-md);padding:var(--s3);
+  width:min(680px,100%);max-height:calc(100vh - 2*var(--s3));overflow-y:auto}
+.modal-head{display:flex;align-items:center;gap:var(--s1);margin-bottom:var(--s2)}
+.modal-head h3{margin:0;font-size:var(--f-h1);font-weight:600;color:var(--ink)}
+.modal-close{margin-left:auto;border:none;background:transparent;cursor:pointer;
+  font-size:22px;line-height:1;color:var(--ink-soft);padding:0 4px}
+.modal-close:hover{color:var(--ink)}
+.modal-box .fbox{display:flex;flex-direction:column;gap:var(--s1);font-size:12px;
+  background:#f8fafc;border:1px dashed var(--line);border-radius:var(--radius-md);
+  padding:var(--s2);line-height:1.6}

@@ -1588,16 +1588,23 @@ function updateAll() {
     if (saveMixSetBtn) saveMixSetBtn.addEventListener("click", saveCurrentMixSet);
   }
 
-  // --- Formül kutusu aç/kapa (sadece görünürlük, hesaba etkisi yok) ---
-  function initFormulaToggle() {
-    const box = $("formulaBox");
-    const ico = $("formulaToggle");
-    const head = box && box.previousElementSibling; // .fbox'tan önceki <h2>
-    if (!box || !ico || !head) return;
-    head.addEventListener("click", () => {
-      const opening = box.style.display === "none";
-      box.style.display = opening ? "flex" : "none";
-      ico.textContent = opening ? "▾" : "▸";
+  // --- Bütçe kurgusu bilgi modal'ı (tablo başlığındaki (i) ikonu) ---
+  // Eski "Bütçe Kurgusu — Nasıl Hesaplanıyor?" accordion paneli KALDIRILDI;
+  // içerik artık ortalı, kapatılabilir modal. SADECE bilgilendirme — hiçbir
+  // parametreye/hesaba dokunmaz. Kapanış: × butonu, overlay boşluğuna tıklama, Esc.
+  function initFormulaModal() {
+    const overlay = $("formulaModal");
+    const btn = $("formulaInfoBtn");
+    const closeBtn = $("formulaModalClose");
+    if (!overlay || !btn || !closeBtn) return;
+    const open = () => { overlay.hidden = false; closeBtn.focus(); };
+    const close = () => { overlay.hidden = true; btn.focus(); };
+    btn.addEventListener("click", open);
+    closeBtn.addEventListener("click", close);
+    // Sadece overlay boşluğu kapatır; kutunun içine tıklamak kapatmaz
+    overlay.addEventListener("click", (e) => { if (e.target === overlay) close(); });
+    document.addEventListener("keydown", (e) => {
+      if (e.key === "Escape" && !overlay.hidden) close();
     });
   }
 
@@ -1998,7 +2005,7 @@ function updateAll() {
     DataService.loadMix = function () { return this.loadMixFor(this._cur.sel, this._cur.level); };
     buildTable();
     bind();
-    initFormulaToggle();
+    initFormulaModal();
     initToptanInfoToggle();
     initColResize();
     initGridFormat();

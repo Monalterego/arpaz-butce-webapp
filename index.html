@@ -50,6 +50,7 @@
       <!-- ANA MIKS TABLOSU (taşındı, artık sekmenin ilk bloğu) -->
       <div class="panel">
         <h2 style="display:flex;align-items:center;gap:8px;">Bütçe &amp; Stok Karışım Tablosu <span class="pill">Hedef Cover elle girilir</span>
+          <button type="button" class="info-ico" id="formulaInfoBtn" title="Bütçe kurgusu nasıl hesaplanıyor?" aria-label="Bütçe kurgusu nasıl hesaplanıyor?">i</button>
           <button type="button" class="btn ghost mini" id="saveMixSetBtn" style="margin-left:auto">💾 Kaydet</button>
           <span class="note" id="saveMixSetNote" style="margin:0"></span>
           <div class="grid-format-wrap">
@@ -229,17 +230,6 @@
       </div>
 
       <div class="kpis" id="kpis"></div>
-
-      <!-- FORMÜL AÇIKLAMA -->
-      <div class="panel formula">
-        <h2>Bütçe Kurgusu — Nasıl Hesaplanıyor? <span class="toggle-ico" id="formulaToggle">▸</span></h2>
-        <div class="fbox" id="formulaBox" style="display:none">
-          <div><b>1) Plan Stok %</b> = ( <span class="wK">Kâr%×W</span> + <span class="wS">Satış%×W</span> + <span class="wSt">Stok%×W</span> ) → 100'e normalize</div>
-          <div><b>2) Plan Stok Adet</b> = ( Toplam Stok × Hedef Stok Büyümesi ) × Plan Stok %</div>
-          <div><b>3) Satış Bütçe</b> = ( Plan Stok Adet ÷ <span class="wH">Hedef Cover [elle]</span> ) × Pazarlama Büyümesi × Çarpanlar</div>
-          <div><b>4)</b> LFL = Bütçe/LY Satış−1 · R-LFL = (Bütçe/PlanStok)/(LY Satış/LY Stok)−1 · Stok Büyümesi = PlanStok/LY Stok−1</div>
-        </div>
-      </div>
 
       <!-- SENARYO -->
       <div class="panel">
@@ -468,6 +458,23 @@
       </div>
     </div>
   </main>
+</div>
+
+<!-- BÜTÇE KURGUSU BİLGİ MODAL'I — tablo başlığındaki (i) ikonuyla açılır.
+     Tamamen bilgilendirme amaçlı; hiçbir hesaba/parametreye dokunmaz. -->
+<div class="modal-overlay" id="formulaModal" hidden>
+  <div class="modal-box" role="dialog" aria-modal="true" aria-labelledby="formulaModalTitle">
+    <div class="modal-head">
+      <h3 id="formulaModalTitle">Bütçe Kurgusu — Nasıl Hesaplanıyor?</h3>
+      <button type="button" class="modal-close" id="formulaModalClose" title="Kapat" aria-label="Kapat">×</button>
+    </div>
+    <div class="fbox">
+      <div><b>1) Plan Stok %</b> = ( <span class="wK">Kâr%×W</span> + <span class="wS">Satış%×W</span> + <span class="wSt">Stok%×W</span> ) → 100'e normalize</div>
+      <div><b>2) Plan Stok Adet</b> = ( Toplam Stok × Hedef Stok Büyümesi ) × Plan Stok %</div>
+      <div><b>3) Satış Bütçe</b> = ( Plan Stok Adet ÷ <span class="wH">Hedef Cover [elle]</span> ) × Pazarlama Büyümesi × Çarpanlar</div>
+      <div><b>4)</b> LFL = Bütçe/LY Satış−1 · R-LFL = (Bütçe/PlanStok)/(LY Satış/LY Stok)−1 · Stok Büyümesi = PlanStok/LY Stok−1</div>
+    </div>
+  </div>
 </div>
 
 <script src="assets/hierarchy.js"></script>

@@ -274,9 +274,19 @@ stil + sarmalayıcı yapı katmanındadır.
   (`display:flex;flex-direction:column;min-height:100vh`) + `.wrap{flex:1}` geldi.
   Header'a yükseklik ekleyen bir değişiklik yaparsan bu mekanizma kendiliğinden
   uyum sağlar, sabit piksel HESAPLAMA.
-- **"Bütçe Kurgusu — Nasıl Hesaplanıyor?" accordion varsayılan KAPALI** (`▸`),
-  başlığa tıklayınca açılır (`initFormulaToggle()`). Toptan'ın "Nasıl Çalışır?"
-  paneli KASITLI olarak açık (`▾`) kalır — orası yöntemin kendisini anlatır.
+- **"Bütçe Kurgusu — Nasıl Hesaplanıyor?" ARTIK PANEL DEĞİL, MODAL.** Eski
+  accordion paneli (`.panel.formula` + `#formulaBox` + `initFormulaToggle()`)
+  kaldırıldı; içerik aynen, ana tablo başlığındaki `(i)` ikonuna
+  (`#formulaInfoBtn`, `.info-ico`) tıklanınca açılan ekrana ortalı modal'da
+  (`#formulaModal`, `.modal-overlay`/`.modal-box`, `initFormulaModal()`).
+  Kapanış üç yoldan: `×` butonu, overlay boşluğuna tıklama, `Esc`. Modal markup'ı
+  `<body>` sonunda, script etiketlerinden hemen ÖNCE durur (panel/tablo
+  `overflow` kutularına takılmasın diye) — `.tabpane` içine TAŞIMA. Tamamen
+  bilgilendirme; hiçbir parametreye/hesaba dokunmaz.
+  NOT: `.panel.formula`, `.fbox`, `.wK/.wS/.wSt/.wH` CSS kuralları SİLİNMEDİ —
+  Toptan'ın "Nasıl Çalışır?" paneli ve Ağırlıklar kartı hâlâ kullanıyor.
+  Toptan'ın paneli KASITLI olarak açık (`▾`) accordion kalır — orası yöntemin
+  kendisini anlatır, `initToptanInfoToggle()` DEĞİŞMEDİ.
 - **Planlama Parametreleri:** Satır 1 = 3 eşit kart (Global Hedefler · Kampanya
   Çarpanları · Gam & Kota, sade `--surface`), Satır 2 = tek ve VURGULU
   "🎯 Plan Stok % Ağırlıkları" kartı (`--accent-bg` zemin, `border-left:4px solid
