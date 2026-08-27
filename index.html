@@ -205,32 +205,39 @@
         <div class="params">
           <div class="pgroup">
             <div class="ptitle">Global Hedefler</div>
-            <div class="prow"><label>Hedef Stok Büyümesi %</label><input type="number" id="p_stokbuyume" value="-10" step="1"></div>
-            <div class="prow"><label>Pazarlama Büyümesi %</label><input type="number" id="p_pazar" value="5" step="1"></div>
-            <div class="prow"><label>Fiyat Büyümesi %</label><input type="number" id="p_fiyatbuyume" value="5" step="1"></div>
+            <div class="prow"><label for="p_stokbuyume">Hedef Stok Büyümesi</label>
+              <div class="numfield"><button type="button" class="nf-btn" data-step="p_stokbuyume" data-dir="-1" tabindex="-1" aria-label="azalt">−</button><input type="number" id="p_stokbuyume" value="-10" step="1"><span class="nf-suffix">%</span><button type="button" class="nf-btn" data-step="p_stokbuyume" data-dir="1" tabindex="-1" aria-label="artır">+</button></div></div>
+            <div class="prow"><label for="p_pazar">Pazarlama Büyümesi</label>
+              <div class="numfield"><button type="button" class="nf-btn" data-step="p_pazar" data-dir="-1" tabindex="-1" aria-label="azalt">−</button><input type="number" id="p_pazar" value="5" step="1"><span class="nf-suffix">%</span><button type="button" class="nf-btn" data-step="p_pazar" data-dir="1" tabindex="-1" aria-label="artır">+</button></div></div>
+            <div class="prow"><label for="p_fiyatbuyume">Fiyat Büyümesi</label>
+              <div class="numfield"><button type="button" class="nf-btn" data-step="p_fiyatbuyume" data-dir="-1" tabindex="-1" aria-label="azalt">−</button><input type="number" id="p_fiyatbuyume" value="5" step="1"><span class="nf-suffix">%</span><button type="button" class="nf-btn" data-step="p_fiyatbuyume" data-dir="1" tabindex="-1" aria-label="artır">+</button></div></div>
           </div>
           <div class="pgroup">
             <div class="ptitle">Kampanya Çarpanları</div>
-            <div class="prow"><label>Paro</label><input type="range" id="m_paro" min="-30" max="40" value="0"><span class="num" id="v_paro">0%</span></div>
-            <div class="prow"><label>Bundle</label><input type="range" id="m_bundle" min="-30" max="40" value="0"><span class="num" id="v_bundle">0%</span></div>
-            <div class="prow"><label>Özel gün</label><input type="range" id="m_event" min="-30" max="40" value="0"><span class="num" id="v_event">0%</span></div>
+            <div class="prow"><label for="m_paro">Paro</label>
+              <div class="numfield"><button type="button" class="nf-btn" data-step="m_paro" data-dir="-1" tabindex="-1" aria-label="azalt">−</button><input type="number" id="m_paro" value="0" step="1" min="-30" max="40"><span class="nf-suffix">%</span><button type="button" class="nf-btn" data-step="m_paro" data-dir="1" tabindex="-1" aria-label="artır">+</button></div></div>
+            <div class="prow"><label for="m_bundle">Bundle</label>
+              <div class="numfield"><button type="button" class="nf-btn" data-step="m_bundle" data-dir="-1" tabindex="-1" aria-label="azalt">−</button><input type="number" id="m_bundle" value="0" step="1" min="-30" max="40"><span class="nf-suffix">%</span><button type="button" class="nf-btn" data-step="m_bundle" data-dir="1" tabindex="-1" aria-label="artır">+</button></div></div>
+            <div class="prow"><label for="m_event">Özel gün</label>
+              <div class="numfield"><button type="button" class="nf-btn" data-step="m_event" data-dir="-1" tabindex="-1" aria-label="azalt">−</button><input type="number" id="m_event" value="0" step="1" min="-30" max="40"><span class="nf-suffix">%</span><button type="button" class="nf-btn" data-step="m_event" data-dir="1" tabindex="-1" aria-label="artır">+</button></div></div>
           </div>
           <div class="pgroup">
             <div class="ptitle">Gam &amp; Kota</div>
-            <div class="prow"><label>Gam değişimi</label><input type="range" id="m_gam" min="-30" max="40" value="0"><span class="num" id="v_gam">0%</span></div>
-            <div class="prow"><label>Kota ayı</label><input type="range" id="m_kota" min="-30" max="40" value="0"><span class="num" id="v_kota">0%</span></div>
+            <div class="prow"><label for="m_gam">Gam değişimi</label>
+              <div class="numfield"><button type="button" class="nf-btn" data-step="m_gam" data-dir="-1" tabindex="-1" aria-label="azalt">−</button><input type="number" id="m_gam" value="0" step="1" min="-30" max="40"><span class="nf-suffix">%</span><button type="button" class="nf-btn" data-step="m_gam" data-dir="1" tabindex="-1" aria-label="artır">+</button></div></div>
+            <div class="prow"><label for="m_kota">Kota ayı</label>
+              <div class="numfield"><button type="button" class="nf-btn" data-step="m_kota" data-dir="-1" tabindex="-1" aria-label="azalt">−</button><input type="number" id="m_kota" value="0" step="1" min="-30" max="40"><span class="nf-suffix">%</span><button type="button" class="nf-btn" data-step="m_kota" data-dir="1" tabindex="-1" aria-label="artır">+</button></div></div>
             <div class="mult-total"><span>Toplam Çarpan</span><span id="mult_total">1,00x</span></div>
           </div>
-        </div>
-        <div class="params params-weights">
-          <div class="pgroup pgroup-weights">
-            <div class="ptitle">🎯 Plan Stok % Ağırlıkları</div>
-            <div class="weights-grid">
-              <div class="prow"><label class="wK">Kâr ağırlığı</label><input type="number" id="w_kar" value="40" step="5"></div>
-              <div class="prow"><label class="wS">Satış ağırlığı</label><input type="number" id="w_satis" value="30" step="5"></div>
-              <div class="prow"><label class="wSt">Stok ağırlığı</label><input type="number" id="w_stok" value="30" step="5"></div>
-            </div>
-            <div class="weights-note">Gelecek yıl stok payını belirleyen ağırlıklar. Kâr önceliklidir (varsayılan 40/30/20).</div>
+          <div class="pgroup">
+            <div class="ptitle">Plan Stok % Ağırlıkları</div>
+            <div class="prow"><label class="wK" for="w_kar">Kâr ağırlığı</label>
+              <div class="numfield"><button type="button" class="nf-btn" data-step="w_kar" data-dir="-1" tabindex="-1" aria-label="azalt">−</button><input type="number" id="w_kar" value="40" step="5" min="0" max="100"><button type="button" class="nf-btn" data-step="w_kar" data-dir="1" tabindex="-1" aria-label="artır">+</button></div></div>
+            <div class="prow"><label class="wS" for="w_satis">Satış ağırlığı</label>
+              <div class="numfield"><button type="button" class="nf-btn" data-step="w_satis" data-dir="-1" tabindex="-1" aria-label="azalt">−</button><input type="number" id="w_satis" value="30" step="5" min="0" max="100"><button type="button" class="nf-btn" data-step="w_satis" data-dir="1" tabindex="-1" aria-label="artır">+</button></div></div>
+            <div class="prow"><label class="wSt" for="w_stok">Stok ağırlığı</label>
+              <div class="numfield"><button type="button" class="nf-btn" data-step="w_stok" data-dir="-1" tabindex="-1" aria-label="azalt">−</button><input type="number" id="w_stok" value="30" step="5" min="0" max="100"><button type="button" class="nf-btn" data-step="w_stok" data-dir="1" tabindex="-1" aria-label="artır">+</button></div></div>
+            <div class="weights-note">Gelecek yıl stok payını belirler; kâr önceliklidir.</div>
           </div>
         </div>
       </div>

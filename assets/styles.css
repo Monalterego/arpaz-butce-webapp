@@ -71,7 +71,9 @@ select[disabled]{opacity:.5;cursor:not-allowed}
 .panel.formula h2:hover{color:var(--accent)}
 .panel.formula .fbox,.panel.formula .toptan-info-box{margin-top:var(--s2)}
 .toggle-ico{margin-left:auto;font-size:12px;color:var(--ink-soft)}
-.params{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:var(--s2);align-items:start}
+.params{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:var(--s2);align-items:stretch}
+@media (max-width:1240px){.params{grid-template-columns:repeat(2,minmax(0,1fr))}}
+@media (max-width:720px){.params{grid-template-columns:1fr}}
 .params > .pgroup{background:var(--surface);border:1px solid var(--line);border-radius:var(--radius);padding:var(--s2);box-shadow:var(--shadow);position:static;width:auto;z-index:auto;min-width:0}
 /* Parametre kartlarının başlığı gerçek bir KART BAŞLIĞIdır (--f-h2/600/--ink),
    diğer panellerdeki küçük uppercase "üst etiket" .ptitle'lardan bilinçli
@@ -83,7 +85,6 @@ select[disabled]{opacity:.5;cursor:not-allowed}
    AYNI sol/sağ kenardan hizalanıyor (aynı .panel içinde, aynı .params
    grid mantığı). İki blok arası boşluk için .params + .params margin-top. */
 .params + .params{margin-top:var(--s2)}
-.params-weights{grid-template-columns:1fr}
 /* Hafif vurgu: "bağımsız ama aynı ailenin parçası" — mavi accent arka plan +
    sol renkli şerit, diğer kartlarla AYNI boyut/köşe/gölge korunuyor (sadece
    renk/sol-şerit override, bkz. Bölüm 9 token kuralı — yeni ham renk yok,
@@ -92,19 +93,15 @@ select[disabled]{opacity:.5;cursor:not-allowed}
    Seçici `.params > .pgroup.pgroup-weights` (üç sınıf/kombinatör) KASITLI —
    düz `.pgroup-weights` (tek sınıf) `.params > .pgroup`'un (iki sınıf)
    ÖNÜNE geçemiyordu, renk hiç uygulanmıyordu (test edildi, doğrulandı). */
-.params > .pgroup.pgroup-weights{background:var(--accent-bg);border:1px solid rgba(0,119,182,.22);border-left:4px solid var(--accent);padding-left:calc(var(--s2) - 3px);box-shadow:var(--shadow-md)}
 /* Üç ağırlık girişi yatay ve dengeli dizilir. Üstteki 3 karttaki 136px sabit
    etiket genişliği burada geçersiz kılınır (etiketler kısa: "Kâr ağırlığı" vb.).
    Sütunlar 1fr DEĞİL max-content: kart tam satır genişliğinde olduğu için 3 eşit
    1fr sütun, her sütunda ~270px ölü boşluk bırakıyordu (413px sütun / ~140px
    içerik — ölçüldü, %66 boş). max-content + justify-content:start ile üçlü sola
    paketlenir, "dev boşluk" kalmaz. minmax(0,...) dar ekranda taşmayı önler. */
-.weights-grid{display:grid;grid-template-columns:repeat(3,minmax(0,max-content));gap:var(--s1) var(--s4);justify-content:start}
 /* .prow varsayılan olarak justify-content:space-between'dir — 3 eşit sütunda bu,
    etiket ile input arasında ~300px'lik DEV bir boşluk bırakıyordu (ekran görüntüsüyle
    doğrulandı). Ağırlık satırlarında etiket ve input yan yana dursun: */
-.weights-grid .prow{margin:0;min-width:0;justify-content:flex-start;gap:var(--s2)}
-.weights-grid .prow:has(input[type=number]) label{flex:0 0 auto}
 .weights-note{font-size:var(--f-label);color:var(--ink-soft);margin-top:var(--s1);line-height:1.5}
 .params + .action-row,
 .action-row{display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:12px;margin-top:12px}
@@ -127,10 +124,8 @@ select[disabled]{opacity:.5;cursor:not-allowed}
    72,52px (önceki 62px değeri yetersizdi, metin 2 satıra bölünüp satırlar arasında
    GÖRSEL bir hiza kayması hissi veriyordu — inputlar aslında pikselde hizalıydı,
    getBoundingClientRect ile doğrulandı; kök neden sadece 2 satıra bölünmekti). */
-.prow:has(input[type=range]) label{flex:0 0 80px}
-.prow:has(input[type=number]) label{flex:0 0 136px}
-.prow input[type=range]{flex:1;accent-color:var(--accent)}
-.prow .num{width:52px;text-align:right;font-weight:600;color:var(--accent);font-variant-numeric:tabular-nums}
+.params .prow{gap:var(--s2)}
+.params .prow label{flex:1 1 auto;min-width:0}
 .prow input[type=number]{width:64px;padding:5px 8px;border:1px solid var(--line);border-radius:var(--radius-sm);text-align:right;color:var(--accent);font-weight:600;font-variant-numeric:tabular-nums}
 .prow input[type=number]:focus{outline:2px solid rgba(0,119,182,.18);border-color:var(--accent)}
 /* "Toplam Çarpan": tam genişlik şerit DEĞİL, accent zeminli küçük pill rozet. */
@@ -526,3 +521,32 @@ tfoot td{background:#eef3f8;font-weight:700;border-top:2px solid var(--navy)}
 .panel-actions{margin-left:auto;display:flex;align-items:center;gap:var(--s2)}
 .panel-actions .note{margin:0;font-size:11px;color:var(--ink-soft)}
 .btn-group{display:flex;align-items:center;gap:6px}
+
+/* ===== .numfield — parametre sayı girişi (eski input[type=range] YERİNE) =====
+   Slider'lar hassas ayar için uygun değildi (1 puanı tutturmak zor, dokunmatikte
+   hantal). Bu kontrol üç yolu birden verir: rakamı doğrudan yaz, −/+ ile tek tek
+   adımla, ya da odaktayken klavye ok tuşlarını kullan (native number input).
+   Adım büyüklüğü input'un step'inden okunur (parametreler 1, ağırlıklar 5). */
+.numfield{display:inline-flex;align-items:stretch;flex:0 0 auto;
+  border:1px solid var(--line);border-radius:var(--radius-sm);background:#fff;
+  overflow:hidden;transition:border-color .12s,box-shadow .12s}
+.numfield:focus-within{border-color:var(--accent);box-shadow:0 0 0 3px rgba(0,119,182,.14)}
+.numfield input[type=number]{width:44px;border:none;outline:none;background:transparent;
+  padding:0 2px;text-align:center;font-size:12px;font-weight:600;color:var(--accent);
+  font-variant-numeric:tabular-nums;-moz-appearance:textfield}
+/* Native ok tuşları gizlenir — kendi −/+ butonlarımız var, ikisi birden kalabalık.
+   Klavye ok tuşları yine de çalışır (input'un kendi davranışı). */
+.numfield input[type=number]::-webkit-outer-spin-button,
+.numfield input[type=number]::-webkit-inner-spin-button{-webkit-appearance:none;margin:0}
+.numfield .nf-suffix{display:flex;align-items:center;padding-right:4px;
+  font-size:11px;font-weight:600;color:var(--ink-soft)}
+.nf-btn{display:flex;align-items:center;justify-content:center;width:24px;
+  border:none;background:transparent;color:var(--ink-soft);cursor:pointer;
+  font-size:14px;font-weight:700;line-height:1;padding:0;
+  transition:background .12s,color .12s}
+.nf-btn:hover{background:var(--accent-bg);color:var(--accent)}
+.nf-btn:active{background:var(--accent);color:#fff}
+/* Kartlar eşit yükseklikte dursun; "Toplam Çarpan"/not kartın DİBİNE yaslansın. */
+.params > .pgroup{display:flex;flex-direction:column}
+.params > .pgroup .mult-total,.params > .pgroup .weights-note{margin-top:auto}
+.params > .pgroup .mult-total{align-self:flex-start}

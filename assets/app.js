@@ -347,7 +347,6 @@
   // --- Hücreleri güncelle (DOM'u yeniden kurmadan) ---
 function updateAll() {
   const p = readParams();
-  CAMP.forEach((k) => ($("v_" + k).textContent = $("m_" + k).value + "%"));
   const m = computeModel(p, state.covers, state.tyFiyat);
   $("mult_total").textContent = fmtX(m.pazarF * m.campF);
 
@@ -1571,6 +1570,28 @@ function updateAll() {
   }
 
   // --- Olaylar ---
+  // .numfield −/+ butonları: input.step kadar artırır/azaltır, min/max varsa
+  // kırpar ve "input" olayı yayar — böylece mevcut dinleyiciler (updateAll,
+  // enforceWeightTotal) hiç değişmeden çalışır.
+  function initNumFields() {
+    document.querySelectorAll(".nf-btn[data-step]").forEach((btn) => {
+      btn.addEventListener("click", () => {
+        const inp = $(btn.dataset.step);
+        if (!inp) return;
+        const step = parseFloat(inp.step) || 1;
+        const dir = parseInt(btn.dataset.dir, 10);
+        let v = parseFloat(inp.value);
+        if (!isFinite(v)) v = 0;
+        v += dir * step;
+        if (inp.min !== "" && isFinite(parseFloat(inp.min))) v = Math.max(v, parseFloat(inp.min));
+        if (inp.max !== "" && isFinite(parseFloat(inp.max))) v = Math.min(v, parseFloat(inp.max));
+        // Kayan nokta artığını temizle (0.1 adımlarda 0.30000000000000004 olmasın)
+        inp.value = Math.round(v * 1000) / 1000;
+        inp.dispatchEvent(new Event("input", { bubbles: true }));
+      });
+    });
+  }
+
   function bind() {
     ["p_stokbuyume","p_pazar","p_fiyatbuyume","w_kar","w_satis","w_stok",...CAMP.map(k=>"m_"+k)]
       .forEach((id) => $(id).addEventListener("input", () => {
@@ -2032,6 +2053,7 @@ function updateAll() {
     buildTable();
     bind();
     initFormulaModal();
+    initNumFields();
     initToptanInfoToggle();
     initColResize();
     initGridFormat();

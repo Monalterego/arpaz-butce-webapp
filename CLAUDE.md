@@ -287,16 +287,32 @@ stil + sarmalayıcı yapı katmanındadır.
   Toptan'ın "Nasıl Çalışır?" paneli ve Ağırlıklar kartı hâlâ kullanıyor.
   Toptan'ın paneli KASITLI olarak açık (`▾`) accordion kalır — orası yöntemin
   kendisini anlatır, `initToptanInfoToggle()` DEĞİŞMEDİ.
-- **Planlama Parametreleri:** Satır 1 = 3 eşit kart (Global Hedefler · Kampanya
-  Çarpanları · Gam & Kota, sade `--surface`), Satır 2 = tek ve VURGULU
-  "🎯 Plan Stok % Ağırlıkları" kartı (`--accent-bg` zemin, `border-left:4px solid
-  var(--accent)`, `--shadow-md`). Üç ağırlık girişi `.weights-grid` ile 3 eşit
-  sütunda YATAY dizilir; `.prow`'un varsayılan `space-between`'i burada
-  `flex-start`'a çekilmiştir, aksi halde etiket–input arası ~300px dev boşluk
-  oluşuyordu (ekran görüntüsüyle doğrulandı). Kartın altında gri açıklama
-  (`.weights-note`).
-  NOT: 🎯 ikonu, önceki turda başlıklardan emoji temizleme kararının bilinçli bir
-  ISTISNASIdır (kullanıcı bu kartın öne çıkmasını açıkça istedi).
+- **Planlama Parametreleri: DÖRT EŞİT KART, TEK SATIR, TEK STİL.** Global Hedefler ·
+  Kampanya Çarpanları · Gam & Kota · Plan Stok % Ağırlıkları — hepsi tek `.params`
+  gridinde (`repeat(4,minmax(0,1fr))`), hepsi sade `--surface`. `align-items:stretch`
+  + `.pgroup{display:flex;flex-direction:column}` ile kart yükseklikleri EŞİTLENİR;
+  "Toplam Çarpan" pill'i ve `.weights-note` `margin-top:auto` ile kartın DİBİNE
+  yaslanır. Kırılım: 1240px altı 2 sütun, 720px altı tek sütun (doğrulandı:
+  1100px'te 2 satır, kart içi taşma yok, yatay scroll yok).
+  TARİHÇE (artık geçersiz): ağırlıklar kartı bir dönem ayrı satırda, `--accent-bg`
+  zeminli, `border-left:4px solid var(--accent)` ve 🎯 ikonlu VURGULU bir kart idi
+  (`.params-weights` / `.pgroup-weights` / `.weights-grid` kuralları). Kullanıcı
+  "hepsi aynı stilde olsun" dediği için bu ayrıcalıklı stil ve 🎯 KALDIRILDI;
+  o CSS kuralları da silindi. Geri isteniyorsa yeniden yazılmalı.
+- **Slider YOK — `.numfield` sayı kontrolü.** Kampanya Çarpanları ve Gam & Kota
+  bir dönem `input[type=range]` kullanıyordu; hassas ayar için uygun değildi
+  (1 puanı tutturmak zor, dokunmatikte hantal). Yerine `.numfield`: `−` / sayı /
+  `%` / `+`. Üç giriş yolu birden: rakamı doğrudan yaz · −/+ ile adımla ·
+  odaktayken klavye ok tuşları (native `input[type=number]` davranışı).
+  Adım input'un `step``step` niteliğinden okunur (parametreler 1, ağırlıklar 5);
+  `min`/`max` varsa kırpılır (kampanya −30..40). Native spinner okları CSS ile
+  gizlidir (kendi butonlarımız var), klavye okları YİNE ÇALIŞIR.
+  `initNumFields()` butona basınca `input` olayı YAYAR — bu yüzden mevcut
+  dinleyiciler (`updateAll`, `enforceWeightTotal`) hiç değişmeden çalışır; yeni
+  bir parametre eklerken de aynı deseni kullan, ayrı bir hesap yolu AÇMA.
+  NOT: slider'ların yanındaki `v_paro`/`v_bundle`... değer etiketleri KALDIRILDI
+  (değer artık input'un içinde). `updateAll()` içindeki `$("v_"+k)` satırı da
+  silindi — geri eklersen `null` hatası alırsın.
 - **Buton hizalama — ÖLÇÜLDÜ, TAHMİN DEĞİL.** Ana tablo başlığındaki dört buton
   aynı `.btn.ghost.mini` sınıfına sahipken üç FARKLI yükseklikte ve dört farklı
   dikey konumda çıkıyordu (ölçüm: 20,0 / 21,0 / 23,0px · top 129/130/131/134).
