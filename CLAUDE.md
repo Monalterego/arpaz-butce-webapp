@@ -51,9 +51,12 @@ arpaz-butce-webapp/
 │   ├── data.js           # DataService: filtre + satır şemasına indirgeme
 │   ├── app.js            # Hesap motoru + kaskad seçim + tablo + senaryo + forecast
 │   └── styles.css        # Stiller (Segoe UI, lacivert/yeşil tema)
+├── docs/                 # Detaylı özellik referansları (SADECE o özelliğe dokunurken oku)
+│   ├── TOPTAN_KOPRUSU.md # Bölüm 13'ün tamamı: sell-in köprüsü + kanıt vitrini
+│   └── ROLLUP_PANELI.md  # Bölüm 14'ün tamamı: Özet/Rollup paneli mimarisi
 ├── .github/
 │   └── copilot-instructions.md   # (varsa) kısa kural özeti
-└── CLAUDE.md             # BU DOSYA
+└── CLAUDE.md             # BU DOSYA (tek kaynak bağlam; detaylar docs/'ta)
 ```
 
 **Çalıştırma:** `index.html`'e çift tıkla YA DA VS Code'da Live Server (`127.0.0.1:5500`).
@@ -380,7 +383,7 @@ Sol menü sırası: **TEŞKİLAT → ÜRÜN HİYERARŞİSİ → PERİYOT**.
 - **Bütçe formüllerinin özünü değiştirme; HedefCover elle-girişini ezme.**
 - **hierarchy.js'e (İPTAL) grup ekleme.** "buyer grup" deme; "ÜH4" de.
 - **Ana tabloya (`#grid`) kolon eklerken/çıkarırken TÜM bu yerleri BİRLİKTE güncelle**
-  (21 kolona çıkarken hepsi elden geçti, bkz. commit geçmişi):
+  (22 kolona çıkarken hepsi elden geçti, bkz. commit geçmişi):
   1) `index.html` `<colgroup>` (yeni `<col>` + genişlik — bkz. Bölüm 9'daki ölçüm kuralı),
   2) `index.html` thead (grup `colspan` + 2. satır `<th>`, `title` attribute'uyla),
   3) `app.js` `buildTable()` satır şablonu (yeni `<td>`/input hücreleri),
@@ -389,8 +392,9 @@ Sol menü sırası: **TEŞKİLAT → ÜRÜN HİYERARŞİSİ → PERİYOT**.
   6) `assets/styles.css` `#grid{width:...}` (colgroup toplamına eşit olmalı),
   7) `app.js` `COL_MIN_WIDTHS` ve `initColResize()`'daki Durum/Aksiyon `makeResizeHandle`
   index'leri (satır 2'nin th'leri `i+1` ile otomatik kayar, ama rowspan'lı ÜH4/Durum/
-  Aksiyon'un sabit index'leri elle güncellenmeli). Güncel toplam kolon sayısı: **21**
-  (Grup 1 + GERÇEKLEŞEN 9 + GELECEK YIL PLANI 9 + Durum 1 + Aksiyon 1).
+  Aksiyon'un sabit index'leri elle güncellenmeli). Güncel toplam kolon sayısı: **22**
+  (Grup 1 + GERÇEKLEŞEN 10 [LY Satış Tutar/Ciro dahil] + GELECEK YIL PLANI 9
+  + Durum 1 + Aksiyon 1).
 - **Cerrahi düzenleme yap** (mümkünse tüm dosyayı değil ilgili bloğu değiştir).
 - Küçük, sık commit al. Geri dönülebilir olsun.
 - **Yeni renk/boşluk/tipografi/radius/gölge değeri eklerken önce `:root`'taki mevcut
@@ -398,9 +402,21 @@ Sol menü sırası: **TEŞKİLAT → ÜRÜN HİYERARŞİSİ → PERİYOT**.
   `--f-hero/--f-h1/--f-h2/--f-body/--f-label`, `--radius`, `--shadow`; ince ayrımlar
   için `--radius-sm/--radius-md/--radius-pill`, `--shadow-sm/--shadow-md`),
   yeni ham değer YAZMA. **İkiden fazla vurgu rengi kullanma** — accent mavi +
-  durum renkleri (sadece rozet/tabloda); `--navy` marka/yapı rengidir, vurgu değil. Kabuk (panel/kart/badge/buton) katmanı bu token'lardan besleniyor;
-  `#grid` içindeki tablo-özel değerler (`--grid-row-pad` vb., bkz. Bölüm 8) bu token'lardan
-  AYRI ve kasıtlı olarak farklı bir mekanizma — birbirine karıştırılmasın.
+  durum renkleri (sadece rozet/tabloda); `--navy` marka/yapı rengidir, vurgu değil.
+  Kabuk (panel/kart/badge/buton) katmanı bu token'lardan besleniyor; `#grid` içindeki
+  tablo-özel değerler (`--grid-row-pad` vb., bkz. Bölüm 8) bu token'lardan AYRI ve
+  kasıtlı olarak farklı bir mekanizma — birbirine karıştırılmasın.
+- **Orantılılık:** Görev küçük/kozmetikse (tek metin, tek CSS kuralı, tek
+  renk/etiket değişikliği) SADECE ilgili bölümü/dosyayı oku, kabul
+  kriterini 1-2 maddeye indir — dosyanın tamamını satır satır yeniden
+  okumaya veya 10 maddelik test matrisine gerek yok. Bu rijitlik
+  yapı/formül değişikliklerinde (Bölüm 5, kolon ekleme/çıkarma) haklı,
+  kozmetik işlerde gereksiz yavaşlatır. Şüphedeysen sor, ama varsayılan
+  orantılı davranmak olsun.
+- **Detaylı özellik dokümanları ayrı dosyalarda:** "Toptan Bütçe"/"Kanıt"
+  sekmesi için `docs/TOPTAN_KOPRUSU.md`, Rollup paneli için
+  `docs/ROLLUP_PANELI.md` — SADECE o özelliğe dokunurken oku, her görevde
+  okumana gerek yok.
 
 ---
 
@@ -476,212 +492,21 @@ Sol menü sırası: **TEŞKİLAT → ÜRÜN HİYERARŞİSİ → PERİYOT**.
 
 ---
 
-## 13) Perakende → Toptan Köprüsü (Sell-out → Sell-in)
+## 13) Perakende → Toptan Köprüsü (Sell-out → Sell-in) — DETAY AYRI DOSYADA
 
-### 13.1 Problem
-Şimdiye kadar ekran, bayinin yerine geçerek **Perakende (sell-out) bütçesi** kuruyordu.
-Ancak Arpaz için asıl kritik olan **Toptan (sell-in) bütçesi**: Arçelik'in bayilere
-**sevk edeceği** adet. Perakende bütçesinden toptan bütçesine geçmek için bilimsel,
-açıklanabilir bir yöntem gerekiyordu.
+Toptan Bütçe sekmesi + "Perakende → Toptan (Kanıt)" sekmesi için envanter
+köprüsü formülü (r=0,894 doğrulanmış), mevsimsel katsayı, outlier kuralları,
+Kayıtlar'dan besleme mimarisi ("Revize Et"), Durum/Sevki-durdur mantığı ve
+kanıt vitrini render fonksiyonlarının TAM detayı:
 
-### 13.2 Yöntem — Envanter Akış Kimliği (ANA YÖNTEM)
-Fiziksel kimlik (adet bazında):
-```
-Toptan_t  ≈  Perakende_t  +  ΔBayiStok_t
-ΔBayiStok_t = BayiStok_t − BayiStok_(t−1)
-```
-Yani bayiye sevk = bayinin sattığı + bayi deposundaki stok değişimi. Bayi sezon
-öncesi stoklar (toptan > perakende), sezon sonu eritir (toptan < perakende).
-
-**DOĞRULANDI (historical veri, 2022-01 → 2026-03, 19.043 satır, 34 ÜH2, 411 ÜH4):**
-- Korelasyon(beklenen toptan, gerçek toptan) = **0.894** (çok güçlü)
-- Sapma oranı (ÜH4/aylık) = %34.6 → ÜH2/çeyrek bazında toplandığında çok azalır.
-- Sonuç: kimlik güçlü; toptan'ı fiziksel köprüyle türetmek sağlam ve savunulabilir.
-
-**Ekranla mükemmel uyum:** Kullanıcı zaten **Hedef Cover** giriyor →
-Hedef Bayi Stok'u belirliyor → ΔStok otomatik çıkıyor → Toptan otomatik türeniyor.
-Ekstra parametre gerekmez.
-
-### 13.3 Yöntem — Mevsimsel Katsayı (KONTROL / DOĞRULAMA)
-İkincil, çapraz-kontrol yöntemi:
-```
-Toptan Bütçe(ÜH2, ay) = Perakende Bütçe × KATSAYI(ÜH2, ay)
-```
-Katsayılar historical Toptan/Perakende oranından ÜH2 × ay bazında üretildi
-(`toptan_katsayi.js` → `TOPTAN_KATSAYI[uh2][ay]`).
-
-**Gözlemlenen desenler (yönetime anlatım için):**
-- **Aralık = evrensel eritme:** neredeyse tüm kategoriler < 1 (yıl sonu stok kapama).
-- **Klima:** Oca-May 1.7–2.5 (sezon öncesi dolum) → Tem ~0.8 (eritme).
-- **Dondurucu:** Oca-Nis 2.8–5.0 (yaz öncesi dolum) → Ağu-Eyl ~0.5 (eritme).
-- **Isıtıcılar:** Ağu-Eyl 3.2–3.7 (kış öncesi dolum).
-- **Çekirdek beyaz eşya** (soğutucu/çamaşır/bulaşık): ılımlı dolum 1.1–1.7, yıl sonu ~0.85.
-
-**Lead-Lag bulgusu:** Toptan, perakendeyi ~**2 ay önden** besliyor
-(cross-correlation en güçlü lag = −2, r = +0.633). Yani sezon planlamasında
-toptan bütçesi perakendeye göre öne çekilmelidir.
-
-### 13.4 Outlier / Güvenilirlik Kuralları
-Mevsimsel katsayıda ELE / DİKKAT:
-- ELE: SOLAR ENERJI (rasyo yüzlerce/binlerce — perakende≈0), tüm (İPTAL) ÜH2'ler,
-  GRUPSUZ (0), HAVALANDIRMA/HIJYEN/PROFESYONEL GÖRÜNTÜLEME (yeni rampa, 4–41).
-- KIRP: katsayıyı 0.5–2.0 aralığına sıkıştır (aşırı uçları makul sınıra çek).
-- Yıllık rasyo oynaklığı ~%56-59 (makro sell-in/sell-out döngüsü) → düz yıllık
-  ortalamaya GÜVENME; envanter kimliğini veya aylık katsayıyı kullan.
-
-### 13.5 Ekran Formülü (Toptan Bütçe sekmesi)
-```
-Toptan Bütçe(ÜH4, ay) = Perakende Bütçe + (Hedef Bayi Stok − Mevcut Bayi Stok)
-  Hedef Bayi Stok = Hedef Cover × (aylık Perakende Bütçe)
-  Mevcut Bayi Stok = son LY stok (stok_adet)
-
-Kontrol kolonu (mevsimsel):
-  Mevsimsel Toptan = Perakende Bütçe × TOPTAN_KATSAYI[uh2][ay]
-  → İki değer yakınsa yöntemler birbirini doğruluyor (✓).
-```
-
-### 13.6 Veri/Dosya Notları
-- `assets/toptan_katsayi.js`: `const TOPTAN_KATSAYI = { "ÜH2": { "1":kat, ... "12":kat } }`
-  (index.html'de app.js'ten ÖNCE yüklenir).
-- Katsayılar Colab analizinden üretildi (historical Perakende-Toptan.xlsx).
-- Envanter kimliği için ekstra veri gerekmez; mevcut stok_adet + hedef cover yeter.
-
-### 13.7 Son Kullanıcıya Anlatım İlkesi (ÖNEMLİ)
-Ekranda toptan mantığı MUTLAKA sade Türkçe ile açıklanmalı (bkz. "Nasıl Çalışır?"
-bilgi paneli). Son kullanıcı formülün ARDINDAKİ MANTIĞI anlamalı:
-"Bayiye ne kadar mal göndereceğiz? = Bayinin satacağı kadar + bayinin deposunu
-hedeflediğimiz seviyeye getirmek için gereken fark." Teknik jargon değil, sezgi ver.
-
-### 13.8 Veri Kaynağı: KAYITLI Planlar, CANLI Seçim DEĞİL (ÖNEMLİ DAVRANIŞ)
-Toptan Bütçe sekmesi artık sidebar'daki CANLI seçimden/parametrelerden BESLENMİYOR —
-`buildFlatRows()` (Kayıtlar sekmesiyle AYNI düzleştirme) ile TÜM kayıtlı set'lerin
-TÜM satırlarını okuyup, her satırın KAYIT ANINDA dondurulmuş `salesBudget/hedefCover/
-stock` değerleriyle hesap yapar (`computeToptanFromSaved()`/`renderToptanFromSaved()`,
-bkz. Bölüm 8). Sonuç: global bir parametreyi (ör. Hedef Stok Büyümesi %) sonradan
-değiştirmek Toptan Bütçe'yi ETKİLEMEZ — o grubu güncellemek için kullanıcı o seçime
-dönüp yeniden **Kaydet/Revize Et** yapmalı. Mevsimsel katsayı için `ay` de artık global
-`h_targetperiod`'dan değil, HER SATIRIN KENDİ `targetperiod` alanından (`monthFromPeriodLabel`)
-türetiliyor — aynı ÜH4 farklı Hedef Periyot'larla kaydedilmişse farklı katsayı kullanır
-(test edildi: aynı bütçe, "Ocak" periyodunda katsayı×1, "Tam Yıl" periyodunda 12 ayın
-ortalaması — iki satır farklı Mevsimsel Kontrol üretir, beklenen davranış).
-
-**"Revize Et" mekanizması** (Bütçe & Stok Miks ekranı, `#saveMixSetBtn`): Eşleşme
-anahtarı Satış Teşkilatı + Şube/Bölge + ÜH1 + ÜH2 + ÜH3 + Baz Periyot + Hedef Periyot
-(**ÜH4 DAHİL DEĞİL** — bir kayıt zaten o ÜH3'ün tüm ÜH4'lerini birlikte tutuyor).
-`findMatchingSavedSet()` sidebar seçimi bu 7 alanla mevcut bir kayıtla TAM eşleşiyorsa
-butonu "🔁 Revize Et"e çevirir (yanında `#saveMixSetNote`'ta son kayıt zamanı görünür);
-`saveCurrentMixSet()` bu durumda YENİ set EKLEMEZ, eşleşen set'i aynı `id` ile YERİNDE
-üzerine yazar (Kayıtlar tablosunda ayrı bir blok olarak eklenmez, mevcut satırlar
-güncellenir). Eşleşme yoksa normal "💾 Kaydet" (yeni set, 25 kayıt sınırı korunur).
-Buton durumu `rebuild()` (ÜH1/2/3/org/bölge değişince) ve `h_baseperiod`/`h_targetperiod`
-"change" olaylarında CANLI güncellenir. Kayıt/Revize/Silme her işlemden sonra
-`renderToptanFromSaved()` de çağrılır ki Toptan Bütçe güncel kalsın.
-
-**Bilinen sınırlama (kullanıcıya bildirildi, otomatik temizlenmedi):** Bu mekanizma
-kurulmadan ÖNCE kaydedilmiş yinelenen (duplicate) satırlar Kayıtlar'da hâlâ olabilir —
-bunlar Toptan Bütçe'de çift sayıma yol açar. Kayıtlar'ın mevcut "Sil" butonuyla elle
-temizlenebilir; ayrı bir "Tekilleştir" (aynı 7 alanı paylaşan kayıtlardan en yenisini
-tutup eskilerini silen) özelliği henüz YOK, talep gelirse eklenebilir.
-
-### 13.9 "Perakende → Toptan (Kanıt)" Sekmesi — Statik İnfografik Vitrini
-Eski "Perakende/Toptan Rasyo" sekmesi (yıl bazlı temsili `RATIO` tablosu — kaldırıldı,
-`assets/data.js`'te artık yok) **gerçek analiz kanıtlarını** gösteren bir vitrine
-dönüştürüldü. Amaç: son kullanıcı "toptan neden bu formülle hesaplanıyor" sorusuna
-somut, ölçülmüş kanıtla cevap bulsun (bkz. Bölüm 13.2 envanter kimliği doğrulaması).
-
-**Veri:** `assets/kanit.js` → `const KANIT` (özet istatistikler + lead-lag korelasyon
-dizisi + ÜH2 yıllık rasyo listesi + mevsim imzası kartları — hepsi Colab analizinden
-üretilmiş GERÇEK, sabit/geçmiş değerler, sidebar seçimine bağlı DEĞİL). Aylık ısı
-haritası için ayrı veri gerekmedi, mevcut `assets/toptan_katsayi.js` (`TOPTAN_KATSAYI`)
-tekrar kullanıldı. İkisi de `index.html`'de `app.js`'ten ÖNCE yüklenir.
-
-**Render:** `renderKanit()` (app.js) tek seferde DOMContentLoaded'da çalışır — hiçbir
-alt fonksiyonu `updateAll()`'a bağlı değildir, sidebar/parametre değişikliği bu
-sekmeyi ETKİLEMEZ (bilinçli, çünkü veri zaten sabit/geçmiş). Alt fonksiyonlar:
-- `renderKanitKpis()` — 3 KPI kartı (Doğruluk %89, Lead-Time −2 Ay, Test Kapsamı).
-- `renderKanitLeadLag()` — lag −3..+3 bar grafik, saf CSS flexbox (canvas YOK); her
-  kolon üstte pozitif bölge (sıfır çizgisinden yukarı büyür), altta ince negatif bölge
-  (sıfır çizgisinden aşağı büyür); en güçlü lag (`KANIT.ozet.lead_lag_en_guclu`) yeşil
-  vurgulu.
-- `heatDiverge(v)` + `renderKanitHeatmap()` — ÜH2×ay ısı haritası; `isToptanOutlierUh2()`
-  (Bölüm 13.4'teki AYNI fonksiyon, tekrar yazılmadı) ile outlier ÜH2'ler elenir, değerler
-  0,5–2,0'a kırpılır, renk 1,0 pivotlu diverging skala (yeşil→amber→kırmızı, `heat()`
-  ana tablodaki gibi iki-renk lineer interpolasyon, burada iki bacaklı).
-- `renderKanitYillikRasyo()` — `KANIT.yillik_rasyo` yatay bar liste, 1,0 referans çizgili.
-- `renderKanitMevsim()` — `KANIT.mevsim`, mevcut `.action-row`/`.action-card` kabuğu
-  (önceden kullanılmayan, dead CSS idi) yeniden kullanılarak 4 kart.
-- `renderKanitFootnote()` — sabit dipnot metni.
-
-**KISIT (bilinçli):** Bu sekme SADECE görsel/kanıt — bütçe hesaplarına (computeFromData,
-computeToptanFromSaved) dokunmaz, hiçbir kullanıcı girdisi almaz.
+**→ `docs/TOPTAN_KOPRUSU.md`** (SADECE bu sekmelere dokunurken oku)
 
 ---
 
-## 14) "Perakende Bütçe" Sekmesi — Özet / Rollup Paneli
+## 14) "Perakende Bütçe" Sekmesi — Rollup Paneli — DETAY AYRI DOSYADA
 
-### 14.1 Amaç
-Kullanıcı bütçeyi ÜH4'te çalışıyor; bu panel üst kırılımda (ÜH1→ÜH2→ÜH3) "bütçe LY'ye
-göre nereden nereye geldi?" sorusunu cevaplar. "Perakende Bütçe" (data-pane="kayitlar")
-sekmesinde, "Çalışılmış Bütçe ve Stok Karışım" (Kayıtlar) panelinin ÜSTÜNDE yer alır.
+ÜH1→ÜH2→ÜH3 özet/rollup panelinin mimarisi (computeFromData'yı yeniden
+yazmadan çoklu çağırma, planPctOverrides izolasyonu, CANLI davranış,
+periyot seçicileri) için TAM detay:
 
-### 14.2 Mimari — YENİDEN FORMÜL YOK, mevcut computeFromData'yı ÇOKLU ÇAĞIRIR
-Rollup, bütçe formülünü ASLA yeniden yazmaz. Bunun yerine:
-1. `rollupLeafTriples(level)` — HIERARCHY ağacında kırılım seviyesine göre taranacak
-   tüm "yaprak" (uh1,uh2,uh3) üçlülerini + hangi rollup grubuna (groupKey) ait
-   olduklarını çıkarır. `level="uh1"` TÜM hiyerarşiyi tarar (global, 7 ÜH1); `"uh2"`
-   sidebar'ın mevcut `state.sel.uh1`'i altını tarar; `"uh3"` `state.sel.uh1/uh2`
-   altını tarar. **data.js'e HİÇ dokunulmadı** — `DataService.loadMixFor({uh1,uh2,uh3},
-   "uh4")` zaten TEK bir ÜH3'ün ÜH4 satırlarını döndürüyordu, rollup bunu her yaprak
-   için ayrı ayrı çağırır (ana ekranın `buildTable()`'ının yaptığının AYNISI, sadece
-   döngüde).
-2. `computeRollupLeaf(leaf, params)` — her yaprağın ÜH4 satırlarını **computeFromData**
-   ile hesaplar (aynı fonksiyon, ana ekranla BİREBİR). Hedef Cover/TY Fiyat elle-giriş
-   override'ları SADECE `state.sel` ile TAM eşleşen (o an sidebar'da GÖRÜNEN) yaprağa
-   uygulanır — uygulamada zaten başka hiçbir ÜH3'ün elle-girişleri hafızada tutulmuyor
-   (`state.covers`/`state.tyFiyat` her ÜH3 değişiminde sıfırlanıyor, bkz. `rebuild()`),
-   bu yüzden diğer yapraklar computeFromData'nın override'sız varsayılanına (LY cover,
-   LY fiyat × Fiyat Büyümesi %) döner — bilinçli, mevcut mimariyle tutarlı.
-   **DİKKAT:** `computeFromData` Plan Stok% override'ını PARAMETRE olarak almıyor,
-   doğrudan dış `state.planPctOverrides`'ı okuyor (satır index'iyle) — başka bir
-   yaprak için çağrılırken bu dizi geçici olarak `null`'a çekilip hesap sonrası GERİ
-   YÜKLENİR, yoksa mevcut ÜH3'ün override index'leri YANLIŞ yaprağın satırlarına
-   uygulanıp sessiz bir hesap hatası yaratırdı (kod incelemesiyle bulundu, düzeltildi).
-3. Her yaprağın `model.rows`'u (`r.sales, r.salesBudget, r.stock, r.planStock,
-   r.lyFiyat, r.tyRevenue`) hem kendi rollup grubuna (`groupKey`) hem GENEL TOPLAM'a
-   toplanır (`rollupAddRow`); grup metrikleri (`rollupFinalize`) bu Σ alanlarından
-   LFL/R-LFL/Stok Δ/Cover/Ort.Fiyat Δ formülleriyle türetilir — formüller ana ekrandaki
-   TOPLAM satırının (bkz. `updateAll()` `tfoot`) AYNI mantığıyla (ağırlıklı toplam,
-   satır bazlı ortalama DEĞİL).
-
-**Doğrulama (iç tutarlılık testiyle kanıtlandı):** ÜH1 görünümünde "BEYAZ EŞYA"
-satırının LY/TY toplamı, ÜH2 görünümünün TOPLAM satırıyla BİREBİR eşleşiyor; ÜH2
-görünümünde "ASPİRATÖR - DAVLUMBAZ" satırı ÜH3 görünümünün TOPLAM'ıyla eşleşiyor —
-rollup'ın iç içe geçmiş kırılımlar arasında matematiksel olarak tutarlı olduğunu
-kanıtlar (headless test, bkz. commit).
-
-### 14.3 CANLI mı, DONDURULMUŞ mu? — CANLI (Toptan Bütçe'nin TAM TERSİ)
-Bu panel `updateAll()` içinden `renderRollup()` ile çağrılır — global parametre
-(Hedef Stok Büyümesi % vb.) VEYA herhangi bir Hedef Cover elle-değişikliği ANINDA
-rollup'a yansır (test edildi: bir ÜH4'ün Hedef Cover'ı 16→2 yapılınca SADECE o ÜH4'ün
-ait olduğu grup güncellendi, diğer gruplar değişmedi; global Hedef Stok Büyümesi %
--10→80 yapılınca TÜM gruplar güncellendi). Bu, **Bölüm 13.8'deki Toptan Bütçe'nin TAM
-TERSİDİR** — Toptan Bütçe kayıtlı/dondurulmuş planları gösterir, bu panel ise CANLI
-sonuç/izleme ekranıdır. İkisini birbirine KARIŞTIRMA.
-
-### 14.4 Kırılım Seçici + Bağımsız Periyot Seçici
-- `#rollupLevelSeg` — 3 buton (segmented control, mevcut `.segmented` kabuğu), `rollupState.level`
-  (varsayılan `"uh2"`) tutuyor; tıklanınca `renderRollup()` yeniden çağrılır.
-- `#rollup_baseperiod` / `#rollup_targetperiod` — sidebar'ın `#h_baseperiod`/
-  `#h_targetperiod`'undan TAMAMEN BAĞIMSIZ, KENDİ periyot seçicileri (aynı seçenek
-  listesi: "2026 Ocak"/"2026 Tam Yıl" ve "2027 Ocak"/"2027 Tam Yıl"). Prototip veri
-  TEK dönem içerdiğinden bu seçiciler şu an sayıları DEĞİŞTİRMEZ (sadece `renderRollup()`
-  tetiklenir, no-op) — gerçek çok-dönem veri gelince aynı seçici canlı çalışacak
-  (bilinçli, görev tanımında istenen davranış).
-
-### 14.5 Görünüm
-KPI şeridi (5 kart, mevcut `.kpi`/`.kpis` kabuğu, `.rollup-kpis{grid-template-columns:
-repeat(5,1fr)}`): Satış Bütçe (TY)+LFL, R-LFL, Stok Büyümesi, Cover (LY→TY ay), Ort.
-Fiyat Değişimi. Tablo (`#rollupTable`, 10 kolon): Grup | LY Satış | TY Bütçe | LFL %
-(mini CSS bar ile, `.rollup-lfl-track/.rollup-lfl-fill`) | R-LFL % | Stok Δ% | Cover
-LY→TY | LY Ort.Fiyat | TY Ort.Fiyat | Fiyat Δ%. Δ kolonları `rollupDeltaSpan()` ile
-▲/▼ ok + yeşil/kırmızı; TOPLAM satırı `tfoot`'ta.
+**→ `docs/ROLLUP_PANELI.md`** (SADECE bu panele dokunurken oku)
