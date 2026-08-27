@@ -380,8 +380,12 @@ Sol menü sırası: **TEŞKİLAT → ÜRÜN HİYERARŞİSİ → PERİYOT**.
   satırı dahil. Bu üç kolon aynı alt-toplama göre kıyaslanır ve Durum/Aksiyon
   2×2 matrisini besler (bkz. Bölüm 6) — birlikte okunmaları için gruplanmıştır.
   Tint YARI SAYDAM olmalı: opak bir renk `tbody tr:hover` zeminini ezip satır
-  vurgusunu öldürüyor. Kâr % hücresindeki `.heat` pill'i KORUNDU, tint onun
-  altında durur.
+  vurgusunu öldürüyor. Üç hücre de AYNI görünür: düz metin, `.pct` gri rengi,
+  aynı tint. Kâr % hücresinde bir dönem `.heat` pill'i vardı (kâr payına göre
+  kırmızı→yeşil tek-bacaklı skala); kullanıcı isteğiyle KALDIRILDI, çünkü tint
+  vurgusunu örtüyordu. Onunla birlikte artık ölü kalan `heat()` fonksiyonu ve
+  `.heat` CSS kuralı da SİLİNDİ — geri isteniyorsa yeniden yazılmalı. Kanıt
+  sekmesindeki `heatDiverge()` AYRI bir fonksiyondur, ondan etkilenmedi.
 - KPI kartları (üst şerit, `#kpis`, 6 kart): Toplam Stok, Toplam Satış (LY), Toplam Kâr
   (LY ₺), Bayi Stok Ay (Cover), Toplam Satış Bütçe (TY), LFL Büyüme.
 - **Senaryo Karşılaştırma** (`data-pane="senaryo"`, AYRI SEKME — miks ekranında
@@ -436,7 +440,7 @@ Sol menü sırası: **TEŞKİLAT → ÜRÜN HİYERARŞİSİ → PERİYOT**.
   `--grid-h-weight`, `--grid-c-size`, `--grid-c-weight`, `--grid-h-align`, `--grid-c-align`);
   `styles.css`'teki `#grid` kuralları bu değişkenleri güvenli fallback'lerle (`var(--x,eski
   değer)`) okur — böylece `#grid` DIŞINDAki hiçbir öğe (aynı sınıfları paylaşsa bile,
-  ör. `.badge`/`.heat`) etkilenmez. `GRID_FORMAT_KEY` ("arpaz_grid_format") ile
+  ör. `.badge`) etkilenmez. `GRID_FORMAT_KEY` ("arpaz_grid_format") ile
   localStorage'a kaydedilir; `loadSavedGridFormat()` bozuk/eksik veriye karşı her alanı
   ayrı ayrı doğrular (aralık dışıysa veya tipi yanlışsa varsayılana döner).
 - **`syncHeaderStickyOffset()`** — iki satırlı sticky başlığın (rowspan=2 ÜH4/Durum/Aksiyon

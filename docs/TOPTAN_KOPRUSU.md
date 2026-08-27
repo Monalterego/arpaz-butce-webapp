@@ -134,8 +134,9 @@ sekmeyi ETKİLEMEZ (bilinçli, çünkü veri zaten sabit/geçmiş). Alt fonksiyo
   vurgulu.
 - `heatDiverge(v)` + `renderKanitHeatmap()` — ÜH2×ay ısı haritası; `isToptanOutlierUh2()`
   (Bölüm 13.4'teki AYNI fonksiyon, tekrar yazılmadı) ile outlier ÜH2'ler elenir, değerler
-  0,5–2,0'a kırpılır, renk 1,0 pivotlu diverging skala (yeşil→amber→kırmızı, `heat()`
-  ana tablodaki gibi iki-renk lineer interpolasyon, burada iki bacaklı).
+  0,5–2,0'a kırpılır, renk 1,0 pivotlu diverging skala (iki-renk lineer interpolasyon,
+  iki bacaklı). NOT: ana tablodaki tek-bacaklı `heat()` fonksiyonu silindi;
+  `heatDiverge()` ondan bağımsızdır ve YAŞIYOR.
 - `renderKanitYillikRasyo()` — `KANIT.yillik_rasyo` yatay bar liste, 1,0 referans çizgili.
 - `renderKanitMevsim()` — `KANIT.mevsim`, mevcut `.action-row`/`.action-card` kabuğu
   (önceden kullanılmayan, dead CSS idi) yeniden kullanılarak 4 kart.

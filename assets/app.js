@@ -308,7 +308,7 @@
         <td class="num-cell" id="st_${i}"></td><td class="pct pct-hl" id="stp_${i}"></td>
         <td class="num-cell" id="sa_${i}"></td><td class="pct pct-hl" id="sap_${i}"></td>
         <td class="num-cell" id="bk_${i}"></td>
-        <td class="pct-hl" id="ktp_${i}"></td>
+        <td class="pct pct-hl" id="ktp_${i}"></td>
         <td id="cov_${i}"></td><td id="tov_${i}"></td>
         <td class="num-cell" id="lyciro_${i}"></td><td id="lyfiyat_${i}"></td>
         <td class="planpctcell"><input type="number" class="planpctin" id="psp_${i}" min="0" max="100" step="0.1"></td><td class="num-cell" id="psa_${i}"></td>
@@ -356,7 +356,7 @@ function updateAll() {
     $("sa_" + i).textContent = fmtN(r.sales);
     $("sap_" + i).textContent = fmtP(r.salesShare);
     $("bk_" + i).textContent = fmtN(r.profit);
-    $("ktp_" + i).innerHTML = `<span class="heat" style="background:${heat(r.profitShare, 0, 0.3)}">${fmtP(r.profitShare)}</span>`;
+    $("ktp_" + i).textContent = fmtP(r.profitShare);
     $("cov_" + i).innerHTML = coverCellHtml(r);
     $("tov_" + i).textContent = fmtD2(r.turnover);
     $("lyciro_" + i).textContent = fmtN(r.sales * r.lyFiyat);
@@ -418,13 +418,6 @@ function updateAll() {
   // değişikliklerine değil, Kayıtlar'a bağlı (bkz. renderToptanFromSaved, saveCurrentMixSet).
 }
 
-  function heat(v, lo, hi) {
-    const t = Math.max(0, Math.min(1, (v - lo) / (hi - lo)));
-    const r = Math.round(198 + (46 - 198) * t);
-    const g = Math.round(40 + (125 - 40) * t);
-    const b = Math.round(40 + (50 - 40) * t);
-    return `rgba(${r},${g},${b},.14)`;
-  }
 
   // LY Cover hücresi: normalde düz sayı, ölü stok işaretliyse mevcut b-red rozetiyle sarılır (görsel — bütçeye etkisi yok)
   function coverCellHtml(r) {
@@ -1271,9 +1264,10 @@ function updateAll() {
     $("kanitLeadLagNote").textContent =
       `En güçlü ilişki ${bestLag} ayda: toptan, perakendeyi ${Math.abs(bestLag)} ay önden götürür.`;
   }
-  // Diverging renk skalası: 0,5(yeşil) → 1,0(amber) → 2,0(kırmızı). Ana #grid'in `heat()`
-  // fonksiyonuyla AYNI ruh (iki renk arası lineer interpolasyon), burada iki bacaklı
-  // (pivot 1,0'da) çünkü "<1 iyi/eritme, >1 dolum" anlamı ortadan ikiye ayrılıyor.
+  // Diverging renk skalası: 0,5(yeşil) → 1,0(amber) → 2,0(kırmızı). İki renk arası
+  // lineer interpolasyon; iki bacaklı (pivot 1,0da) çünkü "<1 iyi/eritme, >1 dolum"
+  // anlamı ortadan ikiye ayrılıyor. (Ana #gridde bir zamanlar Brüt Kâr % hücresinde
+  // benzer bir tek-bacaklı heat() vardı; o pill kaldırıldı, fonksiyon da silindi.)
   function heatDiverge(v) {
     const GREEN = [46, 125, 50], AMBER = [178, 106, 0], RED = [198, 40, 40];
     const clipped = Math.max(0.5, Math.min(2.0, v));

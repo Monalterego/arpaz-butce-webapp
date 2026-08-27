@@ -154,7 +154,6 @@ tfoot td{background:#eef3f8;font-weight:700;border-top:2px solid var(--navy)}
    yaslı kalır. */
 #grid tfoot td{padding-top:var(--grid-row-pad,7px);padding-bottom:var(--grid-row-pad,7px);font-size:var(--grid-c-size,12px)}
 #grid tfoot td:not(:first-child){text-align:var(--grid-c-align,right)}
-.heat{border-radius:4px;padding-inline:6px;padding-block:max(0px,calc(var(--grid-row-pad,7px) - 5px));font-weight:600;font-size:var(--grid-c-size,12px)}
 .legend{display:flex;gap:14px;flex-wrap:wrap;font-size:11px;color:var(--grey);margin-top:10px}
 .legend span{display:inline-flex;align-items:center;gap:5px}
 .dot{width:10px;height:10px;border-radius:50%;display:inline-block}
@@ -311,10 +310,9 @@ tfoot td{background:#eef3f8;font-weight:700;border-top:2px solid var(--navy)}
 #grid tbody td,#grid tbody th{padding-top:var(--grid-row-pad,7px);padding-bottom:var(--grid-row-pad,7px)}
 #grid thead th{font-size:var(--grid-h-size,11px);font-weight:var(--grid-h-weight,600)}
 #grid tbody td{font-size:var(--grid-c-size,12px);font-weight:var(--grid-c-weight,400)}
-/* satır yüksekliği GERÇEKTEN küçülebilsin diye .badge/.heat/.covin'in dikey padding'i
-   de --grid-row-pad'den türetilir (yatay padding sabit, pill/kutu şekli bozulmaz);
-   .heat'in font-size'ı artık --grid-c-size'a bağlı (kasıtlı — hücre metniyle birlikte
-   büyüsün/küçülsün). .badge kendi font-size'ını (11px) hâlâ sabit taşıyor. */
+/* satır yüksekliği GERÇEKTEN küçülebilsin diye .badge/.covin dikey padding.i de
+   --grid-row-pad.den türetilir (yatay padding sabit, pill/kutu şekli bozulmaz).
+   .badge kendi font-size.ını (11px) hâlâ sabit taşıyor. */
 .stepper{display:inline-flex;align-items:center;gap:4px;padding:2px;border:1px solid rgba(11,37,69,.12);background:#f7f9fc;border-radius:var(--radius-pill);box-shadow:inset 0 1px 1px rgba(11,37,69,.04)}
 .stepper .btn{min-height:0;padding:4px 7px;min-width:20px;border-radius:var(--radius-pill);border:none;background:transparent;color:var(--navy);font-weight:700}
 .stepper .btn:hover{background:rgba(11,37,69,.04)}
