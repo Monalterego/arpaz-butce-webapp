@@ -297,6 +297,29 @@ stil + sarmalayıcı yapı katmanındadır.
   (`.weights-note`).
   NOT: 🎯 ikonu, önceki turda başlıklardan emoji temizleme kararının bilinçli bir
   ISTISNASIdır (kullanıcı bu kartın öne çıkmasını açıkça istedi).
+- **Buton hizalama — ÖLÇÜLDÜ, TAHMİN DEĞİL.** Ana tablo başlığındaki dört buton
+  aynı `.btn.ghost.mini` sınıfına sahipken üç FARKLI yükseklikte ve dört farklı
+  dikey konumda çıkıyordu (ölçüm: 20,0 / 21,0 / 23,0px · top 129/130/131/134).
+  İki kök neden: (1) emoji ve simge karakterleri (📐 🔁 💾 ↺) farklı font
+  metrikleriyle `line-height:normal` altında her butonda başka satır yüksekliği
+  üretiyor; (2) `.grid-format-wrap` `display:inline-block` idi, yani h2'nin flex
+  hizalamasına katılmayıp baseline'a oturuyordu.
+  ÇÖZÜM (ikisi birden, tek başına yeterli değil):
+  · `.btn` artık `inline-flex + align-items:center + min-height + line-height:1`
+    — yükseklik İÇERİĞE BIRAKILMAZ. Yeni buton eklerken bu kuralı bozma.
+  · `.grid-format-wrap` `display:flex`.
+  · Butonlardaki emoji/simge KALDIRILDI (miks başlığı + Senaryo sekmesi).
+    Bu, Bölüm 7.0'daki "buton emojilerine dokunulmadı" kararını GEÇERSİZ kılar —
+    emoji hizasızlığın ölçülmüş kök nedeniydi, kozmetik tercih değil.
+    Aksiyon hiyerarşisi artık renkle: birincil = dolu accent (`.btn`),
+    ikincil = `.btn.ghost`. Emoji GERİ EKLEME.
+  · `.stepper .btn{min-height:0}` — stepper butonları kompakt kalsın (19px).
+  Doğrulama sonrası: dört butonun top/bottom/yükseklik sapması **0,00px**,
+  yatay aralık 6/6/6px.
+- **Aksiyon grubu sarmalayıcısı:** başlıktaki not + butonlar tek `.panel-actions`
+  (`margin-left:auto`) içinde, butonlar `.btn-group` içinde. `margin-left:auto`
+  SADECE `.panel-actions`'ta — tekil butona EKLEME (iki eleman bağımsız sağa
+  yaslanınca aralarında ölü boşluk oluşuyordu, bu daha önce yaşandı).
 - **"Toplam Çarpan"** tam genişlik şerit değil, accent zeminli küçük pill rozet.
 - **Senaryo Karşılaştırma AYRI SEKME** (eski "Senaryo Yönetimi" kartı miks
   sekmesinden SÖKÜLDÜ). Kayıt yokken tablo (dolayısıyla dev lacivert boş başlık

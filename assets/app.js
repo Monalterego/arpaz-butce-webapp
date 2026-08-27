@@ -1123,10 +1123,10 @@ function updateAll() {
     const note = $("saveMixSetNote");
     const match = findMatchingSavedSet();
     if (match) {
-      btn.textContent = "🔁 Revize Et";
+      btn.textContent = "Revize Et";
       if (note) note.textContent = `Bu grup için kayıt var: ${match.savedAt}`;
     } else {
-      btn.textContent = "💾 Kaydet";
+      btn.textContent = "Kaydet";
       if (note) note.textContent = "";
     }
   }
@@ -2006,7 +2006,7 @@ function updateAll() {
     const deleteSavedBtn = $("deleteSavedViewBtn");
     if (deleteSavedBtn) deleteSavedBtn.addEventListener("click", deleteSavedView);
 
-    // "↺ Görünümü sıfırla" — mevcut gridColReset butonuna İKİNCİ bir dinleyici (sütun
+    // "Görünümü sıfırla" — mevcut gridColReset butonuna İKİNCİ bir dinleyici (sütun
     // genişliği sıfırlama initColResize()'da zaten bağlı, ona dokunmadan ekleniyor)
     const resetBtn = $("gridColReset");
     if (resetBtn) {
