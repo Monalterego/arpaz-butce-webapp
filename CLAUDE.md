@@ -434,6 +434,22 @@ Sol menü sırası: **TEŞKİLAT → ÜRÜN HİYERARŞİSİ → PERİYOT**.
   minimum genişlik `COL_MIN_WIDTHS` sabitinde (ÜH4/Hedef Cover/Durum/Aksiyon için özel,
   diğerleri 36px). `rebuild()` `grpColHead`'in içeriğini ezdiği için ÜH4 tutamacı ayrıca
   `attachUh4ResizeHandle()` ile yeniden takılır.
+- **`initSavedMixColResize(list)`** — AYNI davranışı "Çalışılmış Bütçe ve Stok
+  Karışım" tablosuna (`.saved-mix-table`, Perakende Bütçe sekmesi) getirir; ortak
+  olan tek şey `.col-resize-handle` CSS sınıfıdır, gerisi AYRI bir uygulamadır
+  (`#grid`'in makinesi modül seviyesindeki `gridCols`/`GRID_COLS_KEY`'e sıkı bağlı,
+  genelleştirmek yerine ikinci bir uygulama yazıldı). Genişlikler
+  `SAVED_MIX_COLS_KEY` ("arpaz_saved_mix_col_widths") altında saklanır; kolon
+  seti değişirse (dizi uzunluğu tutmazsa) eski kayıt GEÇERSİZ sayılıp varsayılana
+  dönülür. Minimum 40px (`SAVED_MIX_MIN_COL_WIDTH`). Tutamağa ÇİFT TIK o kolonu
+  varsayılana döndürür (bu tablonun `#grid`'deki gibi "Görünümü sıfırla" butonu yok).
+  **DİKKAT — iki tuzak:** (1) Tablo her filtre/kayıt değişiminde `innerHTML` ile
+  SIFIRDAN kurulur; bu yüzden genişlikler `renderSavedMixTable()` içinde
+  colgroup'a localStorage'den basılır ve tutamaklar render SONUNDA yeniden takılır.
+  (2) CSS'te `.saved-mix-table{width:100%;min-width:3286px}` var — sabit min-width
+  sürüklemeyi yutuyordu (tarayıcı farkı diğer kolonlara dağıtıyor), bu yüzden
+  `syncSavedMixTableWidth()` tablo `width`'ini VE `min-width`'ini colgroup toplamına
+  eşitler.
 - **`initGridFormat()` / `applyGridFormat()`** — Görünüm araç çubuğunun motoru. Ayarlar
   (`rowPad, headerSize, headerBold, cellSize, cellBold, headerAlign, cellAlign`) CSS
   custom property olarak `#grid` öğesine yazılır (`--grid-row-pad`, `--grid-h-size`,

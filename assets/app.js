@@ -996,6 +996,90 @@ function updateAll() {
   // değişebilir); filtrelemede ÇAĞRILMAZ (bkz. renderSavedMixRows) — dropdown
   // içindeki checkbox'lar SADECE renderSavedMixRows()'u tetikler, thead bu
   // yüzden hiç yeniden kurulmaz, odak kaybı riski yok.
+  // --- "Çalışılmış Bütçe ve Stok Karışım" tablosu: sütun genişliği sürükleme ---
+  // Ana #grid'deki initColResize ile AYNI kullanıcı deneyimi (başlık kenarından
+  // sürükle), ama AYRI bir uygulama: #grid'in makinesi modül seviyesindeki
+  // gridCols/#grid/GRID_COLS_KEY'e sıkı bağlı. Ortak olan tek şey .col-resize-handle
+  // CSS sınıfı. Bu tablo her filtre/kayıt değişiminde innerHTML ile YENİDEN kurulduğu
+  // için genişlikler hem localStorage'dan colgroup'a basılır hem tutamaklar
+  // render sonunda YENİDEN takılır (bkz. renderSavedMixTable sonu).
+  const SAVED_MIX_COLS_KEY = "arpaz_saved_mix_col_widths";
+  const SAVED_MIX_MIN_COL_WIDTH = 40;
+  function savedMixDefaultWidths() {
+    return SAVED_MIX_COLUMNS.map((c) => c.width).concat([SAVED_MIX_DELETE_COL_WIDTH]);
+  }
+  function loadSavedMixColWidths() {
+    try {
+      const raw = localStorage.getItem(SAVED_MIX_COLS_KEY);
+      if (!raw) return null;
+      const arr = JSON.parse(raw);
+      const def = savedMixDefaultWidths();
+      // Kolon seti değişmişse (kolon eklendi/çıkarıldı) eski kayıt GEÇERSİZ — varsayılana dön.
+      if (!Array.isArray(arr) || arr.length !== def.length) return null;
+      if (arr.some((n) => typeof n !== "number" || !isFinite(n) || n < SAVED_MIX_MIN_COL_WIDTH)) return null;
+      return arr;
+    } catch (e) {
+      return null;
+    }
+  }
+  function saveSavedMixColWidths(cols) {
+    try {
+      localStorage.setItem(SAVED_MIX_COLS_KEY, JSON.stringify(cols.map((c) => parseFloat(c.style.width))));
+    } catch (e) { /* localStorage kullanılamıyorsa sessizce geç */ }
+  }
+  // CSS'te .saved-mix-table{width:100%;min-width:3286px} var — sabit min-width
+  // sürüklemeyi yutar (tarayıcı artan/azalan farkı diğer kolonlara dağıtır).
+  // Bu yüzden tablo genişliği colgroup toplamına EŞİTLENİR, min-width de aynı değere.
+  function syncSavedMixTableWidth(table, cols) {
+    const total = cols.reduce((a, c) => a + (parseFloat(c.style.width) || 0), 0);
+    table.style.width = total + "px";
+    table.style.minWidth = total + "px";
+  }
+  function initSavedMixColResize(list) {
+    const table = list.querySelector(".saved-mix-table");
+    if (!table) return;
+    const cols = Array.from(table.querySelectorAll("colgroup col"));
+    const ths = table.querySelectorAll(".saved-mix-header-row th");
+    if (!cols.length || !ths.length) return;
+    syncSavedMixTableWidth(table, cols);
+    ths.forEach((th, i) => {
+      if (i >= cols.length) return;
+      const handle = document.createElement("span");
+      handle.className = "col-resize-handle";
+      handle.title = "Sürükleyerek genişliği ayarla · çift tıkla varsayılana dön";
+      handle.addEventListener("mousedown", (e) => {
+        e.preventDefault();
+        e.stopPropagation(); // başlıktaki sıralama/filtre davranışlarına karışmasın
+        const col = cols[i];
+        const startX = e.clientX;
+        const startWidth = parseFloat(col.style.width);
+        handle.classList.add("dragging");
+        function onMove(ev) {
+          col.style.width = Math.max(SAVED_MIX_MIN_COL_WIDTH,
+            Math.round(startWidth + (ev.clientX - startX))) + "px";
+          syncSavedMixTableWidth(table, cols);
+        }
+        function onUp() {
+          document.removeEventListener("mousemove", onMove);
+          document.removeEventListener("mouseup", onUp);
+          handle.classList.remove("dragging");
+          saveSavedMixColWidths(cols);
+        }
+        document.addEventListener("mousemove", onMove);
+        document.addEventListener("mouseup", onUp);
+      });
+      // Çift tık: SADECE o kolonu varsayılan genişliğine döndürür (bu tablonun
+      // #grid'deki gibi bir "Görünümü sıfırla" butonu yok, çıkış yolu bu).
+      handle.addEventListener("dblclick", (e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        cols[i].style.width = savedMixDefaultWidths()[i] + "px";
+        syncSavedMixTableWidth(table, cols);
+        saveSavedMixColWidths(cols);
+      });
+      th.appendChild(handle);
+    });
+  }
   function renderSavedMixTable() {
     const list = $("savedMixList");
     if (!list) return;
@@ -1007,8 +1091,9 @@ function updateAll() {
       return;
     }
 
-    const colgroupHtml = SAVED_MIX_COLUMNS.map((col) => `<col style="width:${col.width}px">`).join("")
-      + `<col style="width:${SAVED_MIX_DELETE_COL_WIDTH}px">`;
+    // Kullanıcının sürükleyerek ayarladığı genişlikler varsa ONLAR, yoksa varsayılanlar.
+    const colWidths = loadSavedMixColWidths() || savedMixDefaultWidths();
+    const colgroupHtml = colWidths.map((w) => `<col style="width:${w}px">`).join("");
 
     const filterControls = SAVED_MIX_COLUMNS.map((col) => `
       <th>
@@ -1046,6 +1131,9 @@ function updateAll() {
       });
       updateSavedMixFilterIconState(key, btn);
     });
+
+    // Tablo her render'da sıfırdan kurulduğu için tutamaklar da yeniden takılır.
+    initSavedMixColResize(list);
 
     renderSavedMixRows();
   }
