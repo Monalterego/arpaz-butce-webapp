@@ -304,7 +304,7 @@ stil + sarmalayıcı yapı katmanındadır.
   (1 puanı tutturmak zor, dokunmatikte hantal). Yerine `.numfield`: `−` / sayı /
   `%` / `+`. Üç giriş yolu birden: rakamı doğrudan yaz · −/+ ile adımla ·
   odaktayken klavye ok tuşları (native `input[type=number]` davranışı).
-  Adım input'un `step``step` niteliğinden okunur (parametreler 1, ağırlıklar 5);
+  Adım input'un `step` niteliğinden okunur (parametreler 1, ağırlıklar 5);
   `min`/`max` varsa kırpılır (kampanya −30..40). Native spinner okları CSS ile
   gizlidir (kendi butonlarımız var), klavye okları YİNE ÇALIŞIR.
   `initNumFields()` butona basınca `input` olayı YAYAR — bu yüzden mevcut
