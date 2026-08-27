@@ -1155,12 +1155,35 @@ function updateAll() {
     renderToptanFromSaved(); // Kayıtlar değişti — Toptan Bütçe bundan besleniyor
   }
 
+  // --- Sekme geçişi (hem navbar butonları hem programatik çağrı kullanır) ---
+  // Ana tablo başlığındaki "Senaryo kaydet" butonu bunu çağırarak kullanıcıyı
+  // Senaryo Karşılaştırma ekranına aktarır.
+  function showTab(t) {
+    document.querySelectorAll(".tabs button").forEach((x) =>
+      x.classList.toggle("active", x.dataset.tab === t));
+    document.querySelectorAll(".tabpane").forEach((p) =>
+      (p.style.display = p.dataset.pane === t ? "" : "none"));
+    if (t === "toptan") {
+      renderToptanFromSaved(); // sekme her açıldığında Kayıtlar'ın GÜNCEL halini yansıt
+      syncToptanHeaderOffset(); // sekme az önce görünür oldu, gizliyken 0 ölçülen yükseklik şimdi düzeltilir
+    }
+  }
+
   // --- Senaryo yönetimi ---
   let scenarios = [];
   function currentScenario() {
     const p = readParams();
     const m = computeModel(p, state.covers, state.tyFiyat);
     return { p, budget: m.T.salesBudget, planStock: m.T.planStock, lfl: m.T.lfl };
+  }
+  // Mevcut parametre setini senaryo olarak ekler. name boş/verilmemişse
+  // otomatik "Senaryo N" adı verilir (başlıktaki buton bu yolu kullanır).
+  function addScenario(name) {
+    const s = currentScenario();
+    s.name = (name || "").trim() || "Senaryo " + (scenarios.length + 1);
+    scenarios.push(s);
+    renderScenarios();
+    return s;
   }
   function renderScenarios() {
     const tb = $("scRows"); tb.innerHTML = "";
@@ -1173,7 +1196,7 @@ function updateAll() {
       const p = s.p;
       const campF = CAMP.reduce((a, k) => a * (1 + p.camp[k] / 100), 1) * (1 + p.pazar / 100);
       const tr = document.createElement("tr");
-      tr.innerHTML = `<td>${s.name}</td><td>${p.stokBuyume}%</td><td>${p.pazar}%</td>
+      tr.innerHTML = `<td class="sc-name" data-name="${i}" contenteditable="true" spellcheck="false" title="Yeniden adlandırmak için tıkla">${s.name}</td><td>${p.stokBuyume}%</td><td>${p.pazar}%</td>
         <td>${p.wKar}/${p.wSatis}/${p.wStok}</td><td>${fmtX(campF)}</td>
         <td>${fmtN(s.budget)}</td><td>${fmtN(s.planStock)}</td>
         <td class="${s.lfl >= 0 ? "up" : "down"}">${fmtP0(s.lfl)}</td>
@@ -1186,6 +1209,15 @@ function updateAll() {
     }
     tb.querySelectorAll("[data-del]").forEach((x) => {
       x.onclick = () => { scenarios.splice(+x.dataset.del, 1); renderScenarios(); };
+    });
+    // Senaryo adı yeniden adlandırma: Enter onaylar, blur yazar. Boş bırakılırsa
+    // eski ada geri döner (isimsiz satır olmasın).
+    tb.querySelectorAll(".sc-name").forEach((c) => {
+      c.onkeydown = (e) => { if (e.key === "Enter") { e.preventDefault(); c.blur(); } };
+      c.onblur = () => {
+        const i = +c.dataset.name, v = c.textContent.trim();
+        if (v) { scenarios[i].name = v; } else { c.textContent = scenarios[i].name; }
+      };
     });
   }
 
@@ -1567,22 +1599,16 @@ function updateAll() {
     const rollupTargetEl = $("rollup_targetperiod");
     if (rollupTargetEl) rollupTargetEl.addEventListener("change", renderRollup);
     document.querySelectorAll(".tabs button").forEach((b) => {
-      b.addEventListener("click", () => {
-        document.querySelectorAll(".tabs button").forEach((x) => x.classList.remove("active"));
-        b.classList.add("active");
-        const t = b.dataset.tab;
-        document.querySelectorAll(".tabpane").forEach((p) => (p.style.display = p.dataset.pane === t ? "" : "none"));
-        if (t === "toptan") {
-          renderToptanFromSaved(); // sekme her açıldığında Kayıtlar'ın GÜNCEL halini yansıt
-          syncToptanHeaderOffset(); // sekme az önce görünür oldu, gizliyken 0 ölçülen yükseklik şimdi düzeltilir
-        }
-      });
+      b.addEventListener("click", () => showTab(b.dataset.tab));
     });
     $("saveSc").onclick = () => {
-      const s = currentScenario();
-      s.name = $("scName").value.trim() || "Senaryo " + (scenarios.length + 1);
-      scenarios.push(s); $("scName").value = ""; renderScenarios();
+      addScenario($("scName").value);
+      $("scName").value = "";
     };
+    // Ana tablo başlığındaki buton: otomatik adla kaydeder ve kullanıcıyı
+    // Senaryo Karşılaştırma ekranına aktarır (isim orada düzenlenebilir).
+    const scHeadBtn = $("saveScenarioBtn");
+    if (scHeadBtn) scHeadBtn.onclick = () => { addScenario(); showTab("senaryo"); };
     $("clearSc").onclick = () => { scenarios = []; renderScenarios(); };
     const saveMixSetBtn = $("saveMixSetBtn");
     if (saveMixSetBtn) saveMixSetBtn.addEventListener("click", saveCurrentMixSet);

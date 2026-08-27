@@ -503,3 +503,8 @@ tfoot td{background:#eef3f8;font-weight:700;border-top:2px solid var(--navy)}
 .modal-box .fbox{display:flex;flex-direction:column;gap:var(--s1);font-size:12px;
   background:#f8fafc;border:1px dashed var(--line);border-radius:var(--radius-md);
   padding:var(--s2);line-height:1.6}
+
+/* Senaryo adı hücresi: tıklayınca yerinde düzenlenir (contenteditable). */
+#scTable .sc-name{cursor:text;border-radius:var(--radius-sm)}
+#scTable .sc-name:hover{background:var(--accent-bg)}
+#scTable .sc-name:focus{outline:2px solid var(--accent);outline-offset:-2px;background:#fff}

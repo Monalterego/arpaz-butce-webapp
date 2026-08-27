@@ -17,6 +17,7 @@
     <button data-tab="takvim">Kampanya / Özel Gün Takvimi</button>
     <button data-tab="rasyo">Perakende → Toptan (Metodoloji)</button>
     <button data-tab="forecast">Tahmin (Forecast)</button>
+    <button data-tab="senaryo">Senaryo Karşılaştırma</button>
   </nav>
 </header>
 
@@ -51,7 +52,8 @@
       <div class="panel">
         <h2 style="display:flex;align-items:center;gap:8px;">Bütçe &amp; Stok Karışım Tablosu <span class="pill">Hedef Cover elle girilir</span>
           <button type="button" class="info-ico" id="formulaInfoBtn" title="Bütçe kurgusu nasıl hesaplanıyor?" aria-label="Bütçe kurgusu nasıl hesaplanıyor?">i</button>
-          <button type="button" class="btn ghost mini" id="saveMixSetBtn" style="margin-left:auto">💾 Kaydet</button>
+          <button type="button" class="btn ghost mini" id="saveScenarioBtn" style="margin-left:auto" title="Bu parametre setini senaryo olarak kaydet ve karşılaştırma ekranına git">📐 Senaryo kaydet</button>
+          <button type="button" class="btn ghost mini" id="saveMixSetBtn">💾 Kaydet</button>
           <span class="note" id="saveMixSetNote" style="margin:0"></span>
           <div class="grid-format-wrap">
             <button type="button" class="btn ghost mini" id="gridFormatToggle">Görünüm</button>
@@ -231,23 +233,6 @@
 
       <div class="kpis" id="kpis"></div>
 
-      <!-- SENARYO -->
-      <div class="panel">
-        <h2>Senaryo Yönetimi <span class="pill">Kaydet &amp; Karşılaştır</span></h2>
-        <div class="scenario-bar">
-          <input id="scName" placeholder="Senaryo adı (ör. Karlı-Agresif)">
-          <button id="saveSc" class="btn">➕ Senaryo kaydet</button>
-          <button id="clearSc" class="btn ghost">🗑️ Temizle</button>
-          <span class="note" style="margin:0">Parametre + Hedef Cover setini kaydeder, yan yana kıyaslar.</span>
-        </div>
-        <div class="sc-empty" id="scEmpty">Henüz senaryo kaydedilmedi.</div>
-        <div class="sc-table-wrap" id="scTableWrap" style="display:none">
-          <table id="scTable"><thead><tr>
-            <th>Senaryo</th><th>Stok Büy.%</th><th>Pazar.%</th><th>Ağırlık K/S/St</th><th>Çarpan</th>
-            <th>Toplam Satış Bütçe</th><th>Toplam Plan Stok</th><th>LFL %</th><th></th>
-          </tr></thead><tbody id="scRows"></tbody></table>
-        </div>
-      </div>
 
       <div class="foot">Kaynak: gerçek demo veri (2025-07…2026-07, aylık ortalama). Brüt kâr sentetiktir. IT tam veri verdiğinde yalnızca bu katman API'ye bağlanacak.</div>
     </div>
@@ -455,6 +440,31 @@
       <div class="panel">
         <h2>Çalışılmış Bütçe ve Stok Karışım</h2>
         <div id="savedMixList" class="saved-mix-list"></div>
+      </div>
+    </div>
+
+    <!-- ========== TAB: SENARYO KARŞILAŞTIRMA ========== -->
+    <!-- Eski "Senaryo Yönetimi" kartı buraya TAŞINDI (miks sekmesinden söküldü).
+         Ana tablo başlığındaki "Senaryo kaydet" butonu hem kaydeder hem buraya
+         geçirir; kullanıcı burada isim verip yeni senaryo ekleyebilir, satırdaki
+         isme tıklayıp düzeltebilir, silebilir, temizleyebilir. -->
+    <div class="tabpane" data-pane="senaryo" style="display:none">
+      <div class="panel">
+        <h2>Senaryo Karşılaştırma <span class="pill">Kaydet &amp; Karşılaştır</span></h2>
+        <div class="scenario-bar">
+          <input id="scName" placeholder="Senaryo adı (ör. Karlı-Agresif)">
+          <button id="saveSc" class="btn">➕ Senaryo kaydet</button>
+          <button id="clearSc" class="btn ghost">🗑️ Temizle</button>
+          <span class="note" style="margin:0">O anki parametre + Hedef Cover setini kaydeder, yan yana kıyaslar. En yüksek LFL yeşil vurgulanır.</span>
+        </div>
+        <div class="sc-empty" id="scEmpty">Henüz senaryo kaydedilmedi. "Bütçe &amp; Stok Karışımı" ekranında parametreleri ayarlayıp başlıktaki <b>📐 Senaryo kaydet</b> butonuna bas.</div>
+        <div class="sc-table-wrap" id="scTableWrap" style="display:none">
+          <table id="scTable"><thead><tr>
+            <th>Senaryo</th><th>Stok Büy.%</th><th>Pazar.%</th><th>Ağırlık K/S/St</th><th>Çarpan</th>
+            <th>Toplam Satış Bütçe</th><th>Toplam Plan Stok</th><th>LFL %</th><th></th>
+          </tr></thead><tbody id="scRows"></tbody></table>
+        </div>
+        <div class="note">Senaryo adına tıklayarak yeniden adlandırabilirsin. Senaryolar bu oturuma özeldir (sayfa yenilenince sıfırlanır).</div>
       </div>
     </div>
   </main>

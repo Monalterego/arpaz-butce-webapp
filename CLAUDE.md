@@ -298,7 +298,8 @@ stil + sarmalayıcı yapı katmanındadır.
   NOT: 🎯 ikonu, önceki turda başlıklardan emoji temizleme kararının bilinçli bir
   ISTISNASIdır (kullanıcı bu kartın öne çıkmasını açıkça istedi).
 - **"Toplam Çarpan"** tam genişlik şerit değil, accent zeminli küçük pill rozet.
-- **Senaryo Yönetimi:** kayıt yokken tablo (dolayısıyla dev lacivert boş başlık
+- **Senaryo Karşılaştırma AYRI SEKME** (eski "Senaryo Yönetimi" kartı miks
+  sekmesinden SÖKÜLDÜ). Kayıt yokken tablo (dolayısıyla dev lacivert boş başlık
   şeridi) tamamen gizlenir, yerine ince gri "Henüz senaryo kaydedilmedi." satırı
   (`#scEmpty` / `#scTableWrap`, `renderScenarios()` ikisini takas eder).
 
@@ -325,7 +326,8 @@ Sol menü sırası: **TEŞKİLAT → ÜRÜN HİYERARŞİSİ → PERİYOT**.
   bkz. Bölüm 14) · **Toptan Bütçe** (`data-tab="toptan"`, bkz. Bölüm 13) · Kampanya/Özel
   Gün Takvimi (2021+, `data-tab="takvim"`) · **Perakende → Toptan (Metodoloji)**
   (`data-tab="rasyo"`, eski adı "...(Kanıt)"/"...Rasyo" — statik infografik vitrini,
-  bkz. Bölüm 13.9) · Tahmin (Forecast, `data-tab="forecast"`).
+  bkz. Bölüm 13.9) · Tahmin (Forecast, `data-tab="forecast"`) · **Senaryo
+  Karşılaştırma** (`data-tab="senaryo"`, çubuğun EN SONU — bkz. Bölüm 7).
 - Ana tablo blokları: **GERÇEKLEŞEN (LY)** [Stok Adet, Stok%, Satış Adet, Satış%,
   Brüt Kâr (₺), Kâr%, Cover, Turnover, **Ortalama Satış Fiyatı** — 9 kolon] ve
   **GELECEK YIL PLANI (TY)** [Plan Stok %, Plan Stok Adet, Hedef Cover(elle), Satış Bütçe,
@@ -336,7 +338,15 @@ Sol menü sırası: **TEŞKİLAT → ÜRÜN HİYERARŞİSİ → PERİYOT**.
   Ciro Bütçe = Satış Bütçe × TY Fiyat.
 - KPI kartları (üst şerit, `#kpis`, 6 kart): Toplam Stok, Toplam Satış (LY), Toplam Kâr
   (LY ₺), Bayi Stok Ay (Cover), Toplam Satış Bütçe (TY), LFL Büyüme.
-- Senaryo Yönetimi: parametre + hedef cover setini kaydet/karşılaştır; en iyi LFL yeşil.
+- **Senaryo Karşılaştırma** (`data-pane="senaryo"`, AYRI SEKME — miks ekranında
+  kart olarak DEĞİL): parametre setini kaydet/karşılaştır; en iyi LFL yeşil.
+  Giriş noktası ana tablo başlığındaki **📐 Senaryo kaydet** butonu
+  (`#saveScenarioBtn`) — otomatik "Senaryo N" adıyla kaydeder ve `showTab("senaryo")`
+  ile kullanıcıyı bu sekmeye AKTARIR. Sekmenin kendi çubuğunda isim alanı
+  (`#scName` + `#saveSc`) ve Temizle (`#clearSc`) durur; satırdaki senaryo adı
+  `contenteditable` (`.sc-name`) — tıklayıp yeniden adlandırılır, boş bırakılırsa
+  eski ada döner. Senaryolar OTURUMA ÖZELDİR (localStorage YOK, sayfa yenilenince
+  sıfırlanır) — "Kaydet"/`savedMixSets` ile KARIŞTIRMA, o ayrı bir mekanizma.
 - **Ana tablo (`#grid`) — Görünüm araç çubuğu** ("Görünüm" butonu, `#gridFormatPanel`):
   PowerBI tarzı, SADECE bu tabloyu etkiler. Satır yüksekliği (sürükle veya +/-), başlık/
   hücre yazı boyutu + kalın, başlık/hücre hizalama (Sol/Orta/Sağ). Ayrıca sütun genişlikleri
@@ -359,6 +369,12 @@ Sol menü sırası: **TEŞKİLAT → ÜRÜN HİYERARŞİSİ → PERİYOT**.
   (`keys[0]`) otomatik seçer; boş/"Tümü" option'ı YOKTUR, ÜH3 seçimi zorunludur.
 - `updateAll()` — hücreleri yeniden hesaplayıp yazar; tfoot TOPLAM; KPI; forecast.
 - `actionTag(...)` — 2×2 matris (bkz. Bölüm 6).
+- `showTab(t)` — sekme geçişini yapan TEK yer; hem navbar butonları hem programatik
+  çağrı (`#saveScenarioBtn`) bunu kullanır. Yeni bir sekme açılışında iş yapılması
+  gerekiyorsa (ör. `toptan` için `renderToptanFromSaved`) koşul BURAYA eklenir.
+- `addScenario(name)` — o anki parametre setini senaryoya ekler; `name` boşsa
+  otomatik "Senaryo N". Hem başlıktaki `#saveScenarioBtn` hem paneldeki `#saveSc`
+  bunu çağırır (kayıt mantığı TEK yerde).
 - `renderKpis / renderScenarios / renderCalendar / renderKanit / renderForecast`.
 - Biçimleyiciler: `fmtN` (tr-TR tam sayı), `fmtP`/`fmtP0` (yüzde), `fmtX` (çarpan),
   `fmtD`/`fmtD2`/`fmtD3` (ondalık, 1/2/3 basamak). Türkçe locale ZORUNLU.
