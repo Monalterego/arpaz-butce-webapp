@@ -48,75 +48,7 @@
 
     <!-- ========== TAB: MIKS ========== -->
     <div class="tabpane" data-pane="miks">
-      <div class="kpis" id="kpis"></div>
-      <div class="durum-kpis" id="durumKpis"></div>
-
-      <!-- FORMÜL AÇIKLAMA -->
-      <div class="panel formula">
-        <h2>Bütçe Kurgusu — Nasıl Hesaplanıyor? <span class="toggle-ico" id="formulaToggle">▸</span></h2>
-        <div class="fbox" id="formulaBox" style="display:none">
-          <div><b>1) Plan Stok %</b> = ( <span class="wK">Kâr%×W</span> + <span class="wS">Satış%×W</span> + <span class="wSt">Stok%×W</span> ) → 100'e normalize</div>
-          <div><b>2) Plan Stok Adet</b> = ( Toplam Stok × Hedef Stok Büyümesi ) × Plan Stok %</div>
-          <div><b>3) Satış Bütçe</b> = ( Plan Stok Adet ÷ <span class="wH">Hedef Cover [elle]</span> ) × Pazarlama Büyümesi × Çarpanlar</div>
-          <div><b>4)</b> LFL = Bütçe/LY Satış−1 · R-LFL = (Bütçe/PlanStok)/(LY Satış/LY Stok)−1 · Stok Büyümesi = PlanStok/LY Stok−1</div>
-        </div>
-      </div>
-
-      <!-- PARAMETRELER -->
-      <div class="panel">
-        <h2>Planlama Parametreleri <span class="pill">Kullanıcı Girişi</span></h2>
-        <div class="params">
-          <div class="pgroup">
-            <div class="ptitle">Global Hedefler</div>
-            <div class="prow"><label>Hedef Stok Büyümesi %</label><input type="number" id="p_stokbuyume" value="-10" step="1"></div>
-            <div class="prow"><label>Pazarlama Büyümesi %</label><input type="number" id="p_pazar" value="5" step="1"></div>
-            <div class="prow"><label>Fiyat Büyümesi %</label><input type="number" id="p_fiyatbuyume" value="5" step="1"></div>
-          </div>
-          <div class="pgroup">
-            <div class="ptitle">Kampanya Çarpanları</div>
-            <div class="prow"><label>Paro</label><input type="range" id="m_paro" min="-30" max="40" value="0"><span class="num" id="v_paro">0%</span></div>
-            <div class="prow"><label>Bundle</label><input type="range" id="m_bundle" min="-30" max="40" value="0"><span class="num" id="v_bundle">0%</span></div>
-            <div class="prow"><label>Özel gün</label><input type="range" id="m_event" min="-30" max="40" value="0"><span class="num" id="v_event">0%</span></div>
-          </div>
-          <div class="pgroup">
-            <div class="ptitle">Gam &amp; Kota</div>
-            <div class="prow"><label>Gam değişimi</label><input type="range" id="m_gam" min="-30" max="40" value="0"><span class="num" id="v_gam">0%</span></div>
-            <div class="prow"><label>Kota ayı</label><input type="range" id="m_kota" min="-30" max="40" value="0"><span class="num" id="v_kota">0%</span></div>
-            <div class="mult-total"><span>Toplam Çarpan</span><span id="mult_total">1,00x</span></div>
-          </div>
-        </div>
-        <div class="params params-weights">
-          <div class="pgroup pgroup-weights">
-            <div class="ptitle">🎯 Plan Stok % Ağırlıkları</div>
-            <div class="weights-grid">
-              <div class="prow"><label class="wK">Kâr ağırlığı</label><input type="number" id="w_kar" value="40" step="5"></div>
-              <div class="prow"><label class="wS">Satış ağırlığı</label><input type="number" id="w_satis" value="30" step="5"></div>
-              <div class="prow"><label class="wSt">Stok ağırlığı</label><input type="number" id="w_stok" value="30" step="5"></div>
-            </div>
-            <div class="weights-note">Gelecek yıl stok payını belirleyen ağırlıklar. Kâr önceliklidir (varsayılan 40/30/20).</div>
-          </div>
-        </div>
-      </div>
-
-      <!-- SENARYO -->
-      <div class="panel">
-        <h2>Senaryo Yönetimi <span class="pill">Kaydet &amp; Karşılaştır</span></h2>
-        <div class="scenario-bar">
-          <input id="scName" placeholder="Senaryo adı (ör. Karlı-Agresif)">
-          <button id="saveSc" class="btn">➕ Senaryo kaydet</button>
-          <button id="clearSc" class="btn ghost">🗑️ Temizle</button>
-          <span class="note" style="margin:0">Parametre + Hedef Cover setini kaydeder, yan yana kıyaslar.</span>
-        </div>
-        <div class="sc-empty" id="scEmpty">Henüz senaryo kaydedilmedi.</div>
-        <div class="sc-table-wrap" id="scTableWrap" style="display:none">
-          <table id="scTable"><thead><tr>
-            <th>Senaryo</th><th>Stok Büy.%</th><th>Pazar.%</th><th>Ağırlık K/S/St</th><th>Çarpan</th>
-            <th>Toplam Satış Bütçe</th><th>Toplam Plan Stok</th><th>LFL %</th><th></th>
-          </tr></thead><tbody id="scRows"></tbody></table>
-        </div>
-      </div>
-
-      <!-- ANA MIKS TABLOSU -->
+      <!-- ANA MIKS TABLOSU (taşındı, artık sekmenin ilk bloğu) -->
       <div class="panel">
         <h2 style="display:flex;align-items:center;gap:8px;">Bütçe &amp; Stok Karışım Tablosu <span class="pill">Hedef Cover elle girilir</span>
           <button type="button" class="btn ghost mini" id="saveMixSetBtn" style="margin-left:auto">💾 Kaydet</button>
@@ -260,6 +192,75 @@
         </div>
         <div class="note">Kâr % = grup kârının alt-toplamdaki payı (Kâr = Satış Tutarı × Marj). Hedef Cover hücresi bütçe sahibinin uzman yargısıdır — değeri değiştir, Satış Bütçe/LFL anında güncellenir.</div>
       </div>
+
+      <div class="kpis" id="kpis"></div>
+      <div class="durum-kpis" id="durumKpis"></div>
+
+      <!-- FORMÜL AÇIKLAMA -->
+      <div class="panel formula">
+        <h2>Bütçe Kurgusu — Nasıl Hesaplanıyor? <span class="toggle-ico" id="formulaToggle">▸</span></h2>
+        <div class="fbox" id="formulaBox" style="display:none">
+          <div><b>1) Plan Stok %</b> = ( <span class="wK">Kâr%×W</span> + <span class="wS">Satış%×W</span> + <span class="wSt">Stok%×W</span> ) → 100'e normalize</div>
+          <div><b>2) Plan Stok Adet</b> = ( Toplam Stok × Hedef Stok Büyümesi ) × Plan Stok %</div>
+          <div><b>3) Satış Bütçe</b> = ( Plan Stok Adet ÷ <span class="wH">Hedef Cover [elle]</span> ) × Pazarlama Büyümesi × Çarpanlar</div>
+          <div><b>4)</b> LFL = Bütçe/LY Satış−1 · R-LFL = (Bütçe/PlanStok)/(LY Satış/LY Stok)−1 · Stok Büyümesi = PlanStok/LY Stok−1</div>
+        </div>
+      </div>
+
+      <!-- PARAMETRELER -->
+      <div class="panel">
+        <h2>Planlama Parametreleri <span class="pill">Kullanıcı Girişi</span></h2>
+        <div class="params">
+          <div class="pgroup">
+            <div class="ptitle">Global Hedefler</div>
+            <div class="prow"><label>Hedef Stok Büyümesi %</label><input type="number" id="p_stokbuyume" value="-10" step="1"></div>
+            <div class="prow"><label>Pazarlama Büyümesi %</label><input type="number" id="p_pazar" value="5" step="1"></div>
+            <div class="prow"><label>Fiyat Büyümesi %</label><input type="number" id="p_fiyatbuyume" value="5" step="1"></div>
+          </div>
+          <div class="pgroup">
+            <div class="ptitle">Kampanya Çarpanları</div>
+            <div class="prow"><label>Paro</label><input type="range" id="m_paro" min="-30" max="40" value="0"><span class="num" id="v_paro">0%</span></div>
+            <div class="prow"><label>Bundle</label><input type="range" id="m_bundle" min="-30" max="40" value="0"><span class="num" id="v_bundle">0%</span></div>
+            <div class="prow"><label>Özel gün</label><input type="range" id="m_event" min="-30" max="40" value="0"><span class="num" id="v_event">0%</span></div>
+          </div>
+          <div class="pgroup">
+            <div class="ptitle">Gam &amp; Kota</div>
+            <div class="prow"><label>Gam değişimi</label><input type="range" id="m_gam" min="-30" max="40" value="0"><span class="num" id="v_gam">0%</span></div>
+            <div class="prow"><label>Kota ayı</label><input type="range" id="m_kota" min="-30" max="40" value="0"><span class="num" id="v_kota">0%</span></div>
+            <div class="mult-total"><span>Toplam Çarpan</span><span id="mult_total">1,00x</span></div>
+          </div>
+        </div>
+        <div class="params params-weights">
+          <div class="pgroup pgroup-weights">
+            <div class="ptitle">🎯 Plan Stok % Ağırlıkları</div>
+            <div class="weights-grid">
+              <div class="prow"><label class="wK">Kâr ağırlığı</label><input type="number" id="w_kar" value="40" step="5"></div>
+              <div class="prow"><label class="wS">Satış ağırlığı</label><input type="number" id="w_satis" value="30" step="5"></div>
+              <div class="prow"><label class="wSt">Stok ağırlığı</label><input type="number" id="w_stok" value="30" step="5"></div>
+            </div>
+            <div class="weights-note">Gelecek yıl stok payını belirleyen ağırlıklar. Kâr önceliklidir (varsayılan 40/30/20).</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- SENARYO -->
+      <div class="panel">
+        <h2>Senaryo Yönetimi <span class="pill">Kaydet &amp; Karşılaştır</span></h2>
+        <div class="scenario-bar">
+          <input id="scName" placeholder="Senaryo adı (ör. Karlı-Agresif)">
+          <button id="saveSc" class="btn">➕ Senaryo kaydet</button>
+          <button id="clearSc" class="btn ghost">🗑️ Temizle</button>
+          <span class="note" style="margin:0">Parametre + Hedef Cover setini kaydeder, yan yana kıyaslar.</span>
+        </div>
+        <div class="sc-empty" id="scEmpty">Henüz senaryo kaydedilmedi.</div>
+        <div class="sc-table-wrap" id="scTableWrap" style="display:none">
+          <table id="scTable"><thead><tr>
+            <th>Senaryo</th><th>Stok Büy.%</th><th>Pazar.%</th><th>Ağırlık K/S/St</th><th>Çarpan</th>
+            <th>Toplam Satış Bütçe</th><th>Toplam Plan Stok</th><th>LFL %</th><th></th>
+          </tr></thead><tbody id="scRows"></tbody></table>
+        </div>
+      </div>
+
       <div class="foot">Kaynak: gerçek demo veri (2025-07…2026-07, aylık ortalama). Brüt kâr sentetiktir. IT tam veri verdiğinde yalnızca bu katman API'ye bağlanacak.</div>
     </div>
 
