@@ -106,10 +106,13 @@ select[disabled]{opacity:.5;cursor:not-allowed}
    düz `.pgroup-weights` (tek sınıf) `.params > .pgroup`'un (iki sınıf)
    ÖNÜNE geçemiyordu, renk hiç uygulanmıyordu (test edildi, doğrulandı). */
 .params > .pgroup.pgroup-weights{background:var(--accent-bg);border:1px solid rgba(0,119,182,.22);border-left:4px solid var(--accent);padding-left:calc(var(--s2) - 3px);box-shadow:var(--shadow-md)}
-/* Üç ağırlık girişi tam satır boyunca yatay ve dengeli dizilir — dev boşluk
-   kalmasın diye 3 eşit sütun. Üstteki 3 karttaki 136px sabit etiket genişliği
-   burada geçersiz kılınır (etiketler kısa: "Kâr ağırlığı" vb.). */
-.weights-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:var(--s1) var(--s3)}
+/* Üç ağırlık girişi yatay ve dengeli dizilir. Üstteki 3 karttaki 136px sabit
+   etiket genişliği burada geçersiz kılınır (etiketler kısa: "Kâr ağırlığı" vb.).
+   Sütunlar 1fr DEĞİL max-content: kart tam satır genişliğinde olduğu için 3 eşit
+   1fr sütun, her sütunda ~270px ölü boşluk bırakıyordu (413px sütun / ~140px
+   içerik — ölçüldü, %66 boş). max-content + justify-content:start ile üçlü sola
+   paketlenir, "dev boşluk" kalmaz. minmax(0,...) dar ekranda taşmayı önler. */
+.weights-grid{display:grid;grid-template-columns:repeat(3,minmax(0,max-content));gap:var(--s1) var(--s4);justify-content:start}
 /* .prow varsayılan olarak justify-content:space-between'dir — 3 eşit sütunda bu,
    etiket ile input arasında ~300px'lik DEV bir boşluk bırakıyordu (ekran görüntüsüyle
    doğrulandı). Ağırlık satırlarında etiket ve input yan yana dursun: */
