@@ -153,6 +153,8 @@
     const path = [state.sel.uh1, state.sel.uh2, state.sel.uh3].filter(Boolean).join(" › ");
     const n = DataService.loadMix().length;
     $("selInfo").textContent = `Seçim: ${path}  •  Seviye: ${state.level.toUpperCase()}  •  ${n} satır.`;
+    // Bar kapalıysa seçim sadece tooltip'ten görülebiliyor — tazele.
+    if (document.querySelector(".wrap.side-collapsed")) applySidebarCollapsed(true);
   }
 
   function enforceWeightTotal() {
@@ -1270,6 +1272,38 @@ function updateAll() {
   // beslenir ya statiktir, seçimi orada göstermek yanıltıcı olurdu.
   // .side sabit 240px bir flex item; gizlenince .main (flex:1) genişliği
   // kendiliğinden alır, ek bir genişlik hesabı GEREKMEZ.
+  // --- Sidebar aç/kapa (kullanıcı kaynaklı, sekme kaynaklı gizlemeden AYRI) ---
+  // Filtreler bir kez ayarlandıktan sonra kullanıcı barı kapatıp ekranı
+  // genişletebilsin diye. Tercih localStorage'da tutulur — her açılışta yeniden
+  // kapatmak zorunda kalmasın. Sekme kaynaklı gizleme (.side-hidden) bundan
+  // BAĞIMSIZDIR; ikisi aynı anda geçerli olabilir.
+  const SIDE_COLLAPSE_KEY = "arpaz_side_collapsed";
+  function applySidebarCollapsed(collapsed) {
+    const wrap = document.querySelector(".wrap");
+    const btn = $("sideToggle");
+    if (!wrap || !btn) return;
+    wrap.classList.toggle("side-collapsed", collapsed);
+    btn.textContent = collapsed ? "›" : "‹";
+    btn.setAttribute("aria-expanded", collapsed ? "false" : "true");
+    // Kapalıyken kullanıcı seçimi göremez (#selInfo bar'ın içinde) — o yüzden
+    // güncel seçim tooltip'e taşınır.
+    btn.title = collapsed
+      ? "Filtreleri göster — " + (($("selInfo") && $("selInfo").textContent) || "")
+      : "Filtreleri gizle";
+  }
+  function initSidebarToggle() {
+    const btn = $("sideToggle");
+    if (!btn) return;
+    let collapsed = false;
+    try { collapsed = localStorage.getItem(SIDE_COLLAPSE_KEY) === "1"; } catch (e) { /* geç */ }
+    applySidebarCollapsed(collapsed);
+    btn.addEventListener("click", () => {
+      const next = !document.querySelector(".wrap").classList.contains("side-collapsed");
+      applySidebarCollapsed(next);
+      try { localStorage.setItem(SIDE_COLLAPSE_KEY, next ? "1" : "0"); } catch (e) { /* geç */ }
+    });
+  }
+
   function syncSidebarVisibility(tab) {
     const wrap = document.querySelector(".wrap");
     if (wrap) wrap.classList.toggle("side-hidden", tab !== "miks");
@@ -2163,6 +2197,7 @@ function updateAll() {
     bind();
     initFormulaModal();
     initNumFields();
+    initSidebarToggle();
     initToptanInfoToggle();
     initColResize();
     initGridFormat();

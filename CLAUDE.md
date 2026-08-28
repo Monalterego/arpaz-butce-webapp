@@ -361,6 +361,15 @@ kayıtlı veriden beslenir (Perakende/Toptan Bütçe) ya statiktir (Takvim, Meto
 seçimden bağımsızdır (Senaryo) — seçimi orada göstermek yanıltıcı olurdu. `.side` sabit
 240px bir flex item olduğundan gizlenince `.main` (flex:1) boşluğu KENDİLİĞİNDEN doldurur;
 ayrıca genişlik kuralı yazma. Gizlemek `state.sel`i DEĞİŞTİRMEZ, sadece görünürlüktür.
+**Kullanıcı da kapatabilir:** `#sideToggle` düğmesi (`initSidebarToggle()` /
+`applySidebarCollapsed()`) `.wrap`'e `side-collapsed` sınıfı ekler; tercih
+`SIDE_COLLAPSE_KEY` ("arpaz_side_collapsed") ile localStorage'da KALICIdır.
+Düğme `.side`'ın DIŞINDA, `.wrap` içinde durur — içinde olsaydı kapanınca kendisi de
+kaybolur, geri açmanın yolu kalmazdı. Kapalıyken sol kenara yaslanır ve ok yönü
+değişir (‹ / ›). `#selInfo` bar'ın içinde olduğundan kapalıyken seçim görünmez;
+bu yüzden güncel seçim düğmenin `title`'ına taşınır ve `updateSelInfo()` her
+çalıştığında tazelenir. İki gizleme sebebi BAĞIMSIZdır ve aynı anda geçerli
+olabilir: `.side-hidden` (sekme kaynaklı) · `.side-collapsed` (kullanıcı kaynaklı).
 **İSTİSNA/DİKKAT:** "Tahmin (Forecast)" sekmesi hâlâ CANLI modelden (`computeModel`,
 dolayısıyla sidebar seçiminden) besleniyor — orada sidebar gizli olduğu için kullanıcı
 seçimi değiştiremez, miks ekranında en son ne seçtiyse onun tahminini görür. Forecast

@@ -34,7 +34,7 @@ header .tag{background:rgba(255,255,255,.15);padding:3px 10px;border-radius:var(
 header .right{margin-left:auto;display:flex;gap:10px;align-items:center;font-size:12px}
 header select{background:#fff;border:none;border-radius:6px;padding:5px 8px;font-size:12px;color:var(--ink)}
 select[disabled]{opacity:.5;cursor:not-allowed}
-.wrap{display:flex;flex:1;min-height:0}
+.wrap{display:flex;flex:1;min-height:0;position:relative}
 .side{width:240px;background:var(--surface);border-right:1px solid var(--line);padding:var(--s2);flex-shrink:0}
 .side h3{font-size:var(--f-label);text-transform:uppercase;letter-spacing:.6px;color:var(--ink-soft);font-weight:700;margin:var(--s3) 0 var(--s1)}
 .side h3:first-child{margin-top:0}
@@ -576,7 +576,19 @@ tfoot td{background:#eef3f8;font-weight:700;border-top:2px solid var(--navy)}
   #kpis .kpi .val,#kpis .kpi .sub{grid-column:1}
 }
 
-/* Sidebar yalnızca "Bütçe & Stok Karışımı" sekmesinde görünür (bkz.
-   syncSidebarVisibility). Gizlendiğinde .main flex:1 olduğu için boşluğu
-   kendiliğinden doldurur — ayrıca bir genişlik kuralı GEREKMEZ. */
-.wrap.side-hidden .side{display:none}
+/* Sidebar iki AYRI sebeple gizlenebilir, karıştırma:
+   .side-hidden   = sekme kaynaklı (miks dışındaki sekmeler, syncSidebarVisibility)
+   .side-collapsed = kullanıcı kaynaklı (sideToggle butonu, localStorage'da kalıcı)
+   Gizlendiğinde .main flex:1 olduğu için boşluğu kendiliğinden doldurur. */
+.wrap.side-hidden .side,.wrap.side-collapsed .side{display:none}
+/* Aç/kapa düğmesi sidebar ile içerik arasındaki SINIRDA oturur; kapalıyken sol
+   kenara yaslanır. Sekme kaynaklı gizlemede düğme de gizlenir (orada açacak bir
+   filtre yok). */
+.side-toggle{position:absolute;left:240px;top:var(--s2);transform:translateX(-50%);
+  z-index:5;width:22px;height:22px;padding:0;display:flex;align-items:center;
+  justify-content:center;border:1px solid var(--line);background:var(--surface);
+  color:var(--ink-soft);border-radius:50%;cursor:pointer;font-size:13px;line-height:1;
+  box-shadow:var(--shadow-sm);transition:background .12s,color .12s,border-color .12s}
+.side-toggle:hover{background:var(--accent);color:#fff;border-color:var(--accent)}
+.wrap.side-collapsed .side-toggle{left:0;transform:none;border-radius:0 var(--radius-sm) var(--radius-sm) 0}
+.wrap.side-hidden .side-toggle{display:none}
