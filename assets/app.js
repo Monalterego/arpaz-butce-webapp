@@ -1248,6 +1248,7 @@ function updateAll() {
   // Ana tablo başlığındaki "Senaryo kaydet" butonu bunu çağırarak kullanıcıyı
   // Senaryo Karşılaştırma ekranına aktarır.
   function showTab(t) {
+    syncSidebarVisibility(t);
     document.querySelectorAll(".tabs button").forEach((x) =>
       x.classList.toggle("active", x.dataset.tab === t));
     document.querySelectorAll(".tabpane").forEach((p) =>
@@ -1262,6 +1263,16 @@ function updateAll() {
       renderToptanFromSaved(); // sekme her açıldığında Kayıtlar'ın GÜNCEL halini yansıt
       syncToptanHeaderOffset(); // sekme az önce görünür oldu, gizliyken 0 ölçülen yükseklik şimdi düzeltilir
     }
+  }
+
+  // Sidebar SADECE "Bütçe & Stok Karışımı" ekranında görünür — diğer sekmeler
+  // (Perakende/Toptan Bütçe, Takvim, Metodoloji, Senaryo) ya kayıtlı veriden
+  // beslenir ya statiktir, seçimi orada göstermek yanıltıcı olurdu.
+  // .side sabit 240px bir flex item; gizlenince .main (flex:1) genişliği
+  // kendiliğinden alır, ek bir genişlik hesabı GEREKMEZ.
+  function syncSidebarVisibility(tab) {
+    const wrap = document.querySelector(".wrap");
+    if (wrap) wrap.classList.toggle("side-hidden", tab !== "miks");
   }
 
   // --- Senaryo yönetimi ---

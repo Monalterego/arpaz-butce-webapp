@@ -575,3 +575,8 @@ tfoot td{background:#eef3f8;font-weight:700;border-top:2px solid var(--navy)}
   #kpis .kpi{grid-template-columns:minmax(0,1fr);row-gap:2px}
   #kpis .kpi .val,#kpis .kpi .sub{grid-column:1}
 }
+
+/* Sidebar yalnızca "Bütçe & Stok Karışımı" sekmesinde görünür (bkz.
+   syncSidebarVisibility). Gizlendiğinde .main flex:1 olduğu için boşluğu
+   kendiliğinden doldurur — ayrıca bir genişlik kuralı GEREKMEZ. */
+.wrap.side-hidden .side{display:none}

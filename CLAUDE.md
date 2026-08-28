@@ -354,6 +354,17 @@ stil + sarmalayıcı yapı katmanındadır.
   `--grid-row-pad` vb.) bu turda dokunulmadı.
 
 Sol menü sırası: **TEŞKİLAT → ÜRÜN HİYERARŞİSİ → PERİYOT**.
+
+**Sidebar SADECE "Bütçe & Stok Karışımı" sekmesinde görünür** (`syncSidebarVisibility()`,
+`showTab` içinden çağrılır; `.wrap.side-hidden .side{display:none}`). Diğer sekmeler ya
+kayıtlı veriden beslenir (Perakende/Toptan Bütçe) ya statiktir (Takvim, Metodoloji) ya da
+seçimden bağımsızdır (Senaryo) — seçimi orada göstermek yanıltıcı olurdu. `.side` sabit
+240px bir flex item olduğundan gizlenince `.main` (flex:1) boşluğu KENDİLİĞİNDEN doldurur;
+ayrıca genişlik kuralı yazma. Gizlemek `state.sel`i DEĞİŞTİRMEZ, sadece görünürlüktür.
+**İSTİSNA/DİKKAT:** "Tahmin (Forecast)" sekmesi hâlâ CANLI modelden (`computeModel`,
+dolayısıyla sidebar seçiminden) besleniyor — orada sidebar gizli olduğu için kullanıcı
+seçimi değiştiremez, miks ekranında en son ne seçtiyse onun tahminini görür. Forecast
+gerçek veriyle bağlandığında (bkz. Bölüm 11.3) bu yeniden değerlendirilmeli.
 - **Teşkilat:** `#h_org` (Satış Teşkilatı: Tümü/Arçelik/Beko), `#h_region` (Şube/Bölge:
   Tümü + 5 bölge). app.js bunları `DataService.orgs()/regions()` ile doldurur; change →
   `setOrg/setRegion` + `rebuild()`. Başlangıç "Tümü" (value="").
