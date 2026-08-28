@@ -48,7 +48,10 @@
   <main class="main">
     <!-- ========== TAB: MIKS ========== -->
     <div class="tabpane" data-pane="miks">
-      <!-- ANA MIKS TABLOSU (taşındı, artık sekmenin ilk bloğu) -->
+      <!-- KPI ŞERİDİ — ana tablonun ÜSTÜNDE (bilinçli: özet önce, detay sonra) -->
+      <div class="kpis" id="kpis"></div>
+
+      <!-- ANA MIKS TABLOSU -->
       <div class="panel">
         <h2 style="display:flex;align-items:center;gap:8px;">Bütçe &amp; Stok Karışım Tablosu <span class="pill">Hedef Cover elle girilir</span>
           <button type="button" class="info-ico" id="formulaInfoBtn" title="Bütçe kurgusu nasıl hesaplanıyor?" aria-label="Bütçe kurgusu nasıl hesaplanıyor?">i</button>
@@ -242,7 +245,6 @@
         </div>
       </div>
 
-      <div class="kpis" id="kpis"></div>
 
 
       <div class="foot">Kaynak: gerçek demo veri (2025-07…2026-07, aylık ortalama). Brüt kâr sentetiktir. IT tam veri verdiğinde yalnızca bu katman API'ye bağlanacak.</div>

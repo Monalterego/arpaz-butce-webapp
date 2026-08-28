@@ -386,8 +386,26 @@ Sol menü sırası: **TEŞKİLAT → ÜRÜN HİYERARŞİSİ → PERİYOT**.
   vurgusunu örtüyordu. Onunla birlikte artık ölü kalan `heat()` fonksiyonu ve
   `.heat` CSS kuralı da SİLİNDİ — geri isteniyorsa yeniden yazılmalı. Kanıt
   sekmesindeki `heatDiverge()` AYRI bir fonksiyondur, ondan etkilenmedi.
-- KPI kartları (üst şerit, `#kpis`, 6 kart): Toplam Stok, Toplam Satış (LY), Toplam Kâr
-  (LY ₺), Bayi Stok Ay (Cover), Toplam Satış Bütçe (TY), LFL Büyüme.
+- **KPI şeridi (`#kpis`, 6 kart) — ana tablonun ÜSTÜNDE** (özet önce, detay sonra;
+  eskiden tablonun ve parametrelerin ALTINDAydı). Dördü "LY → TY" kıyası (büyük
+  değerde çift + `.kpi-arrow`, alt satırda birim · yüzdesel değişim), ikisi saf oran:
+  **STOK** (LY stok → TY plan stok · Stok Büyümesi %) · **SATIŞ** (LY satış → TY satış
+  bütçesi · LFL %) · **BRÜT KÂR** (LY kâr → TY kâr ₺ · değişim %) · **BAYİ STOK AY
+  (COVER)** (LY → TY ay · değişim %) · **LFL BÜYÜME** · **R-LFL BÜYÜME**.
+  - Değerler ana tablonun TOPLAM satırıyla (tfoot) BİREBİR aynı kaynaktan gelir
+    (`m.T.*`) — doğrulandı, iki yerde farklı formül YOK.
+  - **COVER kartında renk mantığı TERStir:** cover'ın DÜŞMESİ iyidir (stok daha hızlı
+    dönüyor) → yeşil; artması kırmızı. Diğer kartlarda artış yeşildir. Bunu "hata"
+    sanıp düzeltme.
+  - "Toplam Satış Bütçe (TY)" kartı KALDIRILDI — TY satış zaten SATIŞ kartının sağ
+    tarafı, iki yerde göstermek tekrardı.
+- **`T.tyProfit` — TY brüt kâr SENTETİK ÜSTÜNE VARSAYIM.** LY brüt kârın kendisi zaten
+  sentetik (bkz. Bölüm 3: `satis_tutar × marj%`); TY kârı ise `tyRevenue × AYNI marj%`
+  ile türetilir. Yani **TY marjı = LY marjı** varsayılır — uygulamada marj değişimi
+  parametresi YOK. Bu değer **bütçe hesabına GİRMEZ**, sadece BRÜT KÂR kartında LY→TY
+  kıyası için üretilir. Marj değişimi parametresi eklenirse burası da güncellenmeli.
+  Türetilen diğer toplamlar (`T.tyCover`, `T.stockGrowth`, `T.profitGrowth`, `T.rlfl`)
+  `computeFromData` içinde, tfoot'takiyle AYNI formüllerle hesaplanır.
 - **Senaryo Karşılaştırma** (`data-pane="senaryo"`, AYRI SEKME — miks ekranında
   kart olarak DEĞİL): parametre setini kaydet/karşılaştır; en iyi LFL yeşil.
   Giriş noktası ana tablo başlığındaki **📐 Senaryo kaydet** butonu

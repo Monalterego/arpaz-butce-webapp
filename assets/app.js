@@ -246,8 +246,12 @@
       const tyFiyatManual = (tyFiyatOverrides && tyFiyatOverrides[i] != null) ? tyFiyatOverrides[i] : null;
       const tyFiyat = tyFiyatManual !== null ? tyFiyatManual : lyFiyat * (1 + p.fiyatBuyume / 100);
       const tyRevenue = salesBudget * tyFiyat;
+      // TY brüt kâr: TY ciro × AYNI marj. VARSAYIM — uygulamada marj değişimi
+      // parametresi YOK, bu yüzden TY marjı LY marjına eşit alınır. Bütçe
+      // hesabına GİRMEZ, sadece KPI kartında LY→TY kâr kıyası için türetilir.
+      const tyProfit = tyRevenue * margin / 100;
 
-      return { name, stock, sales, profit, stockShare, salesShare, profitShare,
+      return { name, stock, sales, profit, margin, tyProfit, stockShare, salesShare, profitShare,
         lyCover, turnover, lyFiyat, planPct, planStock, hedefCover, salesBudget, lfl, rlfl, stockGrowth,
         tyFiyat, tyRevenue, tag };
     });
@@ -269,10 +273,17 @@
       planStock: rows.reduce((a, r) => a + r.planStock, 0),
       salesBudget: rows.reduce((a, r) => a + r.salesBudget, 0),
       tyRevenue: rows.reduce((a, r) => a + r.tyRevenue, 0),
+      tyProfit: rows.reduce((a, r) => a + r.tyProfit, 0),
       oluAdet: rows.filter((r) => r.oluStok).length,
     };
     T.lfl = T.salesBudget / (totSales || 1) - 1;
     T.cover = totStock / (totSales || 1);
+    // KPI kartları için türetilenler (tfoot ile AYNI formüller — tek kaynak):
+    T.tyCover = T.salesBudget ? T.planStock / T.salesBudget : 0;
+    T.stockGrowth = totStock ? T.planStock / totStock - 1 : 0;
+    T.profitGrowth = totProfit ? T.tyProfit / totProfit - 1 : 0;
+    T.rlfl = (T.planStock && totSales && totStock)
+      ? (T.salesBudget / T.planStock) / (totSales / totStock) - 1 : 0;
     return { rows, T, campF, pazarF };
   }
 
@@ -427,14 +438,31 @@ function updateAll() {
     return `<span class="badge b-red" title="${title}">${val}</span>`;
   }
 
+  // KPI şeridi: ana tablonun ÜSTÜNDE, 6 kart. Dördü "LY → TY" kıyası (büyük
+  // değerde çift, alt satırda birim + yüzdesel değişim), ikisi saf büyüme oranı.
+  // NOT: "Toplam Satış Bütçe (TY)" kartı KALDIRILDI — TY satış zaten SATIŞ
+  // kartının sağ tarafı; iki yerde göstermek tekrar oluyordu.
   function renderKpis(m) {
-    const kpis = [
-      ["Toplam Stok", fmtN(m.T.stock), "adet", ""],
-      ["Toplam Satış (LY)", fmtN(m.T.sales), "adet", ""],
-      ["Toplam Kâr (LY)", fmtN(m.T.profit), "₺", ""],
-      ["Bayi Stok Ay (Cover)", fmtD(m.T.cover), "ay", ""],
-      ["Toplam Satış Bütçe (TY)", fmtN(m.T.salesBudget), "adet", m.rows.length ? (m.T.lfl >= 0 ? "up" : "down") : ""],
-      ["LFL Büyüme", m.rows.length ? fmtP0(m.T.lfl) : "—", "", m.rows.length ? (m.T.lfl >= 0 ? "up" : "down") : ""],
+    const has = m.rows.length > 0;
+    const dir = (v) => (v >= 0 ? "up" : "down");
+    // Cover'da AZALMA iyidir (stok daha hızlı dönüyor) — renk mantığı TERS.
+    const coverD = m.T.cover ? m.T.tyCover / m.T.cover - 1 : 0;
+    const pair = (a, b) => `${a} <span class="kpi-arrow">→</span> ${b}`;
+    const kpis = has ? [
+      ["STOK", pair(fmtN(m.T.stock), fmtN(m.T.planStock)),
+        `adet · ${fmtP0(m.T.stockGrowth)}`, dir(m.T.stockGrowth)],
+      ["SATIŞ", pair(fmtN(m.T.sales), fmtN(m.T.salesBudget)),
+        `adet · ${fmtP0(m.T.lfl)}`, dir(m.T.lfl)],
+      ["BRÜT KÂR", pair(fmtN(m.T.profit), fmtN(m.T.tyProfit)),
+        `₺ · ${fmtP0(m.T.profitGrowth)}`, dir(m.T.profitGrowth)],
+      ["BAYİ STOK AY (COVER)", pair(fmtD(m.T.cover), fmtD(m.T.tyCover)),
+        `ay · ${fmtP0(coverD)}`, coverD <= 0 ? "up" : "down"],
+      ["LFL BÜYÜME", fmtP0(m.T.lfl), "TY bütçe / LY satış", dir(m.T.lfl)],
+      ["R-LFL BÜYÜME", fmtP0(m.T.rlfl), "stoktan arındırılmış", dir(m.T.rlfl)],
+    ] : [
+      ["STOK", "—", "adet", ""], ["SATIŞ", "—", "adet", ""],
+      ["BRÜT KÂR", "—", "₺", ""], ["BAYİ STOK AY (COVER)", "—", "ay", ""],
+      ["LFL BÜYÜME", "—", "", ""], ["R-LFL BÜYÜME", "—", "", ""],
     ];
     $("kpis").innerHTML = kpis.map((k) => {
       const sc = k[3] === "up" || k[3] === "down" ? k[3] : "";

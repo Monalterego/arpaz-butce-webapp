@@ -565,3 +565,13 @@ tfoot td{background:#eef3f8;font-weight:700;border-top:2px solid var(--navy)}
    görsel olarak birlikte okunmaları gerekir. Yarı saydam tint: satır hover'ı
    ve TOPLAM satırının kendi zemini altından görünmeye devam eder. */
 #grid td.pct-hl{background:var(--accent-tint)}
+
+/* KPI kartlarında "LY → TY" çifti: ok, rakamlarla yarışmasın diye daha küçük ve
+   soluk. Değer artık iki sayı taşıdığı için dar kartta taşmasın: kart genişliği
+   yetmezse rakamlar küçülür (clamp) ve gerekirse alta sarar. */
+#kpis .kpi .val{font-size:clamp(15px,1.15vw,var(--f-hero));white-space:nowrap}
+#kpis .kpi .kpi-arrow{font-size:.68em;color:var(--ink-soft);font-weight:400;margin:0 1px}
+@media (max-width:1400px){
+  #kpis .kpi{grid-template-columns:minmax(0,1fr);row-gap:2px}
+  #kpis .kpi .val,#kpis .kpi .sub{grid-column:1}
+}
