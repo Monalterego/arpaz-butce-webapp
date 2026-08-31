@@ -1,11 +1,14 @@
 /* =====================================================================
-   VERİ KATMANI — GERÇEK DEMO VERİ (ORG × BÖLGE × ÜH4)
+   VERİ KATMANI — GERÇEK DEMO VERİ (ORG × BÖLGE × ÜH4, AY BAZLI)
    ---------------------------------------------------------------------
-   Kaynak: Demo Gerçek Veri.xlsx (2025-07..2026-07, 13 ay ort).
-   realdata.js: ORGS, REGIONS, REAL_DATA (org, region, uh1..uh4, metrikler).
-   Teşkilat seçimi (org + bölge) metrikleri gerçekten filtreler.
+   Kaynak: TPM_Data.xlsx (2026-01..2026-08).
+   realdata.js: ORGS, REGIONS, REAL_DATA (org, region, uh1..uh4, marj,
+   indirim + `aylar` alt-objesi: { "YYYY-MM": {satis_adet, satis_tutar,
+   stok_adet, toptan_adet, toptan_tutar, brut_kar}, ... }).
+   Teşkilat seçimi (org + bölge) ve PERİYOT seçimi metrikleri gerçekten filtreler.
    "Tümü" = ilgili boyutta toplam. Brüt kâr sentetiktir (marj ile).
-   Satır şeması (app.js ile uyumlu): [ Ad, StokAdet, SatışAdet, SatışTutar, Marj%, İndirim% ]
+   Satır şeması (app.js ile uyumlu, DEĞİŞMEDİ):
+     [ Ad, StokAdet, SatışAdet, SatışTutar, Marj%, İndirim% ]
    ===================================================================== */
 
 const CALENDAR = [
@@ -25,12 +28,23 @@ const DataService = {
   // Teşkilat seçimi (app.js günceller). "" = Tümü.
   _org: "",     // "" | "Arçelik" | "Beko"
   _region: "",  // "" | bölge adı
+  // Periyot seçimi. "" (varsayılan) = "TUM_YIL" ile AYNI davranır —
+  // UI henüz bağlı değil, bağlanana kadar ekran tüm dönemi görür.
+  _period: "",  // "" | "2026-01" | ... | "TUM_YIL"
 
   loadCalendar() { return CALENDAR; },
   months()       { return MONTHS; },
   seasonal()     { return SEASONAL_INDEX; },
   orgs()         { return (typeof ORGS !== "undefined") ? ORGS : []; },
   regions()      { return (typeof REGIONS !== "undefined") ? REGIONS : []; },
+
+  // REAL_DATA'daki TÜM kayıtların `aylar` anahtarlarının BİRLEŞİMİ, kronolojik.
+  availablePeriods() {
+    const src = (typeof REAL_DATA !== "undefined" ? REAL_DATA : []);
+    const set = new Set();
+    src.forEach((d) => Object.keys(d.aylar || {}).forEach((k) => set.add(k)));
+    return Array.from(set).sort();
+  },
 
   firstSelection() {
     const uh1 = Object.keys(HIERARCHY)[0];
@@ -39,10 +53,39 @@ const DataService = {
   },
   setOrg(org)       { this._org = org || ""; },
   setRegion(region) { this._region = region || ""; },
+  setPeriod(p)      { this._period = p || ""; },
+
+  // Bir kaydı aktif periyoda göre düz metriklere indirger.
+  //  - TUM_YIL (ve varsayılan ""): stok = EN SON ayın stoğu (ortalama DEĞİL),
+  //    satış adet/tutar = mevcut ayların TOPLAMI ÷ o kaydın KENDİ mevcut ay sayısı.
+  //  - Belirli ay: o ayın değerleri; kayıtta o ay YOKSA hepsi 0 (hata fırlatılmaz).
+  _periodMetrics(d) {
+    const aylar = d.aylar || {};
+    const keys = Object.keys(aylar).sort();
+    if (!keys.length) return { stok: 0, satis: 0, tutar: 0 };
+
+    if (!this._period || this._period === "TUM_YIL") {
+      const son = aylar[keys[keys.length - 1]] || {};
+      let sa = 0, st = 0;
+      keys.forEach((k) => {
+        sa += (aylar[k].satis_adet || 0);
+        st += (aylar[k].satis_tutar || 0);
+      });
+      return { stok: (son.stok_adet || 0), satis: sa / keys.length, tutar: st / keys.length };
+    }
+
+    const ay = aylar[this._period];
+    if (!ay) return { stok: 0, satis: 0, tutar: 0 };
+    return {
+      stok:  (ay.stok_adet   || 0),
+      satis: (ay.satis_adet  || 0),
+      tutar: (ay.satis_tutar || 0),
+    };
+  },
 
   loadMix()      { return this.loadMixFor(this.firstSelection(), "uh4"); },
 
-  // Teşkilat + ürün seçimine göre süz, satır şemasına indir.
+  // Teşkilat + periyot + ürün seçimine göre süz, satır şemasına indir.
   loadMixFor(sel, level) {
     const src = (typeof REAL_DATA !== "undefined" ? REAL_DATA : []);
     const norm = (value) => String(value || "")
@@ -65,11 +108,12 @@ const DataService = {
 
     const map = new Map();
     inSel.forEach((d) => {
+      const m = this._periodMetrics(d);
       const k = groupKey(d);
       if (!map.has(k)) map.set(k, { stok: 0, satis: 0, tutar: 0, mW: 0, dW: 0 });
       const o = map.get(k);
-      o.stok += d.stok_adet; o.satis += d.satis_adet; o.tutar += d.satis_tutar;
-      o.mW += d.marj * d.satis_tutar; o.dW += d.indirim * d.satis_tutar;
+      o.stok += m.stok; o.satis += m.satis; o.tutar += m.tutar;
+      o.mW += d.marj * m.tutar; o.dW += d.indirim * m.tutar;
     });
 
     const out = [];
