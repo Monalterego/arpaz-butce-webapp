@@ -12,9 +12,11 @@ Arçelik Pazarlama A.Ş. / **Arpaz** tedarik zinciri veri analitiğine uyarlanm�
 **web uygulaması** (saf HTML + CSS + Vanilla JS, framework yok). Kullanıcı; teşkilat
 (org/bölge) ve ürün hiyerarşisi (ÜH1→ÜH4) seçer, geçmiş (LY) stok/satış/kâr paylarına
 bakarak gelecek yıl (TY) için **plan stok payını, satış bütçesini ve hedef cover'ı**
-belirler. Şu an **gerçek demo veri** ile çalışır (Demo Gerçek Veri.xlsx'ten türetilmiş,
-org×bölge×ÜH4 aylık ortalama); IT tam (API) veri verene kadar bu böyle kalacak. Sentetik
-olan tek alan **brüt kâr** (marj bandından hesaplanıyor) — stok/satış/tutar gerçek.
+belirler. Şu an **gerçek demo veri** ile çalışır (TPM_Data.xlsx'ten türetilmiş,
+org×bölge×ÜH4 **AY BAZLI**: 2026-01 … 2026-08); IT tam (API) veri verene kadar bu böyle
+kalacak. Kullanıcı sidebar'dan **Baz Periyot** (tek bir ay ya da "Tam Yıl") seçer ve tüm
+ekran o periyodun GERÇEK sayılarıyla yeniden hesaplanır. Sentetik olan tek alan
+**brüt kâr** (marj bandından hesaplanıyor) — stok/satış/tutar gerçek.
 
 **Rol:** Ben (kullanıcı) veri/analitik uzmanıyım (Power BI, Power Apps, Qlik, Excel,
 DAX/M). Yazılım geliştirici değilim; bu yüzden **açık, adım adım, kopyala-yapıştır kod**
@@ -65,42 +67,71 @@ Git kullanılıyor; her anlamlı değişiklikten sonra commit al.
 ---
 
 ## 3) Veri Katmanı (DataService)
-`realdata.js` içeriği:
+`realdata.js` içeriği (**AY BAZLI İÇ İÇE YAPI** — eski düz şema ARTIK YOK):
 - `ORGS = ["Arçelik","Beko"]`
 - `REGIONS = ["ADANA","ANKARA","MARMARA BATI KARADENİZ","İSTANBUL TRAKYA","İZMİR"]`
-- `REAL_DATA = [{ org, region, uh1, uh2, uh3, uh4, stok_adet, satis_adet,
-   stok_tutar, satis_tutar, marj, indirim, brut_kar }, ...]`  (**2.866 satır**)
+- ```js
+  REAL_DATA = [{ org, region, uh1, uh2, uh3, uh4, marj, indirim,
+    aylar: { "2026-01": { satis_adet, satis_tutar, stok_adet,
+                          toptan_adet, toptan_tutar, brut_kar },
+             "2026-02": { ... }, ... } }, ...]   // 2.965 kombinasyon
+  ```
 
-Kaynak: **Demo Gerçek Veri.xlsx** (2025-07 … 2026-07, 13 ay). Değerler **aylık ortalamadır**.
-Temizlik TAMAMLANDI: (İPTAL/İptal) satırları elendi (194 kayıt silindi, 3.060→2.866);
-büyük/küçük harf ve TR/EN tekrarları birleştirildi (ENERGY SOLUTIONS→ENERJİ ÇÖZÜMLERİ,
-NON-GROUPED→GRUPSUZ; İST.TRK.=İSTANBUL TRAKYA; MR-B.K.DENİZ=MARMARA BATI KARADENİZ).
-Ölü gruplar (satış<0.5 & stok<1) atıldı. `grep -c "PTAL" assets/realdata.js` → 0.
+Kaynak: **TPM_Data.xlsx** → `arpaz_ay_bazli_marjli.csv`. Kapsam **2026-01 … 2026-08**
+(8 ay). Değerler artık **aylık ortalama DEĞİL, gerçek aylık gözlemdir**; her ay kendi
+anahtarında durur. `marj`/`indirim` kombinasyon başına SABİTtir (ay değişkeni değil),
+bu yüzden kayıt kökünde kalır. **`stok_tutar` alanı ARTIK YOK** (kod tabanında hiçbir
+yerde kullanılmıyordu, kaldırıldı). Her kayıtta 8 ayın hepsi bulunmayabilir — 2.965
+kaydın 2.711'inde 8 ay tam, kalanında 1-7 ay var; ortalama alırken bu yüzden sabit
+8'e DEĞİL, **o kaydın kendi mevcut ay sayısına** bölünür.
+(İPTAL) satırı yoktur: `grep -c "PTAL" assets/realdata.js` → 0.
 
 **Brüt kâr SENTETİKtir** (IT gerçek perakende brüt kârı verene kadar):
 `brut_kar = satis_tutar × marj%`. Marj = ÜH2 baz bandı + ÜH4 deterministik ±4 puan sapma.
 Baz bantlar: Beyaz eşya %12-22 · Elektronik (TV/PC/telefon) %6-12 · Klima/enerji ~%20 ·
 Küçük ev aletleri/kişisel bakım %30-45 · Aksesuar/yedek parça ~%48.
 
+### 3.1) Periyot (ay) filtresi — DataService'in ÜÇÜNCÜ ekseni
+`_org` / `_region` ile **aynı desende** bir `_period` state'i vardır:
+- `setPeriod(p)` — `p ∈ { "" | "2026-01" … "2026-08" | "TUM_YIL" }`.
+- `availablePeriods()` — TÜM kayıtların `aylar` anahtarlarının **BİRLEŞİMİ**,
+  kronolojik: `["2026-01", …, "2026-08"]`. Sidebar'daki Baz Periyot dropdown'ı
+  bundan üretilir (elle yazılmış ay listesi YOK).
+- `_periodMetrics(d)` — bir kaydı aktif periyoda göre düz metriklere indirger:
+  - **`"TUM_YIL"`** → `stok_adet` = **EN SON (kronolojik) ayın stoğu** (ortalama
+    DEĞİL — stok bir AN fotoğrafıdır, aylar boyunca toplanmaz/ortalanmaz);
+    `satis_adet`/`satis_tutar` = mevcut ayların TOPLAMI ÷ **o kaydın kendi mevcut
+    ay sayısı** (aylık ortalama satış).
+  - **Belirli ay** (ör. `"2026-03"`) → o ayın değerleri. **Kayıtta o ay YOKSA**
+    `stok/satış/tutar = 0`; hata FIRLATILMAZ (veri seyrek, bu normaldir).
+  - **`""` (varsayılan)** → `"TUM_YIL"` ile AYNI davranır. Bilinçli: app bir kez
+    `setPeriod` çağrılmadan da güvenli bir taban görünümle render edebilsin diye.
+- `marj`/`indirim` kayıt seviyesinde sabittir, periyottan ETKİLENMEZ.
+
 **DataService API (app.js bunları kullanır):**
-- `orgs()`, `regions()` → dropdown doldurma
-- `setOrg(org)`, `setRegion(region)` → "" = Tümü
+- `orgs()`, `regions()`, `availablePeriods()` → dropdown doldurma
+- `setOrg(org)`, `setRegion(region)` → "" = Tümü · `setPeriod(p)` → bkz. 3.1
 - `firstSelection()` → ilk ÜH1/ÜH2
 - `loadMixFor(sel, level)` → seçime göre süzer, org/bölge "Tümü" ise **grupla-topla**,
   satır şemasına indirir: **`[ Ad, StokAdet, SatışAdet, SatışTutar, Marj%, İndirim% ]`**
   - `sel = { uh1, uh2, uh3 }`, `level ∈ {"uh4","uh3","uh2"}`
+  - **ÇIKTI ŞEMASI AY-BAZLI GEÇİŞTE DEĞİŞMEDİ.** Ay okuma işi tamamen
+    `_periodMetrics()` içinde kapsüllüdür; `computeFromData`, Kayıtlar, Toptan
+    Bütçe ve Rollup paneli bu geçişte TEK SATIR bile değişmedi. Yeni bir zaman
+    ekseni özelliği eklerken aynı sınırı koru: **`REAL_DATA`'ya app.js'ten
+    DOĞRUDAN ERİŞME**, tek kapı `loadMixFor`'dur.
 - `loadMix()` = mevcut seçim için wrapper
 - `loadCalendar()`, `months()`, `seasonal()`
 
 **Gerçek veriye geçiş (IT için):** `loadMixFor` içi `fetch('/api/miks?...')`'e çevrilir;
-şema aynı kalır. Beklenen alanlar yukarıdaki gibi.
+şema aynı kalır. Beklenen alanlar yukarıdaki gibi (periyot da parametre olarak gider).
 
 ---
 
 ## 4) Ürün Hiyerarşisi (HIERARCHY)
 - Dört seviye: **ÜH1 › ÜH2 › ÜH3 › ÜH4**. Ekran ÜH4'ten çalışır (buyer grup DEĞİL — Arpaz'da
   "buyer grup" kavramı yoktur, sadece "ÜH4" de).
-- Güncel boyut: **7 ÜH1 · 31 ÜH2 · 120 ÜH3 · 328 ÜH4** (gerçek demo veriden türetildi).
+- Güncel boyut: **7 ÜH1 · 31 ÜH2 · 124 ÜH3 · 339 ÜH4** (gerçek demo veriden türetildi).
   ÜH1 listesi: BEYAZ EŞYA, DİĞER, ENERJİ ÇÖZÜMLERİ, EV KONFORU, KEA, NON-PRODUCT,
   TÜKETİCİ ELEKTRONİĞİ.
 - **(İPTAL) satırları ASLA eklenmez.** Büyük/küçük harf tekrarları tek kayıtta birleşir.
@@ -109,6 +140,13 @@ Küçük ev aletleri/kişisel bakım %30-45 · Aksesuar/yedek parça ~%48.
   değişirse hiyerarşi de yeniden üretilmeli. Veride hiç karşılığı olmayan **GRUPSUZ** dalı
   (eski hiyerarşide GRUPSUZ›GRUPSUZ›GRUPSUZ vardı, seçilince tablo boş kalıyordu) bu
   yüzden düştü.
+- **DERS (ay-bazlı geçişte yaşandı) — veriyi değiştirip hiyerarşiyi yenilememek EKRANI
+  BOŞALTIR:** Yeni TPM_Data Türkçe **"İ"** kullanıyor (`ASPİRATÖR`), eski hiyerarşi ise
+  noktasız **"I"** ile üretilmişti (`ASPIRATÖR`). `loadMixFor`'un `norm()`'u tr-TR
+  küçültme yaptığı için `I → ı` olur ve iki string ASLA eşleşmez: 328 yaprağın **280'i**
+  eşleşmiyordu, sidebar'daki çoğu seçimde tablo bomboş kalıyordu. Hiyerarşi REAL_DATA'dan
+  yeniden üretilerek çözüldü (doğrulandı: 124 ÜH3 düğümünün tamamı her periyotta dolu,
+  **0 boş tablo**). Veri dosyasına dokunan bu adımı ATLAMAMALI.
 - Sidebar kaskad: ÜH1 seç → ÜH2 dolar → ÜH3 dolar. **ÜH3 seçimi ZORUNLUDUR** —
   **"Tümü (ÜH3)" seçeneği YOKTUR**, bilinçli bir tasarım kararıdır (bkz. Bölüm 10):
   `refreshUh3()` her zaman ilgili ÜH2'nin ilk ÜH3'ünü (`keys[0]`) otomatik seçili
@@ -184,21 +222,25 @@ LY Cover > (Ölü Stok Çarpanı × görünen satırların LY Cover MEDYANI)   V
 - Rozet (kırmızı, mevcut `.badge b-red`) sadece **LY Cover hücresinin görünümünü** değiştirir;
   Hedef Cover, Plan Stok, Satış Bütçe, LFL, R-LFL, Stok Büyümesi hesaplarına **dokunmaz**.
 
-**Gerekçe (ölçüldü, uydurulmadı):**
+**Gerekçe (ölçüldü, uydurulmadı — rakamlar AY-BAZLI veride `TUM_YIL` + org/bölge
+"Tümü" ile YENİDEN ölçüldü, 339 ÜH4 yaprağı):**
 - *Sabit eşik (ör. 24 ay) neden reddedildi:* cover normu ÜH2'ye göre çok değişiyor —
-  KLIMA medyanı 7,4 ay, ÇAMAŞIR KURUTMA MAKINESI medyanı **20,5 ay**. Sabit 24 ay eşiği
-  Çamaşır Kurutma'da neredeyse hiçbir şeyi yakalamaz, Klima'daki gerçek sorunu (7,4 ayın
-  3 katı = ~22 ay üstü) kaçırırdı.
-- *ÜH3 medyanı neden taban alınmadı:* ÜH3 başına ortalama **2,7 ÜH4** var, **%45,8'i
-  (~%46) tek yapraklı**. Tek yapraklı ÜH3'te medyan kalemin kendisidir → o kalem hiçbir
-  zaman kendi medyanının katı olamaz, yapısal kör nokta. Ölçüldü: ÜH2 tabanlı yaklaşım
-  328 kalemden **33'ünü** işaretler, ÜH3 tabanlı yaklaşım sadece **18'ini**; aradaki farkta
-  AYDINLATMA (129 ay) ve SÜPÜRGE AKSESUARLARI (63 ay) gibi gerçek ölü stoklar ÜH3 tabanında
+  NON-PRODUCT/CUSTOMER CARE medyanı **1,0 ay**, KLİMA **9,0 ay**, ÇAMAŞIR KURUTMA
+  MAKİNESİ **11,8 ay**, SES-VİDEO VE GÖRÜNTÜ SİSTEMLERİ **89,5 ay**. Tek bir sabit eşik
+  bu ~90 katlık yelpazede ya hiçbir şey yakalar ya da her şeyi damgalar.
+- *ÜH3 medyanı neden taban alınmadı:* ÜH3 başına ortalama **2,7 ÜH4** var, **%46,0'ı
+  tek yapraklı** (124 ÜH3'ün 57'si). Tek yapraklı ÜH3'te medyan kalemin kendisidir → o
+  kalem hiçbir zaman kendi medyanının katı olamaz, yapısal kör nokta. Ölçüldü: ÜH2
+  tabanlı yaklaşım 339 kalemden **53'ünü** işaretler, ÜH3 tabanlı yaklaşım sadece
+  **32'sini**; aradaki 23 kalemde AYDINLATMA (**1.202 ay**), KULE TİPİ VANTİLATÖR
+  (291 ay), SU SEBİLİ AKSESUARLARI (230 ay) gibi gerçek ölü stoklar ÜH3 tabanında
   kaçıyordu.
-- *12 ay alt sınırı neden var:* medyanı düşük hızlı gruplarda (ör. NON-PRODUCT/CUSTOMER
-  CARE medyanı 1,6 ay) saf göreli kural sağlıklı kalemleri damgalar — ACCESSORIES-AS SPARE
-  PART (cover 11,9 ay, medyanın 7,4 katı ama 12 ay altında) tam bu senaryoyu doğruluyor.
-  KALDIRMA.
+- *12 ay alt sınırı neden var:* düşük medyanlı hızlı gruplarda (CUSTOMER CARE medyanı
+  1,0 ay) saf göreli kural sağlıklı kalemleri damgalayabilir. **Bu veri setinde alt
+  sınır şu an BAĞLAYICI DEĞİL** — göreli kuralı geçip 12 ayın altında kalan 0 kalem var.
+  Yine de koruma amaçlıdır ve periyot değiştikçe taban medyan da değiştiği için
+  KALDIRMA. (Eski veride bu kuralın kanıtı olan ACCESSORIES-AS SPARE PART artık 232 aya
+  çıkmış ve zaten işaretleniyor.)
 - Rozetin bütçeye etkisi yoktur; **cover'a tavan UYGULANMAZ** (bkz. Bölüm 10) çünkü
   Satış Bütçe = Plan Stok ÷ Hedef Cover olduğundan cover'ı düşürmek ölü stoğa yapay yüksek
   satış hedefi yazmak olurdu.
@@ -610,17 +652,26 @@ gerçek veriyle bağlandığında (bkz. Bölüm 11.3) bu yeniden değerlendirilm
   kalkışmasın: "Tümü (ÜH3)" placeholder'ı geri getirilmeden `syncLevel()`'deki
   koşulu DEĞİŞTİRME** (bkz. Bölüm 4, 8; `app.js`'te `syncLevel()` üzerindeki yorum
   aynı gerekçeyi taşır).
-- DİKKAT NOTU — Hedef Cover tavanı tartışıldı, TAVAN UYGULANMAYACAK: Varsayılan (org/bölge
-  Tümü) görünümde 328 ÜH4 yaprağının LY cover'ı ölçüldü — medyan ≈11,4 ay, ~153'ü 12 ayın
-  üzerinde, en uçta satışı sıfıra yakın kalemlerde 3.687 aya kadar çıkıyor. Yine de tavan
+- DİKKAT NOTU — Hedef Cover tavanı tartışıldı, TAVAN UYGULANMAYACAK: org/bölge "Tümü" +
+  `TUM_YIL` görünümünde 339 ÜH4 yaprağının LY cover'ı ölçüldü — medyan ≈12,8 ay, 176'sı
+  12 ayın üzerinde, en uçta satışı sıfıra yakın kalemlerde 1.202 aya kadar çıkıyor. Yine de tavan
   KONULMAYACAK: `Satış Bütçe = Plan Stok ÷ Hedef Cover` olduğu için cover'ı düşürmek
   bütçeyi BÜYÜTÜR — ölü stoğa yapay yüksek satış hedefi yazmak olur. Bunun yerine göreli
   ölü stok rozeti eklendi (Bölüm 5.2); eşik kullanıcı kararı değil, veriden ölçülerek
   (medyan-tabanlı, göreli) belirlendi.
-- GELİŞTİRME ORTAMI NOTU: Bu makinede Node.js ve Python KURULU DEĞİL. `node --check`
-  çalıştırılamıyor; sözdizimi/mantık doğrulaması headless Edge (`msedge --headless=new
-  --dump-dom`) ile uygulamayı gerçekten çalıştırıp konsol/DOM kontrolüyle yapılıyor.
-  Yeni bir oturumda önce `node`/`python` PATH'te var mı kontrol et, yoksa aynı yönteme dön.
+- GELİŞTİRME ORTAMI NOTU (GÜNCELLENDİ — eski "Node yok" notu GEÇERSİZ): Python KURULU
+  DEĞİL, ama **Node.js VAR** — PATH'te değil, tam yolla çağır:
+  `D:\node\node-v22.11.0-win-x64\node.exe` (v22.11.0).
+  · Sözdizimi: `node --check <dosya>`.
+  · Veri/mantık doğrulaması: dosyaları `new Function(kod + '; return {...};')` ile
+    yükleyip `DataService`'i doğrudan çalıştır — DOM gerekmez, en hızlı yol budur.
+  · UI/regresyon: headless Edge devam ediyor —
+    `"C:\Program Files (x86)\Microsoft\Edge\Application\msedge.exe" --headless=new
+    --dump-dom <url>` (ekran görüntüsü: `--screenshot=<png> --window-size=1680,1150`).
+    `file://` yerine küçük bir Node statik sunucusu (`http://127.0.0.1:<port>`) kullan.
+    Kurulum: index.html'in KOPYASINA bir test script'i enjekte et (app.js IIFE olduğu
+    için iç fonksiyonlara erişilemez — UI'ı gerçek `change`/`click` olaylarıyla sür),
+    sonucu bir `<pre>` içine yazıp `--dump-dom` çıktısından oku.
 - TROUBLESHOOTING: Teşkilat dropdown'ları `ORGS/REGIONS`'tan beslenir. Boş görünüyorsa
   neredeyse her zaman sebep: **eski realdata.js** yüklü (ORGS/REGIONS yok). Konsolda `ORGS`
   yazıp kontrol et; `ReferenceError` gelirse yeni realdata.js konmamış demektir.

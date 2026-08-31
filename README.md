@@ -3,9 +3,11 @@
 LC Waikiki perakende planlama yaklaşımının Arçelik Pazarlama / Tedarik Zinciri
 veri analitiğine uyarlanmış **web uygulaması**.
 
-> Durum: **Gerçek demo veri** ile çalışır (Demo Gerçek Veri.xlsx'ten türetilmiş, org×bölge×
-> ÜH4 aylık ortalama — sentetik olan tek alan brüt kâr). IT tam (API) veri verdiğinde
-> yalnızca `assets/data.js` katmanı değişir; arayüz ve mantık aynı kalır.
+> Durum: **Gerçek demo veri** ile çalışır (TPM_Data.xlsx'ten türetilmiş, org×bölge×ÜH4
+> **ay bazlı**: 2026-01…2026-08 — sentetik olan tek alan brüt kâr). Sidebar'daki **Baz
+> Periyot** seçicisiyle tek bir ay ya da "Tam Yıl" seçilir, ekran o periyodun gerçek
+> sayılarıyla hesaplanır. IT tam (API) veri verdiğinde yalnızca `assets/data.js` katmanı
+> değişir; arayüz ve mantık aynı kalır.
 
 ## Bütçe Kurgusu (ekranın çekirdeği)
 Çalışma ÜH4'ten yapılır. Her grup için:
@@ -34,7 +36,7 @@ arpaz-butce-webapp/
 ```
 
 ## Ürün Hiyerarşisi
-`hierarchy.js` gerçek ağacı içerir: **7 ÜH1 · 31 ÜH2 · 120 ÜH3 · 328 ÜH4** (tüm (İPTAL) satırları
+`hierarchy.js` gerçek ağacı içerir: **7 ÜH1 · 31 ÜH2 · 124 ÜH3 · 339 ÜH4** (tüm (İPTAL) satırları
 elenmiş, büyük/küçük harf tekrarları birleştirilmiş; hiyerarşi elle değil, temizlenmiş
 `REAL_DATA`'dan script ile üretiliyor). Sidebar kaskad çalışır: ÜH1 → ÜH2 → ÜH3 seçilir,
 tablo her zaman ÜH4 kırılımı ile üretilir ("Çalışma Seviyesi" kaldırıldı).

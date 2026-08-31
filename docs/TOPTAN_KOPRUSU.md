@@ -62,7 +62,7 @@ Mevsimsel katsayıda ELE / DİKKAT:
 ```
 Toptan Bütçe(ÜH4, ay) = Perakende Bütçe + (Hedef Bayi Stok − Mevcut Bayi Stok)
   Hedef Bayi Stok = Hedef Cover × (aylık Perakende Bütçe)
-  Mevcut Bayi Stok = son LY stok (stok_adet)
+  Mevcut Bayi Stok = seçili Baz Periyot'un GERÇEK stok_adet'i
 
 Kontrol kolonu (mevsimsel):
   Mevsimsel Toptan = Perakende Bütçe × TOPTAN_KATSAYI[uh2][ay]
@@ -74,6 +74,14 @@ Kontrol kolonu (mevsimsel):
   (index.html'de app.js'ten ÖNCE yüklenir).
 - Katsayılar Colab analizinden üretildi (historical Perakende-Toptan.xlsx).
 - Envanter kimliği için ekstra veri gerekmez; mevcut stok_adet + hedef cover yeter.
+- **ESKİ SINIRLAMA ORTADAN KALKTI (ay-bazlı veri geçişi):** `Mevcut Bayi Stok` eskiden
+  13 ayın ORTALAMASI olan bir `stok_adet` idi — yani gerçek bir "şu an depoda ne var"
+  fotoğrafı DEĞİLDİ ve köprünün stok düzeltme bacağı (`Hedef − Mevcut`) bulanık kalıyordu.
+  Artık `realdata.js` ay bazlı: `Mevcut Bayi Stok`, kullanıcının seçtiği **Baz Periyot'un
+  GERÇEK ay stok_adet'idir** (bkz. CLAUDE.md 3.1). "Tam Yıl" seçilirse **EN SON ayın**
+  stoğu kullanılır — stok bir AN fotoğrafı olduğu için aylar boyunca ortalanmaz. Sonuç:
+  envanter köprüsü artık gerçek bir stok seviyesiyle çalışıyor; bu bacak için "veri
+  temsili/ortalama" uyarısı YAZMA.
 
 ### 13.7 Son Kullanıcıya Anlatım İlkesi (ÖNEMLİ)
 Ekranda toptan mantığı MUTLAKA sade Türkçe ile açıklanmalı (bkz. "Nasıl Çalışır?"

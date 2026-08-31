@@ -94,6 +94,41 @@
       $("h_region").addEventListener("change", () => { DataService.setRegion($("h_region").value); autoFitSelectFont($("h_region")); rebuild(); });
     }
 
+    // --- Periyot select'leri (DataService.availablePeriods) ---------------------
+    // Baz Periyot GERÇEK bir filtredir: DataService.setPeriod() ile veri katmanını
+    // süzer (bkz. data.js _periodMetrics). Hedef Periyot hâlâ SADECE BİR ETİKETtir —
+    // gerçek gelecek verisi yoktur; kayıt anahtarına ve Toptan'ın ay katsayısına
+    // (monthFromPeriodLabel) girdiği için seçenekleri baz listeden +1 yıl kaydırılır.
+    const AY_ADI = { "01": "Ocak", "02": "Şubat", "03": "Mart", "04": "Nisan", "05": "Mayıs", "06": "Haziran",
+      "07": "Temmuz", "08": "Ağustos", "09": "Eylül", "10": "Ekim", "11": "Kasım", "12": "Aralık" };
+    const periods = DataService.availablePeriods(); // ["2026-01",...,"2026-08"]
+    const etiket = (p, yilFark) => { const [y, m] = p.split("-"); return `${Number(y) + (yilFark || 0)} ${AY_ADI[m]}`; };
+    const sonYil = periods.length ? Number(periods[periods.length - 1].split("-")[0]) : new Date().getFullYear();
+
+    if (document.getElementById('h_baseperiod') && periods.length) {
+      const labels = periods.map((p) => etiket(p, 0)).concat([`${sonYil} Tam Yıl`]);
+      fillSelect($("h_baseperiod"), labels);
+      // VARSAYILAN: EN SON (güncel) ay — periods[0] DEĞİL, periods[son].
+      $("h_baseperiod").value = labels[periods.length - 1];
+      autoFitSelectFont($("h_baseperiod"));
+      DataService.setPeriod(periods[periods.length - 1]);
+      $("h_baseperiod").addEventListener("change", () => {
+        const idx = labels.indexOf($("h_baseperiod").value);
+        DataService.setPeriod(idx === periods.length ? "TUM_YIL" : periods[idx]);
+        autoFitSelectFont($("h_baseperiod"));
+        rebuild();
+      });
+    }
+    if (document.getElementById('h_targetperiod') && periods.length) {
+      // Baz listesinin +1 yıl kaydırılmışı. FONKSİYONEL DEĞİŞİKLİK YOK: değeri
+      // saveCurrentMixSet()/Kayıtlar/Toptan aynı şekilde metin olarak okumaya devam eder.
+      const tLabels = periods.map((p) => etiket(p, 1)).concat([`${sonYil + 1} Tam Yıl`]);
+      fillSelect($("h_targetperiod"), tLabels);
+      $("h_targetperiod").value = tLabels[0]; // varsayılan: ilk seçenek
+      autoFitSelectFont($("h_targetperiod"));
+      $("h_targetperiod").addEventListener("change", () => autoFitSelectFont($("h_targetperiod")));
+    }
+
     const uh1s = Object.keys(HIERARCHY);
     fillSelect($("h_uh1"), uh1s);
     $("h_uh1").value = state.sel.uh1;
