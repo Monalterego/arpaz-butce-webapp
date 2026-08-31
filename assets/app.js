@@ -1816,10 +1816,14 @@ function updateAll() {
   // Eski "Bütçe Kurgusu — Nasıl Hesaplanıyor?" accordion paneli KALDIRILDI;
   // içerik artık ortalı, kapatılabilir modal. SADECE bilgilendirme — hiçbir
   // parametreye/hesaba dokunmaz. Kapanış: × butonu, overlay boşluğuna tıklama, Esc.
-  function initFormulaModal() {
-    const overlay = $("formulaModal");
-    const btn = $("formulaInfoBtn");
-    const closeBtn = $("formulaModalClose");
+  // Panel başlığındaki (i) ikonuyla açılan bilgi modal'ı. İKİ yerde kullanılır:
+  //   · #formulaInfoBtn  → #formulaModal (Bütçe & Stok Karışım Tablosu)
+  //   · #toptanInfoBtn   → #toptanModal  (Toptan Bütçe Tablosu)
+  // Yeni bir bilgi modal'ı eklerken AYRI bir init yazma, bunu çağır.
+  function initInfoModal(btnId, overlayId, closeId) {
+    const overlay = $(overlayId);
+    const btn = $(btnId);
+    const closeBtn = $(closeId);
     if (!overlay || !btn || !closeBtn) return;
     const open = () => { overlay.hidden = false; closeBtn.focus(); };
     const close = () => { overlay.hidden = true; btn.focus(); };
@@ -1829,19 +1833,6 @@ function updateAll() {
     overlay.addEventListener("click", (e) => { if (e.target === overlay) close(); });
     document.addEventListener("keydown", (e) => {
       if (e.key === "Escape" && !overlay.hidden) close();
-    });
-  }
-
-  // --- Toptan Bütçe "Nasıl Çalışır?" bilgi paneli aç/kapa (sadece görünürlük) ---
-  function initToptanInfoToggle() {
-    const box = $("toptanInfoBox");
-    const ico = $("toptanInfoToggle");
-    const head = box && box.previousElementSibling;
-    if (!box || !ico || !head) return;
-    head.addEventListener("click", () => {
-      const opening = box.style.display === "none";
-      box.style.display = opening ? "flex" : "none";
-      ico.textContent = opening ? "▾" : "▸";
     });
   }
 
@@ -2230,10 +2221,10 @@ function updateAll() {
     DataService.loadMix = function () { return this.loadMixFor(this._cur.sel, this._cur.level); };
     buildTable();
     bind();
-    initFormulaModal();
+    initInfoModal("formulaInfoBtn", "formulaModal", "formulaModalClose");
+    initInfoModal("toptanInfoBtn", "toptanModal", "toptanModalClose");
     initNumFields();
     initSidebarToggle();
-    initToptanInfoToggle();
     initColResize();
     initGridFormat();
     renderSavedMixTable();

@@ -256,24 +256,10 @@
 
     <!-- ========== TAB: TOPTAN ========== -->
     <div class="tabpane" data-pane="toptan" style="display:none">
-      <div class="panel formula">
-        <h2>🔍 Toptan Bütçesi Nasıl Hesaplanıyor? <span class="toggle-ico" id="toptanInfoToggle">▾</span></h2>
-        <div class="fbox toptan-info-box" id="toptanInfoBox">
-          <p>Bayilere ne kadar ürün göndereceğimizi (toptan) belirlemek için basit ama güçlü bir mantık kullanıyoruz:</p>
-          <div class="toptan-note-callout"><b>Önemli:</b> Bu tablo, Bütçe &amp; Stok Miks ekranından <b>Kaydettiğiniz/Revize Ettiğiniz planlardan</b> oluşur — o anki (canlı) sidebar seçiminden değil. Global bir parametreyi (ör. Hedef Stok Büyümesi %) sonradan değiştirmek bu sekmeyi ETKİLEMEZ; bir grubu güncellemek için o seçime dönüp yeniden "Kaydet"/"Revize Et" yapmalısınız.</div>
-          <div class="toptan-formula-box">TOPTAN&nbsp; = &nbsp;Bayinin Satacağı&nbsp; + &nbsp;Bayi Deposunu Doldurma</div>
-          <ul>
-            <li><b>Bayinin Satacağı (Perakende Bütçe):</b> Bayinin bu dönem tüketiciye satmasını beklediğimiz adet.</li>
-            <li><b>Bayi Deposunu Doldurma (Δ Stok):</b> Bayinin deposunu, hedeflediğimiz stok seviyesine (Hedef Cover) getirmek için gereken ek sevk. Depoyu dolduruyorsak toptan artar; eritiyorsak azalır.</li>
-          </ul>
-          <p><b>Örnek:</b> Bir bayi ayda 100 adet satıyorsa ve biz deposunda 3 aylık stok (300 adet) olmasını istiyorsak; deposunda şu an 200 varsa, bu ay ona 100 (satış) + 100 (depo farkı) = 200 adet göndeririz.</p>
-          <p>Bu yöntem şirketin geçmiş verisiyle test edildi ve <b>%89 oranında doğrulandı</b> — yani bilimsel olarak güvenilir. Ayrıca "Mevsimsel Kontrol" kolonu, geçmiş yılların ay bazlı toptan/perakende oranıyla sonucu çapraz-kontrol eder; tablonun üstündeki özet şerit, iki yöntemin ÜH2 toplam düzeyinde ne kadar yakınsadığını (%) gösterir — yüksek yakınsama tahminimizin sağlam olduğu anlamına gelir.</p>
-          <p style="margin:0"><b>Not:</b> Toptan sevk genelde perakende satıştan yaklaşık 2 ay önce olur (bayi önce alır, sonra satar). Sezon planlamasında bunu göz önünde tut.</p>
-        </div>
-      </div>
-
       <div class="panel">
-        <h2>Toptan Bütçe Tablosu <span class="pill">Sell-in</span></h2>
+        <h2 style="display:flex;align-items:center;gap:8px;">Toptan Bütçe Tablosu <span class="pill">Sell-in</span>
+          <button type="button" class="info-ico" id="toptanInfoBtn" title="Toptan bütçesi nasıl hesaplanıyor?" aria-label="Toptan bütçesi nasıl hesaplanıyor?">i</button>
+        </h2>
         <div id="toptanConvergence" class="toptan-convergence"></div>
         <div style="max-height:520px;overflow:auto">
         <table id="toptanGrid">
@@ -500,6 +486,31 @@
       <div><b>2) Plan Stok Adet</b> = ( Toplam Stok × Hedef Stok Büyümesi ) × Plan Stok %</div>
       <div><b>3) Satış Bütçe</b> = ( Plan Stok Adet ÷ <span class="wH">Hedef Cover [elle]</span> ) × Pazarlama Büyümesi × Çarpanlar</div>
       <div><b>4)</b> LFL = Bütçe/LY Satış−1 · R-LFL = (Bütçe/PlanStok)/(LY Satış/LY Stok)−1 · Stok Büyümesi = PlanStok/LY Stok−1</div>
+    </div>
+  </div>
+</div>
+
+<!-- TOPTAN BÜTÇESİ BİLGİ MODAL'I — Toptan Bütçe Tablosu başlığındaki (i) ikonuyla açılır.
+     Eskiden bu içerik tablonun ÜSTÜNDE açık duran bir accordion paneldi (.panel.formula +
+     #toptanInfoBox + initToptanInfoToggle) — kullanıcı isteğiyle modal'a taşındı, miks
+     ekranındaki #formulaModal ile AYNI desen. Tamamen bilgilendirme; hesaba dokunmaz. -->
+<div class="modal-overlay" id="toptanModal" hidden>
+  <div class="modal-box" role="dialog" aria-modal="true" aria-labelledby="toptanModalTitle">
+    <div class="modal-head">
+      <h3 id="toptanModalTitle">Toptan Bütçesi — Nasıl Hesaplanıyor?</h3>
+      <button type="button" class="modal-close" id="toptanModalClose" title="Kapat" aria-label="Kapat">×</button>
+    </div>
+    <div class="toptan-info-box">
+          <p>Bayilere ne kadar ürün göndereceğimizi (toptan) belirlemek için basit ama güçlü bir mantık kullanıyoruz:</p>
+          <div class="toptan-note-callout"><b>Önemli:</b> Bu tablo, Bütçe &amp; Stok Miks ekranından <b>Kaydettiğiniz/Revize Ettiğiniz planlardan</b> oluşur — o anki (canlı) sidebar seçiminden değil. Global bir parametreyi (ör. Hedef Stok Büyümesi %) sonradan değiştirmek bu sekmeyi ETKİLEMEZ; bir grubu güncellemek için o seçime dönüp yeniden "Kaydet"/"Revize Et" yapmalısınız.</div>
+          <div class="toptan-formula-box">TOPTAN&nbsp; = &nbsp;Bayinin Satacağı&nbsp; + &nbsp;Bayi Deposunu Doldurma</div>
+          <ul>
+            <li><b>Bayinin Satacağı (Perakende Bütçe):</b> Bayinin bu dönem tüketiciye satmasını beklediğimiz adet.</li>
+            <li><b>Bayi Deposunu Doldurma (Δ Stok):</b> Bayinin deposunu, hedeflediğimiz stok seviyesine (Hedef Cover) getirmek için gereken ek sevk. Depoyu dolduruyorsak toptan artar; eritiyorsak azalır.</li>
+          </ul>
+          <p><b>Örnek:</b> Bir bayi ayda 100 adet satıyorsa ve biz deposunda 3 aylık stok (300 adet) olmasını istiyorsak; deposunda şu an 200 varsa, bu ay ona 100 (satış) + 100 (depo farkı) = 200 adet göndeririz.</p>
+          <p>Bu yöntem şirketin geçmiş verisiyle test edildi ve <b>%89 oranında doğrulandı</b> — yani bilimsel olarak güvenilir. Ayrıca "Mevsimsel Kontrol" kolonu, geçmiş yılların ay bazlı toptan/perakende oranıyla sonucu çapraz-kontrol eder; tablonun üstündeki özet şerit, iki yöntemin ÜH2 toplam düzeyinde ne kadar yakınsadığını (%) gösterir — yüksek yakınsama tahminimizin sağlam olduğu anlamına gelir.</p>
+          <p style="margin:0"><b>Not:</b> Toptan sevk genelde perakende satıştan yaklaşık 2 ay önce olur (bayi önce alır, sonra satar). Sezon planlamasında bunu göz önünde tut.</p>
     </div>
   </div>
 </div>

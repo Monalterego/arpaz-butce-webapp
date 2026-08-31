@@ -316,19 +316,28 @@ stil + sarmalayıcı yapı katmanındadır.
   (`display:flex;flex-direction:column;min-height:100vh`) + `.wrap{flex:1}` geldi.
   Header'a yükseklik ekleyen bir değişiklik yaparsan bu mekanizma kendiliğinden
   uyum sağlar, sabit piksel HESAPLAMA.
-- **"Bütçe Kurgusu — Nasıl Hesaplanıyor?" ARTIK PANEL DEĞİL, MODAL.** Eski
-  accordion paneli (`.panel.formula` + `#formulaBox` + `initFormulaToggle()`)
-  kaldırıldı; içerik aynen, ana tablo başlığındaki `(i)` ikonuna
-  (`#formulaInfoBtn`, `.info-ico`) tıklanınca açılan ekrana ortalı modal'da
-  (`#formulaModal`, `.modal-overlay`/`.modal-box`, `initFormulaModal()`).
-  Kapanış üç yoldan: `×` butonu, overlay boşluğuna tıklama, `Esc`. Modal markup'ı
-  `<body>` sonunda, script etiketlerinden hemen ÖNCE durur (panel/tablo
-  `overflow` kutularına takılmasın diye) — `.tabpane` içine TAŞIMA. Tamamen
-  bilgilendirme; hiçbir parametreye/hesaba dokunmaz.
-  NOT: `.panel.formula`, `.fbox`, `.wK/.wS/.wSt/.wH` CSS kuralları SİLİNMEDİ —
-  Toptan'ın "Nasıl Çalışır?" paneli ve Ağırlıklar kartı hâlâ kullanıyor.
-  Toptan'ın paneli KASITLI olarak açık (`▾`) accordion kalır — orası yöntemin
-  kendisini anlatır, `initToptanInfoToggle()` DEĞİŞMEDİ.
+- **BİLGİ PANELLERİ ARTIK PANEL DEĞİL, MODAL — İKİSİ DE.** Ekranda iki bilgi
+  modal'ı var ve İKİSİ DE aynı desendedir: panel başlığına gömülü `(i)` ikonu
+  (`.info-ico`) → ekrana ortalı modal (`.modal-overlay`/`.modal-box`).
+  1. **"Bütçe Kurgusu — Nasıl Hesaplanıyor?"** — `#formulaInfoBtn` → `#formulaModal`,
+     Bütçe & Stok Karışım Tablosu başlığında. (Eski accordion `.panel.formula` +
+     `#formulaBox` + `initFormulaToggle()` kaldırılmıştı.)
+  2. **"Toptan Bütçesi — Nasıl Hesaplanıyor?"** — `#toptanInfoBtn` → `#toptanModal`,
+     Toptan Bütçe Tablosu başlığında. Bu içerik ESKİDEN tablonun ÜSTÜNDE açık duran
+     bir accordion paneldi (`.panel.formula` + `#toptanInfoBox` +
+     `initToptanInfoToggle()`); kullanıcı isteğiyle modal'a taşındı. CLAUDE.md'nin
+     eski "Toptan'ın paneli KASITLI olarak açık accordion kalır" notu ARTIK GEÇERSİZ.
+  İkisi de tek ortak yardımcıyla kurulur: **`initInfoModal(btnId, overlayId, closeId)`**
+  (bkz. Bölüm 8). Yeni bir bilgi modal'ı eklerken AYRI bir init YAZMA, bunu çağır.
+  Kapanış üç yoldan: `×` butonu, overlay boşluğuna tıklama, `Esc`; kutunun İÇİNE
+  tıklamak kapatmaz. Modal markup'ları `<body>` sonunda, script etiketlerinden hemen
+  ÖNCE durur (panel/tablo `overflow` kutularına takılmasın diye) — `.tabpane` içine
+  TAŞIMA. Tamamen bilgilendirme; hiçbir parametreye/hesaba dokunmaz.
+  NOT: Toptan accordion'u gidince `.panel.formula`, `.panel.formula .fbox` ve
+  `.toggle-ico` CSS kurallarının son kullanıcısı kalmadı, SİLİNDİLER. Hâlâ duranlar:
+  `.modal-box .fbox` (formül modal'ının gövdesi), `.wK/.wS/.wSt/.wH` (Ağırlıklar
+  kartı + formül modal'ı) ve `.toptan-info-box`/`.toptan-formula-box`/
+  `.toptan-note-callout` (artık `#toptanModal`'ın gövdesini biçimlendiriyor).
 - **Planlama Parametreleri: DÖRT EŞİT KART, TEK SATIR, TEK STİL.** Global Hedefler ·
   Kampanya Çarpanları · Gam & Kota · Plan Stok % Ağırlıkları — hepsi tek `.params`
   gridinde (`repeat(4,minmax(0,1fr))`), hepsi sade `--surface`. `align-items:stretch`
@@ -506,6 +515,11 @@ gerçek veriyle bağlandığında (bkz. Bölüm 11.3) bu yeniden değerlendirilm
   otomatik "Senaryo N". Hem başlıktaki `#saveScenarioBtn` hem paneldeki `#saveSc`
   bunu çağırır (kayıt mantığı TEK yerde).
 - `renderKpis / renderScenarios / renderCalendar / renderKanit / renderForecast`.
+- **`initInfoModal(btnId, overlayId, closeId)`** — panel başlığındaki `(i)` ikonuyla
+  açılan bilgi modal'ını kurar (aç / `×` / overlay / `Esc`). İKİ kez çağrılır:
+  `("formulaInfoBtn","formulaModal","formulaModalClose")` ve
+  `("toptanInfoBtn","toptanModal","toptanModalClose")` — bkz. Bölüm 7.0. Eski
+  `initFormulaModal()` ve `initToptanInfoToggle()` bunun içinde birleşti, ARTIK YOKLAR.
 - Biçimleyiciler: `fmtN` (tr-TR tam sayı), `fmtP`/`fmtP0` (yüzde), `fmtX` (çarpan),
   `fmtD`/`fmtD2`/`fmtD3` (ondalık, 1/2/3 basamak). Türkçe locale ZORUNLU.
 - **`initColResize()`** — `#grid` başlık hücrelerine sürüklenebilir kenar tutamacı

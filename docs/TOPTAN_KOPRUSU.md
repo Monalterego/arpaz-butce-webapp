@@ -84,8 +84,10 @@ Kontrol kolonu (mevsimsel):
   temsili/ortalama" uyarısı YAZMA.
 
 ### 13.7 Son Kullanıcıya Anlatım İlkesi (ÖNEMLİ)
-Ekranda toptan mantığı MUTLAKA sade Türkçe ile açıklanmalı (bkz. "Nasıl Çalışır?"
-bilgi paneli). Son kullanıcı formülün ARDINDAKİ MANTIĞI anlamalı:
+Ekranda toptan mantığı MUTLAKA sade Türkçe ile açıklanmalı. Bu anlatım artık
+**"Toptan Bütçe Tablosu" başlığındaki `(i)` ikonuyla açılan modal'dadır**
+(`#toptanInfoBtn` → `#toptanModal`; eskiden tablonun üstünde açık duran bir accordion
+paneldi, bkz. CLAUDE.md Bölüm 7.0). Son kullanıcı formülün ARDINDAKİ MANTIĞI anlamalı:
 "Bayiye ne kadar mal göndereceğiz? = Bayinin satacağı kadar + bayinin deposunu
 hedeflediğimiz seviyeye getirmek için gereken fark." Teknik jargon değil, sezgi ver.
 

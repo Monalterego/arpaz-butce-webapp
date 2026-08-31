@@ -67,13 +67,8 @@ select[disabled]{opacity:.5;cursor:not-allowed}
 .panel{background:var(--surface);border:1px solid var(--line);border-radius:var(--radius);padding:var(--s3);margin-bottom:var(--s3);box-shadow:var(--shadow)}
 .panel h2{font-size:var(--f-h1);font-weight:600;margin:0 0 var(--s2);color:var(--ink);display:flex;align-items:center;gap:var(--s1)}
 .panel h2 .pill{font-size:10px;background:var(--bluebg);color:var(--blue);padding:2px 8px;border-radius:var(--radius-pill);font-weight:600}
-/* Accordion başlığı: varsayılan KAPALI gelir (index.html'de display:none),
-   başlığa tıklayınca açılır — ▸/▾ ikonu sağda. Kapalıyken h2'nin alt boşluğu
-   sıfırlanır ki boş yer kaplamasın. */
-.panel.formula h2{cursor:pointer;user-select:none;margin-bottom:0}
-.panel.formula h2:hover{color:var(--accent)}
-.panel.formula .fbox,.panel.formula .toptan-info-box{margin-top:var(--s2)}
-.toggle-ico{margin-left:auto;font-size:12px;color:var(--ink-soft)}
+/* NOT: .panel.formula / .toggle-ico accordion kuralları SİLİNDİ — son kullanıcısı olan
+   Toptan'ın "Nasıl Hesaplanıyor?" paneli modal'a taşındı (bkz. #toptanModal). */
 .params{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:var(--s2);align-items:stretch}
 @media (max-width:1240px){.params{grid-template-columns:repeat(2,minmax(0,1fr))}}
 @media (max-width:720px){.params{grid-template-columns:1fr}}
@@ -206,10 +201,9 @@ tfoot td{background:#eef3f8;font-weight:700;border-top:2px solid var(--navy)}
 #scTable td,#scTable th{text-align:center}
 #scTable td:first-child{text-align:left;font-weight:600}
 #calRows td:nth-child(2){text-align:left}
-/* formül kutusu */
-.panel.formula .fbox{display:flex;flex-direction:column;gap:var(--s1);font-size:12px;background:#f8fafc;border:1px dashed var(--line);border-radius:var(--radius-md);padding:var(--s2);line-height:1.6}
+/* formül kutusu — artık SADECE modal içinde (.modal-box .fbox kuralı geçerli) */
 .wK{color:#8e44ad;font-weight:600}.wS{color:#0077b6;font-weight:600}.wSt{color:#5b6b7c;font-weight:600}.wH{color:#b26a00;font-weight:600}
-/* Toptan Bütçe — "Nasıl Çalışır?" bilgi paneli */
+/* Toptan Bütçe — "Nasıl Hesaplanıyor?" bilgi modal'ının gövdesi (#toptanModal) */
 .toptan-info-box{font-size:12px;color:#33475b;line-height:1.6}
 .toptan-info-box p{margin:0 0 10px}
 .toptan-info-box ul{margin:0 0 10px;padding-left:18px}
