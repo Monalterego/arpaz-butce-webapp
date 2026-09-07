@@ -257,6 +257,37 @@
     <!-- ========== TAB: TOPTAN ========== -->
     <div class="tabpane" data-pane="toptan" style="display:none">
       <div class="panel">
+        <h2>Özet / Rollup <span class="pill">Toptan bütçenin LY → TY alt-toplamı</span></h2>
+        <div class="rollup-controls">
+          <div class="segmented" id="toptanRollupLevelSeg">
+            <button type="button" class="mini" data-level="uh1">ÜH1</button>
+            <button type="button" class="mini is-on" data-level="uh2">ÜH2</button>
+            <button type="button" class="mini" data-level="uh3">ÜH3</button>
+          </div>
+        </div>
+        <div class="kpis rollup-kpis" id="toptanRollupKpis"></div>
+        <div style="overflow:auto">
+          <table id="toptanRollupTable">
+            <thead>
+              <tr>
+                <th>Grup</th>
+                <th title="Geçen sene aynı periyot satış adedi (alt-toplam)">LY Satış</th>
+                <th title="Bu sene toptan bütçe (alt-toplam)">TY Toptan</th>
+                <th title="Toptan satış büyümesi: TY Toptan / LY Satış − 1">LFL %</th>
+                <th title="Stoktan arındırılmış büyüme">R-LFL %</th>
+                <th title="Stok büyümesi: TY Plan Stok / LY Stok − 1">Stok Δ%</th>
+                <th title="Bayi Stok Ay: LY → TY">Cover LY→TY</th>
+                <th title="Geçen sene ağırlıklı ortalama satış fiyatı">LY Ort.Fiyat</th>
+                <th title="Bu sene ağırlıklı ortalama satış fiyatı">TY Ort.Fiyat</th>
+                <th title="Ortalama fiyat değişimi: TY Ort.Fiyat / LY Ort.Fiyat − 1">Fiyat Δ%</th>
+              </tr>
+            </thead>
+            <tbody id="toptanRollupRows"></tbody>
+            <tfoot><tr id="toptanRollupFoot"></tr></tfoot>
+          </table>
+        </div>
+      </div>
+      <div class="panel">
         <h2 style="display:flex;align-items:center;gap:8px;">Toptan Bütçe Tablosu <span class="pill">Sell-in</span>
           <button type="button" class="info-ico" id="toptanInfoBtn" title="Toptan bütçesi nasıl hesaplanıyor?" aria-label="Toptan bütçesi nasıl hesaplanıyor?">i</button>
         </h2>

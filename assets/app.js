@@ -635,6 +635,93 @@ function updateAll() {
     renderRollupTable(data);
   }
 
+  // --- Toptan Bütçe Özet / Rollup Paneli ---
+  const toptanRollupState = { level: "uh2" };
+
+  function computeToptanRollup(level) {
+    const stokPolitikasi = readToptanStokPolitikasi();
+    const sets = loadSavedMixSets();
+    const groups = new Map();
+    const totalAcc = rollupBlankAcc("TOPLAM");
+    sets.forEach((set) => {
+      const groupKey = level === "uh1" ? set.uh1 : level === "uh2" ? set.uh2 : set.uh3;
+      if (!groupKey || !Array.isArray(set.rows)) return;
+      if (!groups.has(groupKey)) groups.set(groupKey, rollupBlankAcc(groupKey));
+      const g = groups.get(groupKey);
+      set.rows.forEach((r) => {
+        const don = donusumSatir(r.salesBudget, r.targetperiod || r.baseperiod, stokPolitikasi);
+        const row = {
+          sales: r.sales || 0,
+          salesBudget: don.toptanButce || 0,
+          stock: r.stock || 0,
+          planStock: r.planStock || 0,
+          lyFiyat: r.lyFiyat || 0,
+          tyFiyat: r.tyFiyat || r.lyFiyat || 0,
+          tyRevenue: (don.toptanButce || 0) * (r.tyFiyat || r.lyFiyat || 0),
+        };
+        rollupAddRow(g, row);
+        rollupAddRow(totalAcc, row);
+      });
+    });
+    return { rows: Array.from(groups.values()).map(rollupFinalize), total: rollupFinalize(totalAcc) };
+  }
+
+  function renderToptanRollupKpis(t) {
+    const el = $("toptanRollupKpis");
+    if (!el) return;
+    const kpis = [
+      ["Satış Bütçe (TY)", fmtN(t.tyBudget), "adet · LFL " + fmtP0(t.lfl), t.lfl >= 0 ? "up" : "down"],
+      ["R-LFL", fmtP0(t.rlfl), "stoktan arındırılmış büyüme", t.rlfl >= 0 ? "up" : "down"],
+      ["Stok Büyümesi", fmtP0(t.stokD), "TY Plan Stok / LY Stok − 1", t.stokD >= 0 ? "up" : "down"],
+      ["Bayi Stok Ay (Cover)", `${fmtD(t.lyCover)} → ${fmtD(t.tyCover)}`, "LY → TY ay", ""],
+      ["Ort. Fiyat Değişimi", fmtP0(t.fiyatD), "ağırlıklı ortalama fiyat", t.fiyatD >= 0 ? "up" : "down"],
+    ];
+    el.innerHTML = kpis.map((k) => `<div class="kpi"><div class="lbl">${k[0]}</div>
+      <div class="val">${k[1]}</div><div class="sub ${k[3]}">${k[2]}</div></div>`).join("");
+  }
+
+  function renderToptanRollupTable(data) {
+    const tbody = $("toptanRollupRows");
+    if (!tbody) return;
+    if (!data.rows.length) {
+      tbody.innerHTML = `<tr><td colspan="10" style="text-align:center;color:var(--grey);padding:18px">Henüz kayıt yok — "Bütçe &amp; Stok Karışımı" ekranında <b>Kaydet</b>'e bastığında çalışma burada özetlenir.</td></tr>`;
+      $("toptanRollupFoot").innerHTML = "";
+      return;
+    }
+    tbody.innerHTML = data.rows.map((r) => `
+      <tr>
+        <td>${r.name}</td>
+        <td class="num-cell">${fmtN(r.lySales)}</td>
+        <td class="num-cell">${fmtN(r.tyBudget)}</td>
+        <td>${rollupDeltaSpan(r.lfl)}${rollupLflBar(r.lfl)}</td>
+        <td class="${r.rlfl >= 0 ? "up" : "down"}">${fmtP0(r.rlfl)}</td>
+        <td class="${r.stokD >= 0 ? "up" : "down"}">${fmtP0(r.stokD)}</td>
+        <td>${fmtD(r.lyCover)} → ${fmtD(r.tyCover)}</td>
+        <td class="num-cell">${fmtN(r.lyFiyat)}</td>
+        <td class="num-cell">${fmtN(r.tyFiyat)}</td>
+        <td class="${r.fiyatD >= 0 ? "up" : "down"}">${fmtP0(r.fiyatD)}</td>
+      </tr>`).join("");
+    const t = data.total;
+    $("toptanRollupFoot").innerHTML = `
+      <td>TOPLAM</td>
+      <td class="num-cell">${fmtN(t.lySales)}</td>
+      <td class="num-cell">${fmtN(t.tyBudget)}</td>
+      <td class="${t.lfl >= 0 ? "up" : "down"}">${fmtP0(t.lfl)}</td>
+      <td class="${t.rlfl >= 0 ? "up" : "down"}">${fmtP0(t.rlfl)}</td>
+      <td class="${t.stokD >= 0 ? "up" : "down"}">${fmtP0(t.stokD)}</td>
+      <td>${fmtD(t.lyCover)} → ${fmtD(t.tyCover)}</td>
+      <td class="num-cell">${fmtN(t.lyFiyat)}</td>
+      <td class="num-cell">${fmtN(t.tyFiyat)}</td>
+      <td class="${t.fiyatD >= 0 ? "up" : "down"}">${fmtP0(t.fiyatD)}</td>`;
+  }
+
+  function renderToptanRollup() {
+    if (!$("toptanRollupKpis") || !state.sel) return;
+    const data = computeToptanRollup(toptanRollupState.level);
+    renderToptanRollupKpis(data.total);
+    renderToptanRollupTable(data);
+  }
+
   // --- Kayıtlı ÜH3 / ÜH4 miks kayıtları ---
   const MIX_SAVE_KEY = "arpaz_saved_mix_sets";
   function escapeHtml(str) {
@@ -1051,6 +1138,7 @@ function updateAll() {
   // iki tablo aynı filtre durumunu paylaşıyor (bkz. computeToptanFromSaved).
   function renderSavedMixRows() {
     renderToptanFromSaved();
+    renderToptanRollup();
     const list = $("savedMixList");
     if (!list) return;
     const tbody = list.querySelector(".saved-mix-table tbody");
@@ -1282,6 +1370,7 @@ function updateAll() {
     renderSavedMixTable();
     updateSaveButtonState();
     renderToptanFromSaved(); // Kayıtlar değişti — Toptan Bütçe bundan besleniyor
+    renderToptanRollup();    // Toptan tabındaki Özet/Rollup da güncellensin
     renderRollup();          // Özet/Rollup da Kayıtlar'dan besleniyor
   }
 
@@ -1302,6 +1391,7 @@ function updateAll() {
     }
     if (t === "toptan") {
       renderToptanFromSaved(); // sekme her açıldığında Kayıtlar'ın GÜNCEL halini yansıt
+      renderToptanRollup();
       syncToptanHeaderOffset(); // sekme az önce görünür oldu, gizliyken 0 ölçülen yükseklik şimdi düzeltilir
     }
   }
@@ -1776,6 +1866,13 @@ function updateAll() {
         renderRollup();
       });
     });
+    document.querySelectorAll("#toptanRollupLevelSeg [data-level]").forEach((btn) => {
+      btn.addEventListener("click", () => {
+        toptanRollupState.level = btn.dataset.level;
+        document.querySelectorAll("#toptanRollupLevelSeg [data-level]").forEach((b) => b.classList.toggle("is-on", b === btn));
+        renderToptanRollup();
+      });
+    });
     const rollupBaseEl = $("rollup_baseperiod");
     if (rollupBaseEl) rollupBaseEl.addEventListener("change", renderRollup);
     const rollupTargetEl = $("rollup_targetperiod");
@@ -2218,8 +2315,9 @@ function updateAll() {
     // Bayi Stok Politikası doğrudan çarpanı değiştirir — anında yeniden hesapla.
     // initNumFields() −/+ butonlarında "input" olayı YAYAR, bu yüzden tek dinleyici yeter.
     const spEl = $("t_stokpolitikasi");
-    if (spEl) spEl.addEventListener("input", renderToptanFromSaved);
+    if (spEl) spEl.addEventListener("input", () => { renderToptanFromSaved(); renderToptanRollup(); });
     renderToptanFromSaved(); // ilk yüklemede de Kayıtlar'ın o anki hali gösterilsin
+    renderToptanRollup();    // Toptan tabındaki Özet/Rollup da ilk yüklemede Kayıtlar'ı yansıtsın
     renderRollup();          // Özet/Rollup da ilk yüklemede Kayıtlar'ı yansıtsın
     renderCalendar();
     renderKanit();
