@@ -428,7 +428,7 @@ tfoot td{background:#eef3f8;font-weight:700;border-top:2px solid var(--navy)}
    kanit.js, toptan_katsayi.js, renderKanit*) bu ekranla ÇELİŞTİĞİ için kaldırıldı:
    "Doğruluk %89" envanter köprüsünün kimlik testiydi, "Lead-Time −2 Ay" ise bu
    metnin açıkça reddettiği gecikme terimiydi. */
-.metodoloji{max-width:900px;line-height:1.6;font-size:var(--f-body);color:var(--ink)}
+.metodoloji{line-height:1.6;font-size:var(--f-body);color:var(--ink)}
 .metodoloji h3{font-size:var(--f-h1);color:var(--navy);margin:var(--s3) 0 var(--s1)}
 .metodoloji p{margin:0 0 var(--s1)}
 .metodoloji .ozet{font-size:14px;padding:var(--s2);margin:0 0 var(--s2);
