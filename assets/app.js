@@ -638,46 +638,55 @@ function updateAll() {
   // --- Toptan Bütçe Özet / Rollup Paneli ---
   const toptanRollupState = { level: "uh2" };
 
+  // Rollup KENDİ hesabını YAPMAZ — Toptan tablosunun satır bazlı toptanButce
+  // değerlerini toplar. TEK doğruluk kaynağı satır seviyesidir; burada bağımsız
+  // bir formül çalıştırma.
+  //
+  // ESKİ HATA (tekrarlama): bu fonksiyon loadSavedMixSets()'i doğrudan okuyup
+  // donusumSatir(r.salesBudget, r.targetperiod ...) çağırıyordu. Ama periyot SATIR
+  // seviyesinde YOK — buildFlatRows() onu SET seviyesinden (dims.targetperiod)
+  // taşır. r.targetperiod undefined kalıyor, ayNo() null dönüyor ve çarpan yıllık
+  // K'ya (≈1,00) düşüyordu. Bütçe tek bir ay için çalışıldığından o ayın çarpanı
+  // geçerlidir. Aynı sebeple set.uh1/uh2/uh3 de yanlıştı (dims altında duruyorlar)
+  // ve rowPassesFilters uygulanmadığı için filtreler rollup'a yansımıyordu.
+  //
+  // Çarpan da hesaplanmaz, TÜRETİLİR: toptan toplamı ÷ perakende toplamı. Böylece
+  // birden fazla ay seçiliyse ağırlıklı ortalama kendiliğinden doğru çıkar.
   function computeToptanRollup(level) {
-    const stokPolitikasi = readToptanStokPolitikasi();
-    const sets = loadSavedMixSets();
+    const satirlar = computeToptanFromSaved().rows;
     const groups = new Map();
-    const totalAcc = { name: "TOPLAM", perakendeBudget: 0, toptanBudget: 0, adFark: 0 };
+    const totalAcc = { perakendeBudget: 0, toptanBudget: 0, adFark: 0 };
 
-    sets.forEach((set) => {
-      const groupKey = level === "uh1" ? set.uh1 : level === "uh2" ? set.uh2 : set.uh3;
-      if (!groupKey || !Array.isArray(set.rows)) return;
+    satirlar.forEach((r) => {
+      const groupKey = level === "uh1" ? r.uh1 : level === "uh2" ? r.uh2 : r.uh3;
+      if (!groupKey) return;
       if (!groups.has(groupKey)) groups.set(groupKey, { name: groupKey, perakendeBudget: 0, toptanBudget: 0, adFark: 0 });
       const g = groups.get(groupKey);
-      set.rows.forEach((r) => {
-        const don = donusumSatir(r.salesBudget, r.targetperiod || r.baseperiod, stokPolitikasi);
-        const perakendeBudget = Number(r.salesBudget) || 0;
-        const toptanBudget = Number(don.toptanButce) || 0;
-        g.perakendeBudget += perakendeBudget;
-        g.toptanBudget += toptanBudget;
-        g.adFark += toptanBudget - perakendeBudget;
-        totalAcc.perakendeBudget += perakendeBudget;
-        totalAcc.toptanBudget += toptanBudget;
-        totalAcc.adFark += toptanBudget - perakendeBudget;
-      });
+      const perakendeBudget = Number(r.salesBudget) || 0;
+      const toptanBudget = Number(r.toptanButce) || 0;
+      g.perakendeBudget += perakendeBudget;
+      g.toptanBudget += toptanBudget;
+      g.adFark += toptanBudget - perakendeBudget;
+      totalAcc.perakendeBudget += perakendeBudget;
+      totalAcc.toptanBudget += toptanBudget;
+      totalAcc.adFark += toptanBudget - perakendeBudget;
     });
 
+    const turetilmisCarpan = (toptan, perakende) => (perakende ? toptan / perakende : 0);
     const rows = Array.from(groups.values()).map((g) => ({
       name: g.name,
       perakendeBudget: g.perakendeBudget,
       toptanBudget: g.toptanBudget,
-      carpan: g.perakendeBudget ? g.toptanBudget / g.perakendeBudget : 0,
+      carpan: turetilmisCarpan(g.toptanBudget, g.perakendeBudget),
       adFark: g.adFark,
     }));
-
     const total = {
       name: "TOPLAM",
       perakendeBudget: totalAcc.perakendeBudget,
       toptanBudget: totalAcc.toptanBudget,
-      carpan: totalAcc.perakendeBudget ? totalAcc.toptanBudget / totalAcc.perakendeBudget : 0,
+      carpan: turetilmisCarpan(totalAcc.toptanBudget, totalAcc.perakendeBudget),
       adFark: totalAcc.adFark,
     };
-
     return { rows, total };
   }
 
