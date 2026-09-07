@@ -42,7 +42,9 @@ YASAK — son kullanıcılar İngilizce kullanamaz.
 
 ## 2) Teknik Mimari ve Dosya Yapısı
 Framework/derleme YOK. Live Server veya `python -m http.server` ile açılır.
-Script yükleme sırası KRİTİK: **hierarchy.js → realdata.js → data.js → app.js**.
+Script yükleme sırası KRİTİK: **hierarchy.js → realdata.js → data.js →
+toptan_katsayi.js → kanit.js → donusum.js → app.js**. (app.js her zaman EN SON;
+bir IIFE olduğu için ondan önce yüklenen modüllerin global'lerini görür.)
 
 ```
 arpaz-butce-webapp/
@@ -51,6 +53,8 @@ arpaz-butce-webapp/
 │   ├── hierarchy.js      # HIERARCHY: gerçek ürün ağacı (ÜH1→ÜH4), İPTAL elenmiş
 │   ├── realdata.js       # ORGS, REGIONS, REAL_DATA (gerçek demo veri, sentetik kâr)
 │   ├── data.js           # DataService: filtre + satır şemasına indirgeme
+│   ├── donusum.js        # DONUSUM + toptanButce/toptanButceTablo/ayNo (ulusal aylık
+│   │                     #   perakende→toptan çarpanı; yüklü ama UI'a HENÜZ BAĞLI DEĞİL)
 │   ├── app.js            # Hesap motoru + kaskad seçim + tablo + senaryo + forecast
 │   └── styles.css        # Stiller (Segoe UI, lacivert/yeşil tema)
 ├── docs/                 # Detaylı özellik referansları (SADECE o özelliğe dokunurken oku)
