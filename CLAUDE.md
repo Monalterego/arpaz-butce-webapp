@@ -54,7 +54,8 @@ arpaz-butce-webapp/
 │   ├── realdata.js       # ORGS, REGIONS, REAL_DATA (gerçek demo veri, sentetik kâr)
 │   ├── data.js           # DataService: filtre + satır şemasına indirgeme
 │   ├── donusum.js        # DONUSUM + toptanButce/toptanButceTablo/ayNo (ulusal aylık
-│   │                     #   perakende→toptan çarpanı; yüklü ama UI'a HENÜZ BAĞLI DEĞİL)
+│   │                     #   perakende→toptan çarpanı; Toptan Bütçe'de TARİHSEL
+│   │                     #   REFERANS kolonlarını besler — bkz. docs/TOPTAN_KOPRUSU.md 13.10)
 │   ├── app.js            # Hesap motoru + kaskad seçim + tablo + senaryo + forecast
 │   └── styles.css        # Stiller (Segoe UI, lacivert/yeşil tema)
 ├── docs/                 # Detaylı özellik referansları (SADECE o özelliğe dokunurken oku)
@@ -722,6 +723,14 @@ Toptan Bütçe sekmesi + "Perakende → Toptan (Kanıt)" sekmesi için envanter
 köprüsü formülü (r=0,894 doğrulanmış), mevsimsel katsayı, outlier kuralları,
 Kayıtlar'dan besleme mimarisi ("Revize Et"), Durum/Sevki-durdur mantığı ve
 kanıt vitrini render fonksiyonlarının TAM detayı:
+
+**DİKKAT — Toptan Bütçe tablosunda İKİ BAĞIMSIZ yöntem yan yana durur:**
+**Toptan Bütçe** (envanter köprüsü) **RESMÎ** sonuçtur; **Toptan Bütçe (Tarihsel
+Referans)** (donusum.js ulusal aylık çarpanı) sadece KONTROLdür. Üçüncü kolon
+**İma Edilen Stok Değişimi** ikisinin farkını perakende bütçesine oranlar ve
+|%15| aşılırsa uyarı rozeti gösterir. Hangisinin resmî olduğu görsel olarak
+ayrıştırılmıştır (accent grup başlığı + kalın vurgulu hücre vs. soluk gri grup +
+düz hücre) — bu ayrımı BOZMA. Tam detay:
 
 **→ `docs/TOPTAN_KOPRUSU.md`** (SADECE bu sekmelere dokunurken oku)
 

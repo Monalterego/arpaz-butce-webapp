@@ -1046,7 +1046,11 @@ function updateAll() {
   // SADECE <tbody> içeriğini günceller — thead/filtre input'larına DOKUNMAZ,
   // bu yüzden filtre kutusuna yazarken input DOM'dan hiç silinmiyor, focus/
   // imleç konumu korunuyor. Filtre input'larının "input" olayı bunu çağırır.
+  // NOT: filtre değişikliklerinin TEK hunisi burasıdır (dropdown'daki üç yol da
+  // buraya iner), bu yüzden Toptan Bütçe tazelemesi de buraya bağlandı —
+  // iki tablo aynı filtre durumunu paylaşıyor (bkz. computeToptanFromSaved).
   function renderSavedMixRows() {
+    renderToptanFromSaved();
     const list = $("savedMixList");
     if (!list) return;
     const tbody = list.querySelector(".saved-mix-table tbody");
@@ -1562,8 +1566,49 @@ function updateAll() {
   // AYNI düzleştirme) her satırın kendi salesBudget/hedefCover/stock/uh2/targetperiod
   // değerini taşıyor; global parametreler (Hedef Stok Büyümesi % vb.) burayı ETKİLEMEZ,
   // sadece yeniden Kaydet/Revize Et yapılan gruplar güncellenir (bkz. CLAUDE.md 13).
+  // İma Edilen Stok Değişimi uyarı eşiği — perakende bütçesinin oranı olarak.
+  const TOPTAN_IMA_ESIK = 0.15;
+
+  // donusum.js köprüsü (Toptan Bütçe (Tarihsel Referans) kolonu).
+  // DİKKAT — bu çağrı KASITLI olarak ayrı bir fonksiyonda: computeToptanFromSaved()'in
+  // map callback'inde "toptanButce" adında YEREL bir const var (envanter köprüsü
+  // sonucu). Global toptanButce()'yi o kapsamdan çağırmak TDZ hatası verir
+  // ("Cannot access 'toptanButce' before initialization"). Buraya taşıma.
+  function donusumSatir(perakendeAdet, targetperiod) {
+    if (typeof toptanButce !== "function" || typeof DONUSUM === "undefined") {
+      return { carpan: 1, toptanRef: Math.round(Math.max(0, perakendeAdet)),
+        aciklama: "donusum.js yüklenmedi — çarpan 1,000 kabul edildi" };
+    }
+    const ay = ayNo(targetperiod); // "2027 Ocak" / "2027-01" / 1 → 1..12, aksi halde null
+    if (!ay) {
+      // "Tam Yıl" / "—" gibi tek aya inmeyen periyotlar: yıllık çarpan K.
+      // (CARPAN'ın perakende sezonuyla AĞIRLIKLI ortalaması tam olarak K'dır —
+      // düz ortalaması 1,0294'tür, onu KULLANMA.)
+      const k = DONUSUM.K;
+      return { carpan: k, toptanRef: Math.round(Math.max(0, perakendeAdet) * k),
+        aciklama: "Hedef Periyot tek bir aya inmiyor (Tam Yıl / belirsiz) — yıllık çarpan K kullanıldı" };
+    }
+    const d = toptanButce(perakendeAdet, ay);
+    return { carpan: d.carpan, toptanRef: d.toptanButce, aciklama: d.aciklama };
+  }
+  // |İma Edilen Stok Değişimi| eşiği aşarsa uyarı rozeti. Rozet metni KISA tutuldu:
+  // measureToptanColumnWidths() kolon genişliğini metinden ölçüyor, uzun metin
+  // kolonu gereksiz şişirir; tam gerekçe title'da.
+  function toptanImaBadge(x) {
+    if (x == null || !isFinite(x) || Math.abs(x) <= TOPTAN_IMA_ESIK) return "";
+    return x > 0
+      ? '<span class="badge b-amber" title="Köprü, tarihsel bayi davranışının ÜSTÜNDE sevkiyat öngörüyor — bayi normun üzerinde stoklatılıyor">Norm üstü</span>'
+      : '<span class="badge b-amber" title="Köprü, tarihsel bayi davranışının ALTINDA sevkiyat öngörüyor — bayi stoğu eritiliyor">Norm altı</span>';
+  }
+  function toptanCarpanCls(c) {
+    if (c > 1.10) return " toptan-carpan-yuksek";
+    if (c < 0.90) return " toptan-carpan-dusuk";
+    return "";
+  }
   function computeToptanFromSaved() {
-    const flat = buildFlatRows();
+    // Perakende Bütçe ekranındaki kolon filtreleri burada da geçerli — AYNI
+    // rowPassesFilters(), yani iki tablo tek filtre durumunu paylaşır.
+    const flat = buildFlatRows().filter(rowPassesFilters);
     const rows = flat.map((r) => {
       // Mevsimsel katsayı için ay artık HER SATIRIN KENDİ Hedef Periyot'undan türetiliyor
       const ay = monthFromPeriodLabel(r.targetperiod);
@@ -1577,11 +1622,18 @@ function updateAll() {
       const toptanButce = Math.max(0, toptanButceRaw);
       const toptanButceClipped = toptanButceRaw < 0;
       const mevsimselKontrol = r.salesBudget * katsayi;
+      // Tarihsel referans (donusum.js) — köprüden BAĞIMSIZ ikinci görüş.
+      const don = donusumSatir(r.salesBudget, r.targetperiod);
+      // İma Edilen Stok Değişimi: köprünün tarihsel bayi davranışından sapması.
+      // Pay olarak EKRANDA GÖRÜNEN (kırpılmış) köprü değeri kullanılır ki kolon
+      // resmî sonuçla tutarlı okunsun. Perakende bütçesi 0 ise tanımsız → null.
+      const imaStok = r.salesBudget > 0 ? (toptanButce - don.toptanRef) / r.salesBudget : null;
       return {
         org: r.salesOrg, region: r.region, uh1: r.uh1, uh2: r.uh2, uh3: r.uh3, name: r.name,
         baseperiod: r.baseperiod, targetperiod: r.targetperiod, stock: r.stock, sales: r.sales,
         salesBudget: r.salesBudget, hedefCover: r.hedefCover, lyCover: r.lyCover,
         mevcutBayiStok, hedefBayiStok, deltaStok, toptanButce, toptanButceClipped, mevsimselKontrol,
+        carpan: don.carpan, carpanAciklama: don.aciklama, toptanRef: don.toptanRef, imaStok,
       };
     });
     // TOPLAM = TÜM kayıtlı satırların (kırpılmış) toplamı (önce kırp, sonra topla)
@@ -1590,9 +1642,14 @@ function updateAll() {
       a.salesBudget += r.salesBudget; a.mevcutBayiStok += r.mevcutBayiStok;
       a.hedefBayiStok += r.hedefBayiStok; a.deltaStok += r.deltaStok;
       a.toptanButce += r.toptanButce; a.mevsimselKontrol += r.mevsimselKontrol;
+      a.toptanRef += r.toptanRef;
       return a;
-    }, { stock: 0, sales: 0, salesBudget: 0, mevcutBayiStok: 0, hedefBayiStok: 0, deltaStok: 0, toptanButce: 0, mevsimselKontrol: 0 });
+    }, { stock: 0, sales: 0, salesBudget: 0, mevcutBayiStok: 0, hedefBayiStok: 0, deltaStok: 0, toptanButce: 0, mevsimselKontrol: 0, toptanRef: 0 });
     T.cover = T.sales ? T.stock / T.sales : 0; // ana tablodaki footCover ile AYNI yöntem (ağırlıklı toplam)
+    // TOPLAM satırın çarpanı satır çarpanlarının ortalaması DEĞİL, gerçekleşen
+    // orandır (toplam referans ÷ toplam perakende) — ay karışımını doğru yansıtır.
+    T.carpan = T.salesBudget > 0 ? T.toptanRef / T.salesBudget : 0;
+    T.imaStok = T.salesBudget > 0 ? (T.toptanButce - T.toptanRef) / T.salesBudget : null;
     return { rows, T };
   }
   // Durum kolonu: TOPTAN BÜTÇE artık HER ZAMAN sayısal (bkz. renderToptanFromSaved) —
@@ -1652,7 +1709,11 @@ function updateAll() {
       Array.from(tr.children).forEach((td, i) => {
         if (i >= widths.length) return;
         const badge = td.querySelector(".badge");
-        const text = (badge ? badge.textContent : td.textContent).trim();
+        // td.textContent rozet metnini ZATEN içerir. Eskiden sadece rozet metni
+        // ölçülüyordu; Durum kolonunda hücre = yalnız rozet olduğu için fark yoktu.
+        // İma Edilen Stok Değişimi hücresinde sayı + rozet BİRLİKTE duruyor, bu
+        // yüzden tüm hücre metni ölçülmeli — aksi halde kolon dar kalır.
+        const text = td.textContent.trim();
         const bold = td.classList.contains("num-cell") || td.classList.contains("toptan-highlight");
         const pad = badge ? TOPTAN_CELL_PAD + TOPTAN_BADGE_PAD : TOPTAN_CELL_PAD;
         const w = measureTextWidth(text, bold ? boldCellFont : cellFont) + pad;
@@ -1678,7 +1739,13 @@ function updateAll() {
     if (!tbody) return;
     const data = computeToptanFromSaved();
     if (!data.rows.length) {
-      tbody.innerHTML = `<tr><td colspan="16" style="text-align:center;color:var(--grey);padding:18px">Henüz kayıtlı bir çalışma yok. Önce Bütçe &amp; Stok Miks ekranından bir kombinasyon çalışıp kaydedin.</td></tr>`;
+      // Filtre yüzünden mi boş, gerçekten kayıt yok mu? İkisi FARKLI mesaj —
+      // "kayıt yok" derken aslında filtrelenmiş olmak kullanıcıyı yanıltır.
+      const hicKayitYok = !buildFlatRows().length;
+      const mesaj = hicKayitYok
+        ? "Önce Perakende Bütçe ekranından bütçe çalışın. Toptan bütçesi otomatik türetilir."
+        : "Perakende Bütçe ekranındaki filtreler bu tabloya da uygulanıyor ve hiçbir satır kalmadı. Filtreleri gevşetin.";
+      tbody.innerHTML = `<tr><td colspan="19" style="text-align:center;color:var(--grey);padding:18px">${mesaj}</td></tr>`;
       $("toptanFoot").innerHTML = "";
       renderToptanConvergence(data.T, false);
       autoFitToptanColumns();
@@ -1702,6 +1769,9 @@ function updateAll() {
         <td class="num-cell ${r.deltaStok >= 0 ? "up" : "down"}">${r.deltaStok >= 0 ? "+" : ""}${fmtN(r.deltaStok)}</td>
         <td>${toptanDurumBadge(r)}</td>
         <td class="num-cell toptan-highlight">${fmtN(r.toptanButce)}</td>
+        <td class="num-cell${toptanCarpanCls(r.carpan)}" title="${escapeHtml(r.carpanAciklama)}">${fmtD3(r.carpan)}</td>
+        <td class="num-cell">${fmtN(r.toptanRef)}</td>
+        <td class="num-cell ${r.imaStok == null ? "" : (r.imaStok >= 0 ? "up" : "down")}">${r.imaStok == null ? "—" : (r.imaStok > 0 ? "+" : "") + fmtP(r.imaStok)} ${toptanImaBadge(r.imaStok)}</td>
       </tr>`).join("");
     $("toptanFoot").innerHTML = `
       <td>TOPLAM</td>
@@ -1719,7 +1789,10 @@ function updateAll() {
       <td class="num-cell">${fmtN(data.T.hedefBayiStok)}</td>
       <td class="num-cell ${data.T.deltaStok >= 0 ? "up" : "down"}">${data.T.deltaStok >= 0 ? "+" : ""}${fmtN(data.T.deltaStok)}</td>
       <td>—</td>
-      <td class="num-cell toptan-highlight">${fmtN(data.T.toptanButce)}</td>`;
+      <td class="num-cell toptan-highlight">${fmtN(data.T.toptanButce)}</td>
+      <td class="num-cell${toptanCarpanCls(data.T.carpan)}" title="Toplam Tarihsel Referans ÷ Toplam Perakende Bütçe (satır çarpanlarının düz ortalaması DEĞİL)">${fmtD3(data.T.carpan)}</td>
+      <td class="num-cell">${fmtN(data.T.toptanRef)}</td>
+      <td class="num-cell ${data.T.imaStok == null ? "" : (data.T.imaStok >= 0 ? "up" : "down")}">${data.T.imaStok == null ? "—" : (data.T.imaStok > 0 ? "+" : "") + fmtP(data.T.imaStok)} ${toptanImaBadge(data.T.imaStok)}</td>`;
     renderToptanConvergence(data.T, true);
     autoFitToptanColumns();
   }

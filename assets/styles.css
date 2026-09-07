@@ -231,6 +231,14 @@ tfoot td{background:#eef3f8;font-weight:700;border-top:2px solid var(--navy)}
 #toptanGrid th.tgrp-perakende{background:#0b6e4f;text-align:center}
 #toptanGrid th.tgrp-stok{background:#13315c;text-align:center}
 #toptanGrid th.tgrp-sonuc{background:var(--accent2);text-align:center}
+/* TARİHSEL REFERANS grubu KONTROL katmanıdır, resmî sonuç DEĞİL — bu yüzden
+   tgrp-sonuc'un accent mavisinden kasıtlı olarak daha soluk/nötr bir gri-lacivert.
+   Hücreleri de .toptan-highlight almaz; görsel ağırlık resmî kolonda kalsın. */
+#toptanGrid th.tgrp-referans{background:#5a6b7c;text-align:center}
+/* Çarpan tinti YARI SAYDAM olmalı: opak zemin tbody tr:hover vurgusunu ezer
+   (aynı gerekçe .pct-hl'de de geçerli, bkz. CLAUDE.md Bölüm 7). */
+#toptanGrid td.toptan-carpan-yuksek{background:rgba(46,125,50,.10)}
+#toptanGrid td.toptan-carpan-dusuk{background:rgba(198,40,40,.10)}
 /* table-layout:auto genişlikleri öngörülemez sıkıştırıyor (bkz. #grid/.saved-mix-table
    yorumları) — table-layout:fixed KORUNUR, sadece genişlik artık SABİT değil: her
    render'da app.js'teki autoFitToptanColumns() gerçek hücre içeriğini ölçüp <colgroup>

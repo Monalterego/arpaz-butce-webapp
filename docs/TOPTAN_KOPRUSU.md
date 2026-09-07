@@ -154,3 +154,58 @@ sekmeyi ETKİLEMEZ (bilinçli, çünkü veri zaten sabit/geçmiş). Alt fonksiyo
 
 **KISIT (bilinçli):** Bu sekme SADECE görsel/kanıt — bütçe hesaplarına (computeFromData,
 computeToptanFromSaved) dokunmaz, hiçbir kullanıcı girdisi almaz.
+
+---
+
+### 13.10 Tarihsel Referans Kolonları (donusum.js) — KONTROL katmanı
+
+Toptan Bütçe tablosuna, envanter köprüsünün YANINA üç kolon eklendi (16 → **19 kolon**).
+Bunlar köprüyü DEĞİŞTİRMEZ, çapraz kontrol eder.
+
+| Kolon | Formül | Not |
+|---|---|---|
+| Dönüşüm Çarpanı | `DONUSUM.CARPAN[ay-1]` | 3 ondalık; tooltip = `donusum.js` `ACIKLAMA`; >1,10 yeşil tint, <0,90 kırmızı tint |
+| Toptan Bütçe (Tarihsel Referans) | `Perakende Satış Adet Bütçe × Çarpan` | **RESMÎ DEĞİL** |
+| İma Edilen Stok Değişimi | `(KöprüToptan − Referans) ÷ Perakende Bütçe` | %olarak gösterilir; `|x| > 0,15` → amber "Norm üstü"/"Norm altı" rozeti |
+
+**Resmî olan hangisi?** Envanter köprüsü. Görsel ayrım KASITLIdır ve korunmalı:
+grup başlıkları `TOPTAN SONUCU (RESMÎ)` (accent, `.tgrp-sonuc`) vs.
+`TARİHSEL REFERANS (KONTROL)` (soluk gri, `.tgrp-referans`); köprü hücresi
+`.toptan-highlight` (kalın, mavi zemin), referans hücreleri düz `.num-cell`.
+
+**İma Edilen Stok Değişimi'nin okunuşu:** sıfıra yakın = köprü tarihsel bayi
+davranışıyla uyumlu. Büyük pozitif = bayi tarihsel normun ÜSTÜNDE stoklatılıyor.
+Büyük negatif = bayi stoğu eritiliyor. Payda `salesBudget` 0 ise `null` → "—",
+rozet yok. Pay olarak EKRANDA GÖRÜNEN (0'a kırpılmış) köprü değeri kullanılır ki
+kolon resmî sonuçla tutarlı okunsun.
+
+**TOPLAM satırının çarpanı** satır çarpanlarının düz ortalaması DEĞİL,
+`T.toptanRef / T.salesBudget` (gerçekleşen oran) — ay karışımını doğru yansıtır.
+
+#### Üç tuzak (hepsi yaşandı, tekrar etmesin)
+
+1. **TDZ tuzağı — `donusumSatir()` neden ayrı bir fonksiyon:**
+   `computeToptanFromSaved()`'in map callback'inde `const toptanButce` adında
+   YEREL bir değişken var (köprü sonucu). Global `toptanButce()`'yi o kapsamdan
+   çağırmak `ReferenceError: Cannot access 'toptanButce' before initialization`
+   verir. Çağrıyı o callback'in İÇİNE TAŞIMA.
+2. **"Tam Yıl" / "—" periyodu:** `ayNo()` null döner. Bu durumda yıllık çarpan
+   `DONUSUM.K` (1,0011) kullanılır. `CARPAN`'ın DÜZ ortalamasını (1,0294)
+   KULLANMA — doğru olan perakende sezonuyla ağırlıklı ortalamadır ve o tam K'dır.
+3. **Kolon genişliği ölçümü:** `measureToptanColumnWidths()` eskiden rozet varsa
+   SADECE rozet metnini ölçüyordu (Durum kolonunda hücre = yalnız rozet olduğu için
+   sorun çıkmıyordu). İma kolonunda sayı + rozet BİRLİKTE durduğu için artık
+   `td.textContent` (rozet metnini zaten içerir) ölçülüyor.
+
+#### Filtreler
+`computeToptanFromSaved()` `buildFlatRows().filter(rowPassesFilters)` kullanır —
+yani **Perakende Bütçe sekmesindeki kolon filtreleri Toptan'a da uygulanır**, iki
+tablo TEK filtre durumunu (`savedMixFilterState`) paylaşır. Tazeleme
+`renderSavedMixRows()` içinden tetiklenir (filtre değişikliklerinin tek hunisi).
+
+#### Boş durum — İKİ FARKLI mesaj
+- Hiç kayıt yok → *"Önce Perakende Bütçe ekranından bütçe çalışın. Toptan bütçesi
+  otomatik türetilir."*
+- Kayıt var ama filtre hepsini eledi → *"...filtreler bu tabloya da uygulanıyor ve
+  hiçbir satır kalmadı. Filtreleri gevşetin."*
+  İkisini TEK mesaja indirgeme; "kayıt yok" derken aslında filtrelenmiş olmak yanıltır.
