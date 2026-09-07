@@ -1511,24 +1511,44 @@ function updateAll() {
   // --- Toptan (Sell-in) Bütçe — bkz. docs/TOPTAN_KOPRUSU.md 13.10 ---
   function donusumSatir(perakendeAdet, targetperiod) {
     if (typeof toptanButce !== "function" || typeof DONUSUM === "undefined") {
-      const c = 1;
-      return { carpan: c, toptanButce: Math.round(Math.max(0, perakendeAdet) * c),
-        aciklama: "donusum.js yüklenmedi — çarpan 1,000 kabul edildi" };
+      return { carpanRaw: 1, aciklama: "donusum.js yüklenmedi — çarpan 1,000 kabul edildi" };
     }
     const ay = ayNo(targetperiod); // "2027 Ocak" / "2027-01" / 1 → 1..12, aksi halde null
     if (!ay) {
       // "Tam Yıl" / "—" gibi tek aya inmeyen periyotlar: yıllık çarpan K.
       // (CARPAN'ın perakende sezonuyla AĞIRLIKLI ortalaması tam olarak K'dır —
       // düz ortalaması 1,0294'tür, onu KULLANMA.)
-      const c = DONUSUM.K;
-      return { carpan: Math.round(c * 1000) / 1000,
-        toptanButce: Math.round(Math.max(0, perakendeAdet) * Math.max(0, c)),
+      return { carpanRaw: DONUSUM.K,
         aciklama: "Hedef Periyot tek bir aya inmiyor (Tam Yıl / belirsiz) — yıllık çarpan K kullanıldı" };
     }
     // 3. parametre (stokPolitikasi) donusum.js API'sinde DURUYOR, varsayılanı 0.
     // Arayüzden BESLENMİYOR — "Bayi Stok Politikası %" alanı kaldırıldı.
     const d = toptanButce(perakendeAdet, ay);
-    return { carpan: d.carpan, toptanButce: d.toptanButce, aciklama: d.aciklama };
+    return { carpanRaw: d.carpan, aciklama: d.aciklama };
+  }
+
+  // --- Planlama Parametreleri (Toptan) — Miks ekranındakinden AYRI ---
+  // ID'ler t_m_* (Miks'te m_*). Ortak state YOK, localStorage YOK: input'ların
+  // kendisi state'tir, sayfa yenilenince 0'a döner. Kayıtlı bütçelere yazılmaz.
+  // Dönüşüm çarpanının ÜZERİNE çarpımsal biner: Π(1 + değer/100).
+  const TOPTAN_CAMP = [
+    { id: "t_m_paro", label: "Paro" },
+    { id: "t_m_bundle", label: "Bundle" },
+    { id: "t_m_event", label: "Özel gün" },
+    { id: "t_m_gam", label: "Gam değişimi" },
+    { id: "t_m_kota", label: "Kota ayı" },
+  ];
+  function readToptanCamp() {
+    let factor = 1;
+    const parts = [];
+    TOPTAN_CAMP.forEach((c) => {
+      const el = $(c.id);
+      const v = el ? parseFloat(el.value) : 0;
+      const pct = isFinite(v) ? v : 0;
+      factor *= 1 + pct / 100;
+      if (pct !== 0) parts.push(`${c.label} ${pct > 0 ? "+" : "−"}%${String(Math.abs(pct)).replace(".", ",")}`);
+    });
+    return { factor, parts };
   }
   function toptanCarpanCls(c) {
     if (c > 1.10) return " toptan-carpan-yuksek";
@@ -1544,13 +1564,27 @@ function updateAll() {
     // Perakende Bütçe ekranındaki kolon filtreleri burada da geçerli — AYNI
     // rowPassesFilters(), yani iki tablo tek filtre durumunu paylaşır.
     const flat = buildFlatRows().filter(rowPassesFilters);
+    const camp = readToptanCamp();
     const rows = flat.map((r) => {
       const don = donusumSatir(r.salesBudget, r.targetperiod);
+      // Toptan = Perakende × [Dönüşüm Çarpanı(ay)] × Π(1 + kampanya/gam-kota %)
+      // Tutar HAM çarpanla hesaplanır (görüntülenen 3 ondalık değerle değil) ki
+      // tüm alanlar %0 iken sonuç önceki davranışla BİREBİR aynı kalsın.
+      const carpanRaw = don.carpanRaw * camp.factor;
+      const carpan = Math.round(carpanRaw * 1000) / 1000;
+      const toptanButce = Math.round(Math.max(0, r.salesBudget) * carpanRaw);
+      const carpanAciklama = [
+        `Temel çarpan: ${fmtD3(don.carpanRaw)} — ${don.aciklama}`,
+        camp.parts.length
+          ? `Kampanya & Gam/Kota: ×${fmtD3(camp.factor)}  (${camp.parts.join(" · ")})`
+          : "Kampanya & Gam/Kota: etkisiz (tüm alanlar %0)",
+        `Toplam çarpan: ${fmtD3(carpan)}`,
+      ].join("\n");
       return {
         org: r.salesOrg, region: r.region, uh1: r.uh1, uh2: r.uh2, uh3: r.uh3, name: r.name,
         baseperiod: r.baseperiod, targetperiod: r.targetperiod,
         salesBudget: r.salesBudget,
-        carpan: don.carpan, carpanAciklama: don.aciklama, toptanButce: don.toptanButce,
+        carpan, carpanAciklama, toptanButce,
       };
     });
     const T = rows.reduce((a, r) => {
@@ -1618,6 +1652,8 @@ function updateAll() {
     const tbody = $("toptanRows");
     if (!tbody) return;
     const data = computeToptanFromSaved();
+    const multEl = $("t_mult_total");
+    if (multEl) multEl.textContent = fmtX(readToptanCamp().factor);
     if (!data.rows.length) {
       // Filtre yüzünden mi boş, gerçekten kayıt yok mu? İkisi FARKLI mesaj —
       // "kayıt yok" derken aslında filtrelenmiş olmak kullanıcıyı yanıltır.
@@ -2173,6 +2209,16 @@ function updateAll() {
     updateAll();
     updateSelInfo();
     updateSaveButtonState();
+    // Toptan parametreleri değişince tablo VE rollup anında yeniden hesaplanır.
+    // Rollup satır sonuçlarını topladığı için ayrı bir formül GEREKMEZ.
+    // initNumFields() −/+ butonlarında "input" olayı YAYAR, tek dinleyici yeter.
+    TOPTAN_CAMP.forEach((c) => {
+      const el = $(c.id);
+      if (el) el.addEventListener("input", () => {
+        renderToptanFromSaved();
+        renderToptanRollup();
+      });
+    });
     renderToptanFromSaved(); // ilk yüklemede de Kayıtlar'ın o anki hali gösterilsin
     renderToptanRollup();    // Toptan tabındaki Özet/Rollup da ilk yüklemede Kayıtlar'ı yansıtsın
     renderRollup();          // Özet/Rollup da ilk yüklemede Kayıtlar'ı yansıtsın

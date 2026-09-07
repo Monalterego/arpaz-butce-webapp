@@ -228,6 +228,11 @@ tfoot td{background:#eef3f8;font-weight:700;border-top:2px solid var(--navy)}
 #toptanGrid th.tgrp-sonuc{background:var(--accent2);text-align:center}
 /* Çarpan tinti YARI SAYDAM olmalı: opak zemin tbody tr:hover vurgusunu ezer
    (aynı gerekçe .pct-hl'de de geçerli, bkz. CLAUDE.md Bölüm 7). */
+/* Toptan parametre paneli 2 kart — .params varsayılan 4 sütunlu gridini ezer.
+   720px altındaki tek sütun kırılımı da burada tekrarlanmalı: .params.toptan-camp
+   seçicisi baz .params kuralından daha spesifik, aksi halde mobilde 2 sütun kalır. */
+.params.toptan-camp{grid-template-columns:repeat(2,minmax(0,1fr))}
+@media (max-width:720px){.params.toptan-camp{grid-template-columns:minmax(0,1fr)}}
 #toptanGrid td.toptan-carpan-yuksek{background:rgba(46,125,50,.10)}
 #toptanGrid td.toptan-carpan-dusuk{background:rgba(198,40,40,.10)}
 /* table-layout:auto genişlikleri öngörülemez sıkıştırıyor (bkz. #grid/.saved-mix-table
