@@ -1,0 +1,141 @@
+<!-- ============================================================
+     Perakende → Toptan (Metodoloji) ekranı
+     Son kullanıcıya yönelik açıklama. index.html'e gömülebilir.
+     ============================================================ -->
+
+<section class="metodoloji">
+
+  <h2>Perakende bütçesinden toptan bütçesine nasıl geçiyoruz?</h2>
+
+  <p class="ozet">
+    Bayi bir yılda ne kadar satıyorsa, ArPaz o bayiye bir yılda yaklaşık
+    aynı adedi faturalar. Ama <strong>aylara dağılımı aynı değildir.</strong>
+    Bayi sezon öncesinde yüklenir, yıl sonunda elindeki stoktan satar.
+    Toptan bütçesi bu davranışa göre hesaplanır.
+  </p>
+
+  <h3>1. Yıllık toplamda toptan = perakende</h3>
+  <p>
+    Bayi kanalında son beş yılın toptan / perakende oranı:
+  </p>
+  <table class="mini">
+    <tr><th>2021</th><th>2022</th><th>2023</th><th>2024</th><th>2025</th></tr>
+    <tr><td>1,02</td><td>0,97</td><td>0,98</td><td>1,03</td><td>1,00</td></tr>
+  </table>
+  <p class="not">
+    Beş yılın ortalaması <strong>1,00</strong>. Bayiye faturaladığımız adet,
+    bayinin sattığı adede eşitlenir. Fark yalnızca bayinin stok seviyesindeki
+    değişimden gelir.
+  </p>
+
+  <h3>2. Aylık dağılım farklıdır</h3>
+  <p>
+    Aşağıdaki tablo, bir ayın yıl içindeki payını gösterir.
+    <strong>1,00 = ortalama bir ay.</strong>
+  </p>
+  <table class="metod-tablo">
+    <thead>
+      <tr><th>Ay</th><th>Perakende</th><th>Toptan</th><th>Çarpan</th><th>Neden?</th></tr>
+    </thead>
+    <tbody>
+      <tr class="yuksek"><td>Ocak</td><td>0,71</td><td>0,99</td><td><b>1,405</b></td>
+          <td>Perakendenin en zayıf ayı, bayi sezon öncesi yükleniyor</td></tr>
+      <tr class="yuksek"><td>Şubat</td><td>0,72</td><td>0,94</td><td><b>1,306</b></td>
+          <td>Sezon öncesi yükleme sürüyor</td></tr>
+      <tr class="yuksek"><td>Mart</td><td>0,94</td><td>1,12</td><td><b>1,204</b></td>
+          <td>Yılın en yüksek toptan ayı</td></tr>
+      <tr><td>Nisan</td><td>0,90</td><td>0,94</td><td>1,049</td><td>Dengeleniyor</td></tr>
+      <tr><td>Mayıs</td><td>1,07</td><td>1,04</td><td>0,977</td><td>Dengeli ay</td></tr>
+      <tr><td>Haziran</td><td>1,07</td><td>1,09</td><td>1,017</td><td>Dengeli ay</td></tr>
+      <tr class="dusuk"><td>Temmuz</td><td>1,28</td><td>1,02</td><td><b>0,801</b></td>
+          <td>Perakende zirvede, satış stoktan karşılanıyor</td></tr>
+      <tr><td>Ağustos</td><td>1,04</td><td>0,98</td><td>0,938</td>
+          <td>Perakende toptanın üzerinde</td></tr>
+      <tr><td>Eylül</td><td>0,92</td><td>1,00</td><td>1,092</td>
+          <td>Sezon öncesi hafif yükleme</td></tr>
+      <tr class="dusuk"><td>Ekim</td><td>1,09</td><td>0,93</td><td><b>0,856</b></td>
+          <td>Bayi stok eritiyor</td></tr>
+      <tr><td>Kasım</td><td>1,13</td><td>1,10</td><td>0,974</td><td>Dengeli ay</td></tr>
+      <tr class="dusuk"><td>Aralık</td><td>1,14</td><td>0,83</td><td><b>0,734</b></td>
+          <td>Yıl sonu: bayi stoktan satıyor, sipariş vermiyor</td></tr>
+    </tbody>
+  </table>
+
+  <h3>3. Hesap</h3>
+  <pre class="formul">
+Toptan Satış Adet Bütçe = Perakende Satış Adet Bütçe × Çarpan(ay)
+  </pre>
+  <p class="ornek">
+    <b>Örnek.</b> 2027 Ocak için perakende bütçen 1.387 adet ise,
+    toptan bütçen <b>1.387 × 1,405 = 1.949 adet</b> olur.<br>
+    Aynı ürün için 2027 Aralık'ta perakende bütçen 1.387 adet olsaydı,
+    toptan bütçen <b>1.019 adet</b> olurdu.
+  </p>
+
+  <h3>4. Ne kadar güvenilir?</h3>
+  <p>
+    Aşağıdaki sapma oranları, 2023-2025 yıllarında model geçmiş veriyle
+    sınanarak ölçülmüştür. Perakende bütçesinin doğru olduğu varsayılır;
+    ölçülen yalnızca dönüşümün kendi hatasıdır.
+  </p>
+  <table class="mini">
+    <tr><th>Kırılım</th><th>Sapma</th><th>Kullanım</th></tr>
+    <tr><td>Toplam × Ay</td><td>±%10</td><td>Planlamaya uygun</td></tr>
+    <tr><td>ÜH2 × Ay</td><td>±%25</td><td>Yönlendirici</td></tr>
+    <tr><td>ÜH4 × Ay</td><td>±%37</td><td>Yalnızca sistem beslemesi</td></tr>
+  </table>
+  <p class="not">
+    Tek bir ürün grubunun tek bir aydaki bayi siparişi doğası gereği
+    değişkendir; bu sapma modelin zayıflığından değil, işin doğasından gelir.
+    <strong>Toplulaştırdıkça isabet artar.</strong> Çarpan kullanmak toplam
+    seviyedeki sapmayı %14'ten %10'a indirir — asıl kazanç buradadır.
+    Taahhüt verirken ÜH2 veya toplam seviyeyi kullanın.
+  </p>
+
+  <h3>5. Modelin bilmediği: stok politikası</h3>
+  <p>
+    Çarpanlar, bayi stok seviyesinin bugünkü haliyle kalacağını varsayar.
+    Şirket "seneye %10 daha az stokla çalışacağız" derse, bayinin stoğunu
+    eritmesi için toptan bütçesinin ayrıca aşağı çekilmesi gerekir.
+    Bu bir <strong>bütçe kararıdır, veriden gelmez</strong>; ekrandaki
+    stok politikası alanından girilir.
+  </p>
+
+  <details class="kaynak">
+    <summary>Metodoloji ve veri kaynağı</summary>
+    <ul>
+      <li><b>Veri:</b> 2021-2025, aylık, ÜH4 kırılımında, adet bazında.
+          Yalnızca <b>bayi kanalı</b>. Yedek parça, proje/kurumsal, solar ve
+          pazaryeri kanalları kapsam dışıdır; bunlar ayrı bütçelenir.</li>
+      <li><b>Çarpan:</b> Toptanın aylık payı ÷ perakendenin aylık payı.
+          Son beş tam yılın ortalaması.</li>
+      <li><b>Neden ürün grubu bazında ayrı çarpan yok?</b> Denendi, ulusal
+          çarpanı geçemedi. Mevsimsel kategorilerde beş yıllık veri, grup
+          bazında güvenilir bir aylık profil çıkarmaya yetmiyor.</li>
+      <li><b>Neden gecikme terimi yok?</b> Toptan, perakendeyi önden
+          götürmüyor. Fark yalnızca mevsimsel dağılımda.</li>
+      <li><b>Güncelleme:</b> Çarpanlar her bütçe döneminde son beş yıllık
+          veriyle yenilenir.</li>
+    </ul>
+  </details>
+
+</section>
+
+<style>
+.metodoloji { max-width: 900px; line-height: 1.6; }
+.metodoloji .ozet { font-size: 1.05em; padding: 12px 16px;
+                    border-left: 3px solid #2b6cb0; background: #f7fafc; }
+.metodoloji table { border-collapse: collapse; margin: 12px 0; width: 100%; }
+.metodoloji th, .metodoloji td { border: 1px solid #e2e8f0; padding: 6px 10px;
+                                 text-align: left; }
+.metodoloji th { background: #f1f5f9; font-weight: 600; }
+.metodoloji .mini { width: auto; }
+.metodoloji tr.yuksek td { background: #f0f9f4; }
+.metodoloji tr.dusuk  td { background: #fef5f5; }
+.metodoloji .formul { background: #1a202c; color: #e2e8f0; padding: 12px 16px;
+                      border-radius: 4px; font-size: 0.95em; }
+.metodoloji .ornek { background: #fffbeb; padding: 10px 14px; border-radius: 4px; }
+.metodoloji .not { color: #4a5568; font-size: 0.94em; }
+.metodoloji .kaynak { margin-top: 20px; }
+.metodoloji .kaynak summary { cursor: pointer; font-weight: 600; color: #2b6cb0; }
+</style>
