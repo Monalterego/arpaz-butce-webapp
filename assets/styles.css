@@ -232,6 +232,13 @@ tfoot td{background:#eef3f8;font-weight:700;border-top:2px solid var(--navy)}
    720px altındaki tek sütun kırılımı da burada tekrarlanmalı: .params.toptan-camp
    seçicisi baz .params kuralından daha spesifik, aksi halde mobilde 2 sütun kalır. */
 .params.toptan-camp{grid-template-columns:repeat(2,minmax(0,1fr))}
+.toptan-revize-row{display:flex;align-items:center;gap:var(--s2);margin-top:var(--s3);flex-wrap:wrap}
+.toptan-revize-row .note{margin:0;flex:1;min-width:200px}
+.toptan-revize-row .note.karisik{color:var(--warn);font-weight:600}
+/* .saved-mix-table deseni yeniden kullanılıyor ama onun min-width:3286px'i bu 16
+   kolonluk tablo için yanlış — sadece o ezilir, gerisi (başlık/zebra/hover) aynen gelir. */
+.saved-mix-table.toptan-fix-table{min-width:0}
+.saved-mix-table.toptan-fix-table th,.saved-mix-table.toptan-fix-table td{white-space:nowrap}
 @media (max-width:720px){.params.toptan-camp{grid-template-columns:minmax(0,1fr)}}
 #toptanGrid td.toptan-carpan-yuksek{background:rgba(46,125,50,.10)}
 #toptanGrid td.toptan-carpan-dusuk{background:rgba(198,40,40,.10)}

@@ -355,7 +355,18 @@
             <div class="mult-total"><span>Toplam Çarpan</span><span id="t_mult_total">1,00x</span></div>
           </div>
         </div>
+        <div class="toptan-revize-row">
+          <span class="note" id="toptanRevizeNote"></span>
+          <button type="button" class="btn" id="toptanRevizeBtn">Revize Et</button>
+        </div>
         <div class="note">Bu çarpanlar SADECE Toptan Bütçe tablosunu ve yukarıdaki Özet/Rollup'ı etkiler; dönüşüm çarpanının üzerine çarpımsal olarak binerler. Perakende (Kaynak) sütununa ve kayıtlı bütçelere DOKUNMAZLAR. Bütçe &amp; Stok Karışımı ekranındaki aynı isimli alanlardan bağımsızdır ve sayfa yenilenince sıfırlanır.</div>
+      </div>
+
+      <!-- TOPTAN DÜZELTMELERİ — "Revize Et" ile kaydedilen satır bazlı override'lar -->
+      <div class="panel">
+        <h2>Toptan Düzeltmeleri <span class="pill">Kayıtlı</span></h2>
+        <div class="note" style="margin-bottom:var(--s2)">Bir kayıt, kendi tam kimliğine (Teşkilat · Bölge · ÜH1-ÜH4 · Baz/Hedef Periyot) TAM eşleşen satıra uygulanır ve o satır artık paneldeki canlı değerleri DEĞİL bu kayıtlı değerleri kullanır. Kaydı silmek satırı canlı panel önizlemesine geri döndürür.</div>
+        <div id="toptanFixList"></div>
       </div>
     </div>
 

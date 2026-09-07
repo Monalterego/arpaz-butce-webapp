@@ -259,3 +259,65 @@ TEK filtre durumunu (`savedMixFilterState`) paylaşır. Tazeleme
 `getToptanKatsayi`, `monthFromPeriodLabel`, `TR_MONTH_NUM`; CSS'te
 `.toptan-convergence*` ve `#toptanGrid th.tgrp-referans`. Hiçbiri gizli/yorumlu
 DEĞİL — silindiler.
+
+---
+
+### 13.11 Planlama Parametreleri (Toptan) + Toptan Düzeltmeleri
+
+İki katman var ve **karıştırılmamalı**: paneldeki CANLI değerler geçici bir
+ÖNİZLEMEdir; "Revize Et" ile kaydedilen **Toptan Düzeltmeleri** kalıcıdır.
+
+```
+Toptan = Perakende × [DönüşümÇarpanı(ay) + StokPolitikası%] × Π(1 + Paro/Bundle/ÖzelGün/Gam/Kota %)
+```
+
+#### Panel (`#t_m_paro` … `#t_m_kota`)
+Miks ekranındaki `m_*` alanlarından **AYRI**; ortak state YOK, localStorage YOK.
+Sayfa yenilenince sıfırlanır, kayıtlı Perakende Bütçe kayıtlarına YAZILMAZ, Miks
+ekranındaki canlı tabloyu ETKİLEMEZ. `stokPolitikasi` şemada durur ama arayüzde
+karşılığı yoktur (alan kaldırıldı, bkz. 13.10) — her zaman 0.
+
+#### Store: `toptanDuzeltmeleri` (`localStorage["arpaz_toptan_duzeltmeleri"]`)
+Kayıtlı mix set'leriyle aynı desen (JSON dizi). Kayıt şeması:
+```js
+{ dims: { org, region, uh1, uh2, uh3, uh4, baseperiod, targetperiod },
+  params: { paro, bundle, event, gam, kota, stokPolitikasi },
+  savedAt }
+```
+Kimlik anahtarı `toptanFixKey(dims)` — 8 alanın `␟` ile birleşimi.
+`buildFlatRows()` çıktısı org'u `salesOrg`, ÜH4'ü `name` taşıdığı için kimlik
+**TEK yerde** (`toptanRowDims()`) kurulur; tablo, "Revize Et" ve düzeltme listesi
+aynı anahtarı üretsin diye. Yeni bir dims alanı eklersen `TOPTAN_DIM_ALANLARI`'nı
+güncelle — eski kayıtların anahtarı değişir ve eşleşmeyi kaybederler.
+
+#### "Revize Et" (`#toptanRevizeBtn`)
+Görünen satır sayısını onay kutusunda gösterir, onaylanınca her görünen satır için
+**kendi tam dims kimliğiyle upsert** eder (varsa günceller, yoksa ekler).
+
+#### Render önceliği
+Her satır çizilirken kendi dims'ine TAM eşleşen kayıt aranır:
+- **Varsa** → o kaydın params'ı kullanılır (canlı panel DEĞİL) + `.badge b-blue`
+  **"Revize Edildi"** rozeti; tooltip'te parametreler ve kayıt zamanı.
+- **Yoksa** → eski davranış: canlı panel değerleri geçici önizleme, hiçbir yere yazılmaz.
+
+Dönüşüm Çarpanı tooltip'i dört satır: temel çarpan + ay gerekçesi · kampanya/gam-kota
+katkısı · toplam çarpan · **kaynak** (kayıtlı düzeltme mi, canlı önizleme mi).
+
+#### Panel yükleme kuralı (`syncToptanPanelFromFixes`)
+**Panel, GÖRÜNEN satırların KAYITLI durumunu yansıtır:**
+- hepsi aynı düzeltmeyi taşıyor → o değerler yüklenir
+- karışık **VEYA hiç kayıt yok** → panel **0'a döner** + "Karışık…" uyarısı
+
+**Sıfırlama şart, kaldırma:** aksi halde bir önceki filtrede yüklenen değer,
+düzeltmesi OLMAYAN satırlara canlı önizleme olarak sızar. (Yaşandı: Beko satırı
+revize edilip filtre kaldırılınca Arçelik satırı da 1.949 yerine 2.144 görünüyordu;
+kayıt silindiğinde de satır 1.018'e dönmüyordu.)
+
+**SADECE** filtre değişiminde, sekme açılışında, init'te ve Revize/Sil sonrasında
+çağrılır. Parametre input'una her yazışta çağırma — kullanıcının yazdığını ezer.
+Panel değerlerini yazarken `input` olayı YAYILMAZ (sonsuz döngü olur); tablo bir
+kez elle tazelenir.
+
+#### Rollup
+Ayrı formül YOK — satır sonuçlarını topladığı için düzeltmeler kendiliğinden yansır
+(bkz. 13.10 ve `computeToptanRollup`).

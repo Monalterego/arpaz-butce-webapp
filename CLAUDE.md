@@ -748,6 +748,12 @@ API'sinde `toptanButce(adet, periyot, stokPolitikasi = 0)` parametresi DURUYOR a
 arayüzden BESLENMİYOR — `donusumSatir()` onu hiç geçmez, varsayılan 0 devreye girer.
 Sonuç: toptan bütçesi bayi stok seviyesini sabit varsayar.
 
+Toptan sekmesinde ayrıca **Planlama Parametreleri (Toptan)** (`t_m_*`, Miks'teki
+`m_*`'dan AYRI, oturumluk önizleme) ve **"Revize Et" → Toptan Düzeltmeleri** store'u
+(`localStorage["arpaz_toptan_duzeltmeleri"]`, satır bazlı kalıcı override) vardır.
+Kayıtlı düzeltmesi olan satır canlı paneli DEĞİL kaydı kullanır ve "Revize Edildi"
+rozeti taşır. Panel yükleme kuralı ve üç tuzağı için bkz. Bölüm 13.11.
+
 **→ `docs/TOPTAN_KOPRUSU.md`** (SADECE bu sekmelere dokunurken oku)
 
 ---
