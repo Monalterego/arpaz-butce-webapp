@@ -642,39 +642,51 @@ function updateAll() {
     const stokPolitikasi = readToptanStokPolitikasi();
     const sets = loadSavedMixSets();
     const groups = new Map();
-    const totalAcc = rollupBlankAcc("TOPLAM");
+    const totalAcc = { name: "TOPLAM", perakendeBudget: 0, toptanBudget: 0, adFark: 0 };
+
     sets.forEach((set) => {
       const groupKey = level === "uh1" ? set.uh1 : level === "uh2" ? set.uh2 : set.uh3;
       if (!groupKey || !Array.isArray(set.rows)) return;
-      if (!groups.has(groupKey)) groups.set(groupKey, rollupBlankAcc(groupKey));
+      if (!groups.has(groupKey)) groups.set(groupKey, { name: groupKey, perakendeBudget: 0, toptanBudget: 0, adFark: 0 });
       const g = groups.get(groupKey);
       set.rows.forEach((r) => {
         const don = donusumSatir(r.salesBudget, r.targetperiod || r.baseperiod, stokPolitikasi);
-        const row = {
-          sales: r.sales || 0,
-          salesBudget: don.toptanButce || 0,
-          stock: r.stock || 0,
-          planStock: r.planStock || 0,
-          lyFiyat: r.lyFiyat || 0,
-          tyFiyat: r.tyFiyat || r.lyFiyat || 0,
-          tyRevenue: (don.toptanButce || 0) * (r.tyFiyat || r.lyFiyat || 0),
-        };
-        rollupAddRow(g, row);
-        rollupAddRow(totalAcc, row);
+        const perakendeBudget = Number(r.salesBudget) || 0;
+        const toptanBudget = Number(don.toptanButce) || 0;
+        g.perakendeBudget += perakendeBudget;
+        g.toptanBudget += toptanBudget;
+        g.adFark += toptanBudget - perakendeBudget;
+        totalAcc.perakendeBudget += perakendeBudget;
+        totalAcc.toptanBudget += toptanBudget;
+        totalAcc.adFark += toptanBudget - perakendeBudget;
       });
     });
-    return { rows: Array.from(groups.values()).map(rollupFinalize), total: rollupFinalize(totalAcc) };
+
+    const rows = Array.from(groups.values()).map((g) => ({
+      name: g.name,
+      perakendeBudget: g.perakendeBudget,
+      toptanBudget: g.toptanBudget,
+      carpan: g.perakendeBudget ? g.toptanBudget / g.perakendeBudget : 0,
+      adFark: g.adFark,
+    }));
+
+    const total = {
+      name: "TOPLAM",
+      perakendeBudget: totalAcc.perakendeBudget,
+      toptanBudget: totalAcc.toptanBudget,
+      carpan: totalAcc.perakendeBudget ? totalAcc.toptanBudget / totalAcc.perakendeBudget : 0,
+      adFark: totalAcc.adFark,
+    };
+
+    return { rows, total };
   }
 
   function renderToptanRollupKpis(t) {
     const el = $("toptanRollupKpis");
     if (!el) return;
     const kpis = [
-      ["Satış Bütçe (TY)", fmtN(t.tyBudget), "adet · LFL " + fmtP0(t.lfl), t.lfl >= 0 ? "up" : "down"],
-      ["R-LFL", fmtP0(t.rlfl), "stoktan arındırılmış büyüme", t.rlfl >= 0 ? "up" : "down"],
-      ["Stok Büyümesi", fmtP0(t.stokD), "TY Plan Stok / LY Stok − 1", t.stokD >= 0 ? "up" : "down"],
-      ["Bayi Stok Ay (Cover)", `${fmtD(t.lyCover)} → ${fmtD(t.tyCover)}`, "LY → TY ay", ""],
-      ["Ort. Fiyat Değişimi", fmtP0(t.fiyatD), "ağırlıklı ortalama fiyat", t.fiyatD >= 0 ? "up" : "down"],
+      ["Perakende Bütçe", fmtN(t.perakendeBudget), "kaynak bütçe", "up"],
+      ["Toptan Bütçe", fmtN(t.toptanBudget), `Dönüşüm ${fmtD3(t.carpan)}x`, "up"],
     ];
     el.innerHTML = kpis.map((k) => `<div class="kpi"><div class="lbl">${k[0]}</div>
       <div class="val">${k[1]}</div><div class="sub ${k[3]}">${k[2]}</div></div>`).join("");
@@ -684,35 +696,25 @@ function updateAll() {
     const tbody = $("toptanRollupRows");
     if (!tbody) return;
     if (!data.rows.length) {
-      tbody.innerHTML = `<tr><td colspan="10" style="text-align:center;color:var(--grey);padding:18px">Henüz kayıt yok — "Bütçe &amp; Stok Karışımı" ekranında <b>Kaydet</b>'e bastığında çalışma burada özetlenir.</td></tr>`;
+      tbody.innerHTML = `<tr><td colspan="5" style="text-align:center;color:var(--grey);padding:18px">Henüz kayıt yok — "Bütçe &amp; Stok Karışımı" ekranında <b>Kaydet</b>'e bastığında çalışma burada özetlenir.</td></tr>`;
       $("toptanRollupFoot").innerHTML = "";
       return;
     }
     tbody.innerHTML = data.rows.map((r) => `
       <tr>
         <td>${r.name}</td>
-        <td class="num-cell">${fmtN(r.lySales)}</td>
-        <td class="num-cell">${fmtN(r.tyBudget)}</td>
-        <td>${rollupDeltaSpan(r.lfl)}${rollupLflBar(r.lfl)}</td>
-        <td class="${r.rlfl >= 0 ? "up" : "down"}">${fmtP0(r.rlfl)}</td>
-        <td class="${r.stokD >= 0 ? "up" : "down"}">${fmtP0(r.stokD)}</td>
-        <td>${fmtD(r.lyCover)} → ${fmtD(r.tyCover)}</td>
-        <td class="num-cell">${fmtN(r.lyFiyat)}</td>
-        <td class="num-cell">${fmtN(r.tyFiyat)}</td>
-        <td class="${r.fiyatD >= 0 ? "up" : "down"}">${fmtP0(r.fiyatD)}</td>
+        <td class="num-cell">${fmtN(r.perakendeBudget)}</td>
+        <td class="num-cell">${fmtN(r.toptanBudget)}</td>
+        <td class="num-cell">${fmtD3(r.carpan)}</td>
+        <td class="num-cell ${r.adFark >= 0 ? "up" : "down"}">${fmtN(r.adFark)}</td>
       </tr>`).join("");
     const t = data.total;
     $("toptanRollupFoot").innerHTML = `
       <td>TOPLAM</td>
-      <td class="num-cell">${fmtN(t.lySales)}</td>
-      <td class="num-cell">${fmtN(t.tyBudget)}</td>
-      <td class="${t.lfl >= 0 ? "up" : "down"}">${fmtP0(t.lfl)}</td>
-      <td class="${t.rlfl >= 0 ? "up" : "down"}">${fmtP0(t.rlfl)}</td>
-      <td class="${t.stokD >= 0 ? "up" : "down"}">${fmtP0(t.stokD)}</td>
-      <td>${fmtD(t.lyCover)} → ${fmtD(t.tyCover)}</td>
-      <td class="num-cell">${fmtN(t.lyFiyat)}</td>
-      <td class="num-cell">${fmtN(t.tyFiyat)}</td>
-      <td class="${t.fiyatD >= 0 ? "up" : "down"}">${fmtP0(t.fiyatD)}</td>`;
+      <td class="num-cell">${fmtN(t.perakendeBudget)}</td>
+      <td class="num-cell">${fmtN(t.toptanBudget)}</td>
+      <td class="num-cell">${fmtD3(t.carpan)}</td>
+      <td class="num-cell ${t.adFark >= 0 ? "up" : "down"}">${fmtN(t.adFark)}</td>`;
   }
 
   function renderToptanRollup() {
