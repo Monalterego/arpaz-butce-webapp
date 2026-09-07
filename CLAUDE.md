@@ -54,8 +54,8 @@ arpaz-butce-webapp/
 │   ├── realdata.js       # ORGS, REGIONS, REAL_DATA (gerçek demo veri, sentetik kâr)
 │   ├── data.js           # DataService: filtre + satır şemasına indirgeme
 │   ├── donusum.js        # DONUSUM + toptanButce/toptanButceTablo/ayNo (ulusal aylık
-│   │                     #   perakende→toptan çarpanı; Toptan Bütçe'de TARİHSEL
-│   │                     #   REFERANS kolonlarını besler — bkz. docs/TOPTAN_KOPRUSU.md 13.10)
+│   │                     #   perakende→toptan çarpanı; Toptan Bütçe'nin TEK hesap
+│   │                     #   yöntemi — bkz. docs/TOPTAN_KOPRUSU.md)
 │   ├── app.js            # Hesap motoru + kaskad seçim + tablo + senaryo + forecast
 │   └── styles.css        # Stiller (Segoe UI, lacivert/yeşil tema)
 ├── docs/                 # Detaylı özellik referansları (SADECE o özelliğe dokunurken oku)
@@ -724,13 +724,26 @@ köprüsü formülü (r=0,894 doğrulanmış), mevsimsel katsayı, outlier kural
 Kayıtlar'dan besleme mimarisi ("Revize Et"), Durum/Sevki-durdur mantığı ve
 kanıt vitrini render fonksiyonlarının TAM detayı:
 
-**DİKKAT — Toptan Bütçe tablosunda İKİ BAĞIMSIZ yöntem yan yana durur:**
-**Toptan Bütçe** (envanter köprüsü) **RESMÎ** sonuçtur; **Toptan Bütçe (Tarihsel
-Referans)** (donusum.js ulusal aylık çarpanı) sadece KONTROLdür. Üçüncü kolon
-**İma Edilen Stok Değişimi** ikisinin farkını perakende bütçesine oranlar ve
-|%15| aşılırsa uyarı rozeti gösterir. Hangisinin resmî olduğu görsel olarak
-ayrıştırılmıştır (accent grup başlığı + kalın vurgulu hücre vs. soluk gri grup +
-düz hücre) — bu ayrımı BOZMA. Tam detay:
+**ENVANTER KÖPRÜSÜ KALDIRILDI (2026-09-07) — GERİ EKLEME.** Toptan Bütçe artık
+TEK yöntemle hesaplanır:
+
+    Toptan Bütçe = Perakende Satış Adet Bütçe × Dönüşüm Çarpanı(Hedef Periyot ayı)
+
+Çarpan `assets/donusum.js` içindeki ulusal aylık sabittir (2021-2025 bayi kanalı).
+**Kaldırma gerekçesi (kullanıcı kararı):** köprü YANLIŞ BİR ZAMAN EKSENİ üzerine
+kuruluydu — `Mevcut Bayi Stok` geçmiş (LY) bir stok fotoğrafı, `Hedef Bayi Stok`
+ise gelecek (TY) bütçeden türetiliyordu; ikisinin farkı anlamlı bir sevkiyat
+düzeltmesi vermiyordu. Düzeltmenin yolu yok, çünkü **eksik olan veri gelecekte,
+geçmişte değil.** Bununla birlikte kalkanlar: Mevcut/Hedef Bayi Stok, Δ Stok,
+Durum ("Sevk et"/"Sevki durdur"), yakınsama şeridi, ÜH2×ay mevsimsel katsayı
+kullanımı, Hedef Cover ve Stock Cover kolonları, Toptan Bütçe (Tarihsel Referans)
+ve İma Edilen Stok Değişimi kolonları.
+
+Kullanıcının stok kararını söyleyebileceği tek yer artık **Bayi Stok Politikası %**
+alanıdır (`#t_stokpolitikasi`, Toptan sekmesinin üstünde, varsayılan 0). Değeri
+`/100` ile çarpana DOĞRUDAN eklenir. Perakende ekranındaki **Hedef Stok Büyüme %**
+ile BİRLEŞTİRME — farklı katmanlar: o bayinin kendi stok bütçesini, bu ise sell-in
+ile sell-out arasındaki farkı ayarlar.
 
 **→ `docs/TOPTAN_KOPRUSU.md`** (SADECE bu sekmelere dokunurken oku)
 

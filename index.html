@@ -260,11 +260,18 @@
         <h2 style="display:flex;align-items:center;gap:8px;">Toptan Bütçe Tablosu <span class="pill">Sell-in</span>
           <button type="button" class="info-ico" id="toptanInfoBtn" title="Toptan bütçesi nasıl hesaplanıyor?" aria-label="Toptan bütçesi nasıl hesaplanıyor?">i</button>
         </h2>
-        <div id="toptanConvergence" class="toptan-convergence"></div>
+        <div class="params toptan-params">
+          <div class="pgroup">
+            <div class="ptitle">Bayi Stok Politikası</div>
+            <div class="prow"><label for="t_stokpolitikasi">Bayi Stok Politikası</label>
+              <div class="numfield"><button type="button" class="nf-btn" data-step="t_stokpolitikasi" data-dir="-1" tabindex="-1" aria-label="azalt">−</button><input type="number" id="t_stokpolitikasi" value="0" step="1" min="-30" max="30"><span class="nf-suffix">%</span><button type="button" class="nf-btn" data-step="t_stokpolitikasi" data-dir="1" tabindex="-1" aria-label="artır">+</button></div></div>
+            <div class="weights-note">Bayi stok seviyesini değiştirmek istiyorsanız kullanın. Perakende ekranındaki <b>Hedef Stok Büyüme</b>'den BAĞIMSIZ bir karardır — o bayinin kendi stok bütçesini, bu ise sell-in ile sell-out arasındaki farkı ayarlar. <b>0</b> = bayi stok seviyesi sabit · <b>−10</b> = bayi stoğu erisin (toptan bütçesi düşer). Doğrudan dönüşüm çarpanına eklenir.</div>
+          </div>
+        </div>
         <div style="max-height:520px;overflow:auto">
         <table id="toptanGrid">
           <colgroup>
-            <col style="width:68px">  <!-- Satış Teşkilatı (bkz. SAVED_MIX_COLUMNS, aynı alan) -->
+            <col style="width:68px">  <!-- Satış Teşkilatı -->
             <col style="width:164px"> <!-- Şube/Bölge -->
             <col style="width:140px"> <!-- ÜH1 -->
             <col style="width:240px"> <!-- ÜH2 -->
@@ -272,26 +279,16 @@
             <col style="width:260px"> <!-- ÜH4 -->
             <col style="width:85px">  <!-- Baz Periyot (LY) -->
             <col style="width:85px">  <!-- Hedef Periyot (TY) -->
-            <col style="width:100px"> <!-- Perakende Bütçe -->
-            <col style="width:80px">  <!-- Hedef Cover -->
-            <col style="width:70px">  <!-- Stock Cover (Stok Ay) -->
-            <col style="width:105px"> <!-- Mevcut Bayi Stok -->
-            <col style="width:105px"> <!-- Hedef Bayi Stok -->
-            <col style="width:100px"> <!-- Δ Stok -->
-            <col style="width:150px"> <!-- Durum -->
-            <col style="width:120px"> <!-- Toptan Bütçe (envanter köprüsü — RESMÎ) -->
-            <col style="width:92px">  <!-- Dönüşüm Çarpanı -->
-            <col style="width:132px"> <!-- Toptan Bütçe (Tarihsel Referans) -->
-            <col style="width:124px"> <!-- İma Edilen Stok Değişimi -->
+            <col style="width:112px"> <!-- Perakende Bütçe -->
+            <col style="width:104px"> <!-- Dönüşüm Çarpanı -->
+            <col style="width:120px"> <!-- Toptan Bütçe -->
           </colgroup>
           <thead>
             <tr>
               <th colspan="6" class="tgrp-secim">TEŞKİLAT &amp; ÜRÜN</th>
               <th colspan="2" class="tgrp-periyot">PERİYOT</th>
-              <th colspan="2" class="tgrp-perakende">PERAKENDE BÜTÇE</th>
-              <th colspan="4" class="tgrp-stok">BAYİ STOK DURUMU</th>
-              <th colspan="2" class="tgrp-sonuc">TOPTAN SONUCU (RESMÎ)</th>
-              <th colspan="3" class="tgrp-referans">TARİHSEL REFERANS (KONTROL)</th>
+              <th colspan="1" class="tgrp-perakende">PERAKENDE (KAYNAK)</th>
+              <th colspan="2" class="tgrp-sonuc">TOPTAN SONUCU</th>
             </tr>
             <tr>
               <th>Satış Teşkilatı</th>
@@ -302,30 +299,16 @@
               <th title="ÜH4">ÜH4</th>
               <th>Baz Periyot (LY)</th>
               <th>Hedef Periyot (TY)</th>
-              <th title="Perakende Satış Bütçe">Perakende Bütçe</th>
-              <th title="Hedef Stock Cover (elle)">Hedef Cover</th>
-              <th title="Stock Cover (Stok Ay) — LY">Stock Cover (Stok Ay)</th>
-              <th title="Mevcut Bayi Stok (LY stok adet)">Mevcut Bayi Stok</th>
-              <th title="Hedef Bayi Stok = Hedef Cover × Perakende Bütçe">Hedef Bayi Stok</th>
-              <th title="Δ Stok = Hedef Bayi Stok − Mevcut Bayi Stok">Δ Stok</th>
-              <th title="Sevkiyat durumu — TOPTAN BÜTÇE 0'a kırpıldıysa 'Sevki durdur' gösterilir">Durum</th>
-              <th title="RESMÎ toptan bütçesi — Envanter Köprüsü: Perakende Bütçe + Δ Stok (0'ın altına düşerse 0'da kırpılır)">Toptan Bütçe</th>
-              <th title="Hedef Periyot ayının ulusal toptan/perakende oranı (donusum.js, 2021-2025 bayi kanalı). Hücrenin üzerine gelince o ayın gerekçesi görünür.">Dönüşüm Çarpanı</th>
-              <th title="Toptan Bütçe (Tarihsel Referans) = Perakende Satış Adet Bütçe × Dönüşüm Çarpanı. RESMÎ BÜTÇE DEĞİLDİR — köprüyü çapraz kontrol eden ikinci görüştür.">Toptan Bütçe (Tarihsel Referans)</th>
-              <th title="İma Edilen Stok Değişimi = (Toptan Bütçe − Tarihsel Referans) ÷ Perakende Satış Adet Bütçe. Sıfıra yakınsa köprü tarihsel bayi davranışıyla uyumlu; |%15| aşılırsa uyarı rozeti çıkar.">İma Edilen Stok Değişimi</th>
+              <th title="Perakende Satış Adet Bütçe — kayıttan geldiği gibi, salt okunur">Perakende Bütçe</th>
+              <th title="Hedef Periyot ayının ulusal toptan/perakende oranı (donusum.js, 2021-2025 bayi kanalı) + Bayi Stok Politikası. Hücrenin üzerine gelince o ayın gerekçesi görünür.">Dönüşüm Çarpanı</th>
+              <th title="Toptan Bütçe = Perakende Satış Adet Bütçe × Dönüşüm Çarpanı">Toptan Bütçe</th>
             </tr>
           </thead>
           <tbody id="toptanRows"></tbody>
           <tfoot><tr id="toptanFoot"></tr></tfoot>
         </table>
         </div>
-        <div class="legend">
-          <span class="badge b-red">Sevki durdur (bayi fazla stoklu)</span>
-          <span class="badge b-grey">Sevk et</span>
-          <span class="badge b-amber" title="İma Edilen Stok Değişimi > +%15: köprü, tarihsel bayi davranışının üstünde sevkiyat öngörüyor">Norm üstü</span>
-          <span class="badge b-amber" title="İma Edilen Stok Değişimi < −%15: köprü, tarihsel bayi davranışının altında sevkiyat öngörüyor">Norm altı</span>
-        </div>
-        <div class="note"><b>Toptan Bütçe (RESMÎ)</b> = Perakende Bütçe + (Hedef Bayi Stok − Mevcut Bayi Stok), 0'ın altına düşerse 0'da kırpılır (bayiye eksi adet sevk edilemez); bu durumda Durum kolonunda "Sevki durdur" uyarısı gösterilir, Toptan Bütçe her zaman sayısal kalır. <b>Toptan Bütçe (Tarihsel Referans)</b> ayrı ve BAĞIMSIZ bir yöntemdir: Perakende Satış Adet Bütçe × o ayın ulusal dönüşüm çarpanı (donusum.js, 2021-2025). Resmî bütçe DEĞİLDİR, köprüyü çapraz kontrol eder. <b>İma Edilen Stok Değişimi</b> ikisinin farkının perakende bütçesine oranıdır: sıfıra yakınsa köprü tarihsel bayi davranışıyla uyumlu, büyük pozitifse bayi tarihsel normun üstünde stoklatılıyor, büyük negatifse stok eritiliyor. Doğruluk beklentisi: çarpan ÜH4 × Ay seviyesinde ±%37 sapabilir, toplulaştırdıkça iyileşir. Mevsimsel Kontrol (ÜH2×ay) ayrı bir kolon değildir, yukarıdaki yakınsama şeridinde kullanılır. Kaynak: Kayıtlar sekmesindeki tüm kayıtlı gruplar — Perakende Bütçe ekranında uyguladığınız filtreler bu tabloya da yansır.</div>
+        <div class="note"><b>Toptan Bütçe = Perakende Satış Adet Bütçe × Dönüşüm Çarpanı.</b> Çarpan, Hedef Periyot ayının ulusal toptan/perakende oranıdır (2021-2025 bayi kanalı verisinden türetildi, donusum.js). Yıllık olarak toptan ≈ perakendedir (K = 1,0011); aylık dağılımları farklıdır — bayi Ocak-Mart'ta yüklenir (Ocak 1,405), Temmuz ve Aralık'ta stoktan satar, sipariş vermez (Aralık 0,734). <b>Bayi Stok Politikası</b> çarpana doğrudan eklenir. <b>Ürün grubu bazında ayrı çarpan yoktur</b> — denendi, ulusal çarpanı geçemedi. <b>Doğruluk beklentisi:</b> ÜH4 × Ay seviyesinde sapma ±%37; bu indirilemez, tek bir ürün grubunun tek bir aydaki bayi siparişi değişkendir. Toplulaştırdıkça iyileşir (Toplam × Ay ±%10). <b>Kapsam:</b> yalnızca bayi kanalı — yedek parça, proje/kurumsal, solar ve pazaryeri ayrı bütçelenir. Kaynak: Kayıtlar sekmesindeki tüm kayıtlı gruplar; Perakende Bütçe ekranında uyguladığınız filtreler bu tabloya da yansır. Tüm kolonlar salt okunur ve türetilmiştir.</div>
       </div>
     </div>
 
@@ -510,16 +493,19 @@
       <button type="button" class="modal-close" id="toptanModalClose" title="Kapat" aria-label="Kapat">×</button>
     </div>
     <div class="toptan-info-box">
-          <p>Bayilere ne kadar ürün göndereceğimizi (toptan) belirlemek için basit ama güçlü bir mantık kullanıyoruz:</p>
+          <p>Bayilere ne kadar ürün göndereceğimizi (toptan / sell-in) belirlemek için tek bir soruyu cevaplıyoruz: <b>bayi bu ay, tüketiciye satacağından ne kadar farklı sipariş verir?</b></p>
           <div class="toptan-note-callout"><b>Önemli:</b> Bu tablo, Bütçe &amp; Stok Miks ekranından <b>Kaydettiğiniz/Revize Ettiğiniz planlardan</b> oluşur — o anki (canlı) sidebar seçiminden değil. Global bir parametreyi (ör. Hedef Stok Büyümesi %) sonradan değiştirmek bu sekmeyi ETKİLEMEZ; bir grubu güncellemek için o seçime dönüp yeniden "Kaydet"/"Revize Et" yapmalısınız.</div>
-          <div class="toptan-formula-box">TOPTAN&nbsp; = &nbsp;Bayinin Satacağı&nbsp; + &nbsp;Bayi Deposunu Doldurma</div>
+          <div class="toptan-formula-box">TOPTAN&nbsp; = &nbsp;PERAKENDE BÜTÇE&nbsp; × &nbsp;O AYIN DÖNÜŞÜM ÇARPANI</div>
+          <p><b>Çarpan nereden geliyor?</b> 2021-2025 arasındaki gerçek bayi kanalı verisinden. <b>Yıllık olarak toptan ile perakende neredeyse eşittir</b> (K = 1,0011) — bayi aldığını eninde sonunda satar. Ama <b>aylık dağılımları farklıdır</b>: bayi sezon öncesi yüklenir, sezon sonunda stoktan satıp sipariş vermez.</p>
           <ul>
-            <li><b>Bayinin Satacağı (Perakende Bütçe):</b> Bayinin bu dönem tüketiciye satmasını beklediğimiz adet.</li>
-            <li><b>Bayi Deposunu Doldurma (Δ Stok):</b> Bayinin deposunu, hedeflediğimiz stok seviyesine (Hedef Cover) getirmek için gereken ek sevk. Depoyu dolduruyorsak toptan artar; eritiyorsak azalır.</li>
+            <li><b>Ocak 1,405 · Şubat 1,306 · Mart 1,204</b> — bayi sezon öncesi yükleniyor, toptan perakendenin çok üstünde.</li>
+            <li><b>Temmuz 0,801 · Aralık 0,734</b> — perakende zirvede ama bayi deposundan satıyor, yeni sipariş vermiyor.</li>
+            <li>Aradaki aylar 1,0 civarında dengeli.</li>
           </ul>
-          <p><b>Örnek:</b> Bir bayi ayda 100 adet satıyorsa ve biz deposunda 3 aylık stok (300 adet) olmasını istiyorsak; deposunda şu an 200 varsa, bu ay ona 100 (satış) + 100 (depo farkı) = 200 adet göndeririz.</p>
-          <p>Bu yöntem şirketin geçmiş verisiyle test edildi ve <b>%89 oranında doğrulandı</b> — yani bilimsel olarak güvenilir. Ayrıca "Mevsimsel Kontrol" kolonu, geçmiş yılların ay bazlı toptan/perakende oranıyla sonucu çapraz-kontrol eder; tablonun üstündeki özet şerit, iki yöntemin ÜH2 toplam düzeyinde ne kadar yakınsadığını (%) gösterir — yüksek yakınsama tahminimizin sağlam olduğu anlamına gelir.</p>
-          <p style="margin:0"><b>Not:</b> Toptan sevk genelde perakende satıştan yaklaşık 2 ay önce olur (bayi önce alır, sonra satar). Sezon planlamasında bunu göz önünde tut.</p>
+          <p><b>Örnek:</b> Bir ÜH4 için 2027 Aralık perakende bütçeniz 1.387 adetse, toptan bütçesi 1.387 × 0,734 = <b>1.018 adet</b>. Aynı bütçe 2027 Ocak'ta olsaydı 1.387 × 1,405 = <b>1.949 adet</b> olurdu. Aynı satış, farklı sevkiyat — çünkü bayinin sipariş ritmi farklı.</p>
+          <p><b>Bayi Stok Politikası</b> tablonun üstündeki alandır ve çarpana doğrudan eklenir. Bayi stok seviyesini bilinçli olarak değiştirmek istediğinizde kullanın: <b>0</b> bırakırsanız bayi stoğu sabit kalır; <b>−10</b> girerseniz bayi stoğunu eritmeyi hedeflersiniz ve toptan bütçesi düşer. Bu, perakende ekranındaki Hedef Stok Büyüme'den bağımsız bir karardır — o bayinin kendi stok bütçesini belirler, bu ise bayiye gönderilecek mal ile bayinin satacağı mal arasındaki farkı ayarlar.</p>
+          <p><b>Ürün grubu bazında ayrı çarpan yoktur.</b> Denendi; ÜH2 bazlı çarpanlar ulusal çarpanı geçemedi, bu yüzden tüm gruplara aynı aylık çarpan uygulanır.</p>
+          <p style="margin:0"><b>Doğruluk beklentisi (gizlemiyoruz):</b> ÜH4 × Ay seviyesinde sapma <b>±%37</b>'ye çıkabilir — tek bir ürün grubunun tek bir aydaki bayi siparişi doğası gereği değişkendir. Toplulaştırdıkça iyileşir (Toplam × Ay ±%10, ÜH2 × Yıl ±%9). Çarpanlar ulusal seviyede türetildi; tüm bölgelere aynı çarpan uygulanır, bu bir varsayımdır. Kapsam yalnızca bayi kanalıdır.</p>
     </div>
   </div>
 </div>

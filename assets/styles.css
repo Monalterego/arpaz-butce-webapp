@@ -216,11 +216,6 @@ tfoot td{background:#eef3f8;font-weight:700;border-top:2px solid var(--navy)}
 /* Tablonun ÜSTÜNDEKİ tek özet şerit — satır bazlı ✓uyumlu/⚠farklı rozetinin
    YERİNE geçti (bkz. görev). Yeşil/amber tonları mevcut --green/--amber
    token'larından, yeni ham renk YOK. Boş (kayıt yoksa) gizlenir. */
-.toptan-convergence{display:none;align-items:center;gap:10px;border-radius:var(--radius-md);padding:10px 14px;margin:0 0 12px;font-size:13px;font-weight:700}
-.toptan-convergence.good,.toptan-convergence.bad{display:flex}
-.toptan-convergence.good{background:var(--greenbg);color:var(--green)}
-.toptan-convergence.bad{background:var(--amberbg);color:var(--amber)}
-.toptan-convergence-sub{font-size:11px;font-weight:400;color:var(--grey)}
 /* Toptan Bütçe tablosu — ana #grid ile AYNI görsel dil: gruplu iki satırlı başlık,
    dikey ayırıcılar. Periyot kolonları (7-8) soluk gri gösterilir. Dondurma
    (freeze pane) YOK — denendi, sonra kaldırıldı (kullanıcı talebi); ÜH4 diğer
@@ -231,12 +226,10 @@ tfoot td{background:#eef3f8;font-weight:700;border-top:2px solid var(--navy)}
 #toptanGrid th.tgrp-perakende{background:#0b6e4f;text-align:center}
 #toptanGrid th.tgrp-stok{background:#13315c;text-align:center}
 #toptanGrid th.tgrp-sonuc{background:var(--accent2);text-align:center}
-/* TARİHSEL REFERANS grubu KONTROL katmanıdır, resmî sonuç DEĞİL — bu yüzden
-   tgrp-sonuc'un accent mavisinden kasıtlı olarak daha soluk/nötr bir gri-lacivert.
-   Hücreleri de .toptan-highlight almaz; görsel ağırlık resmî kolonda kalsın. */
-#toptanGrid th.tgrp-referans{background:#5a6b7c;text-align:center}
 /* Çarpan tinti YARI SAYDAM olmalı: opak zemin tbody tr:hover vurgusunu ezer
    (aynı gerekçe .pct-hl'de de geçerli, bkz. CLAUDE.md Bölüm 7). */
+/* Bayi Stok Politikası tek kart — .params varsayılan 4 sütunlu gridini ezer. */
+.params.toptan-params{grid-template-columns:minmax(0,420px);margin-bottom:var(--s3)}
 #toptanGrid td.toptan-carpan-yuksek{background:rgba(46,125,50,.10)}
 #toptanGrid td.toptan-carpan-dusuk{background:rgba(198,40,40,.10)}
 /* table-layout:auto genişlikleri öngörülemez sıkıştırıyor (bkz. #grid/.saved-mix-table
