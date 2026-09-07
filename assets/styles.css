@@ -61,7 +61,7 @@ select[disabled]{opacity:.5;cursor:not-allowed}
 #kpis .kpi .val{grid-column:1}
 #kpis .kpi .sub{grid-column:2}
 /* Rollup/Kanıt kartları: uzun açıklama satırı rakamın ALTINDA kalır. */
-.rollup-kpis .kpi .sub,.kanit-kpis .kpi .sub{margin-top:3px;line-height:1.35}
+.rollup-kpis .kpi .sub{margin-top:3px;line-height:1.35}
 
 .up{color:var(--green)}.down{color:var(--red)}
 .panel{background:var(--surface);border:1px solid var(--line);border-radius:var(--radius);padding:var(--s3);margin-bottom:var(--s3);box-shadow:var(--shadow)}
@@ -421,52 +421,40 @@ tfoot td{background:#eef3f8;font-weight:700;border-top:2px solid var(--navy)}
 .child-row td:first-child{padding-left:18px;background:#fbfcfd;color:var(--grey)}
 .child-row{background:linear-gradient(180deg,#fbfcfd,#f7f8fa)}
 
-/* ===== Perakende → Toptan (Kanıt) sekmesi — statik infografik vitrini =====
-   Saf HTML/CSS (canvas yok); mevcut .kpi/.panel/.action-row/.legend/.foot
-   kabuğu yeniden kullanılıyor, sadece bu sekmeye özel grafik parçaları burada. */
-.kanit-intro{font-size:12px;color:#33475b;line-height:1.6;margin:0}
-.kanit-kpis{grid-template-columns:repeat(3,1fr)}
-.kanit-kpis .kpi .val{font-size:22px}
-.kanit-swatch{display:inline-block;width:10px;height:10px;border-radius:3px}
-
-/* Lead-lag bar grafik: her kolon üstte pozitif bölge (sıfır çizgisine göre
-   alttan büyür), altta ince negatif bölge (sıfır çizgisinden aşağı büyür). */
-.kanit-leadlag-chart{display:flex;gap:8px;align-items:stretch}
-.kanit-leadlag-col{flex:1;display:flex;flex-direction:column;align-items:center;min-width:0}
-.kanit-leadlag-pos{height:140px;width:100%;display:flex;align-items:flex-end;justify-content:center}
-.kanit-leadlag-neg{height:34px;width:100%;display:flex;align-items:flex-start;justify-content:center}
-.kanit-leadlag-bar{width:60%;max-width:36px;border-radius:4px 4px 0 0;background:var(--navy2)}
-.kanit-leadlag-bar.highlight{background:var(--green)}
-.kanit-leadlag-bar-neg{width:60%;max-width:36px;border-radius:0 0 4px 4px;background:var(--grey)}
-.kanit-leadlag-zeroline{width:100%;border-top:1px solid var(--line)}
-.kanit-leadlag-val,.kanit-leadlag-val-neg{font-size:11px;font-weight:700;color:var(--navy);font-variant-numeric:tabular-nums}
-.kanit-leadlag-val{margin-bottom:2px}
-.kanit-leadlag-val-neg{margin-top:2px;color:var(--grey)}
-.kanit-leadlag-lbl{font-size:11px;color:var(--grey);margin-top:6px;font-weight:600}
-
-/* Mevsimsel ısı haritası tablosu — genel table/th/td kabuğunu miras alır,
-   sadece hücre renklendirmesi ve ÜH2 satır etiketi burada özelleştirilir. */
-#kanitHeatmap{min-width:760px}
-#kanitHeatmap th{text-align:center}
-.kanit-heat-rowlabel{text-align:left;white-space:nowrap;font-size:11px;color:#33475b}
-.kanit-heat-cell{text-align:center;color:#fff;font-weight:700;font-size:11px;font-variant-numeric:tabular-nums}
-.kanit-heat-empty{color:var(--grey);background:#f4f6f9;font-weight:400}
-
-/* ÜH2 yıllık rasyo yatay bar listesi — 1,0 referans çizgili */
-.kanit-barlist{display:flex;flex-direction:column;gap:7px}
-.kanit-bar-row{display:grid;grid-template-columns:180px 1fr 46px;align-items:center;gap:10px}
-.kanit-bar-label{font-size:12px;color:#33475b;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-.kanit-bar-track{position:relative;height:16px;background:#eef1f5;border-radius:4px;overflow:hidden}
-.kanit-bar-fill{position:absolute;left:0;top:0;bottom:0;border-radius:4px}
-.kanit-bar-fill.over{background:var(--red)}
-.kanit-bar-fill.under{background:var(--green)}
-.kanit-bar-refline{position:absolute;top:-2px;bottom:-2px;width:2px;background:var(--navy)}
-.kanit-bar-value{font-size:12px;font-weight:700;color:var(--navy);text-align:right;font-variant-numeric:tabular-nums}
-
+/* ===== Perakende → Toptan (Metodoloji) sekmesi =====
+   Son kullanıcıya yönelik açıklama ekranı. docs/metodoloji_ekran.html'deki geçici
+   <style> bloğunun projeye uyarlanmış hali — ham renk/piksel YOK, hepsi :root
+   token'ı (bkz. CLAUDE.md Bölüm 9). Eski "Kanıt" infografik vitrini (.kanit-*,
+   kanit.js, toptan_katsayi.js, renderKanit*) bu ekranla ÇELİŞTİĞİ için kaldırıldı:
+   "Doğruluk %89" envanter köprüsünün kimlik testiydi, "Lead-Time −2 Ay" ise bu
+   metnin açıkça reddettiği gecikme terimiydi. */
+.metodoloji{max-width:900px;line-height:1.6;font-size:var(--f-body);color:var(--ink)}
+.metodoloji h3{font-size:var(--f-h1);color:var(--navy);margin:var(--s3) 0 var(--s1)}
+.metodoloji p{margin:0 0 var(--s1)}
+.metodoloji .ozet{font-size:14px;padding:var(--s2);margin:0 0 var(--s2);
+  border-left:3px solid var(--accent);background:var(--accent-bg);
+  border-radius:0 var(--radius-sm) var(--radius-sm) 0}
+.metodoloji table{border-collapse:collapse;margin:var(--s2) 0;width:100%}
+.metodoloji th,.metodoloji td{border:1px solid var(--line);padding:6px 10px;text-align:left}
+.metodoloji th{background:var(--bg);font-weight:600;color:var(--navy)}
+.metodoloji .mini{width:auto}
+/* Tint YARI SAYDAM olmalı: opak zemin hücre kenarlıklarını ve okunurluğu eziyor
+   (aynı gerekçe #grid .pct-hl ve #toptanGrid çarpan tintlerinde de geçerli). */
+.metodoloji tr.yuksek td{background:rgba(46,125,50,.09)}
+.metodoloji tr.dusuk td{background:rgba(198,40,40,.09)}
+/* 5 kolonlu aylık tablo dar ekranda kendi içinde kaysın — sayfa yatay kaymasın. */
+.metodoloji .metod-kaydir{overflow-x:auto}
+.metodoloji .formul{background:var(--navy);color:#fff;padding:var(--s2);margin:var(--s1) 0;
+  border-radius:var(--radius-sm);font-size:13px;font-weight:600;overflow-x:auto}
+.metodoloji .ornek{background:var(--amberbg);padding:10px 14px;border-radius:var(--radius-sm)}
+.metodoloji .not{color:var(--grey);font-size:12px}
+.metodoloji .kaynak{margin-top:var(--s3)}
+.metodoloji .kaynak summary{cursor:pointer;font-weight:600;color:var(--accent)}
+.metodoloji .kaynak ul{margin:var(--s1) 0 0;padding-left:18px;color:var(--grey);font-size:12px}
+.metodoloji .kaynak li{margin-bottom:6px}
+.metodoloji code{background:var(--bg);border:1px solid var(--line);border-radius:var(--radius-sm);padding:1px 5px;font-size:12px}
 @media (max-width:900px){
-  .kanit-kpis{grid-template-columns:1fr}
-  .kanit-bar-row{grid-template-columns:1fr;gap:4px}
-  .kanit-bar-value{text-align:left}
+  .metodoloji .metod-tablo{font-size:12px}
 }
 .child-row td{font-size:12px}
 

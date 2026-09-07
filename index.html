@@ -349,47 +349,126 @@
       </div>
     </div>
 
-    <!-- ========== TAB: KANIT (Perakende → Toptan Bilimsel Temel) ========== -->
+    <!-- ========== TAB: METODOLOJI (Perakende → Toptan) ========== -->
     <div class="tabpane" data-pane="rasyo" style="display:none">
       <div class="panel">
-        <h2>🔬 Perakende Bütçesinden Toptan Bütçesine: Bilimsel Temel</h2>
-        <p class="kanit-intro">Bayilere ne göndereceğimizi (toptan) tahmin etmek için şu fiziksel kuralı
-          kullanıyoruz: <b>Toptan = Perakende + Bayi Stok Değişimi</b>. Bu kuralı şirketin son 4 yıllık
-          gerçek verisiyle test ettik. İşte kanıtlar:</p>
+        <section class="metodoloji">
+
+          <h2>Perakende bütçesinden toptan bütçesine nasıl geçiyoruz?</h2>
+
+          <p class="ozet">
+            Bayi bir yılda ne kadar satıyorsa, ArPaz o bayiye bir yılda yaklaşık
+            aynı adedi faturalar. Ama <strong>aylara dağılımı aynı değildir.</strong>
+            Bayi sezon öncesinde yüklenir, yıl sonunda elindeki stoktan satar.
+            Toptan bütçesi bu davranışa göre hesaplanır.
+          </p>
+
+          <h3>1. Yıllık toplamda toptan = perakende</h3>
+          <p>Bayi kanalında son beş yılın toptan / perakende oranı:</p>
+          <table class="mini">
+            <tr><th>2021</th><th>2022</th><th>2023</th><th>2024</th><th>2025</th></tr>
+            <tr><td>1,02</td><td>0,97</td><td>0,98</td><td>1,03</td><td>1,00</td></tr>
+          </table>
+          <p class="not">
+            Beş yılın ortalaması <strong>1,00</strong>. Bayiye faturaladığımız adet,
+            bayinin sattığı adede eşitlenir. Fark yalnızca bayinin stok seviyesindeki
+            değişimden gelir.
+          </p>
+
+          <h3>2. Aylık dağılım farklıdır</h3>
+          <p>
+            Aşağıdaki tablo, bir ayın yıl içindeki payını gösterir.
+            <strong>1,00 = ortalama bir ay.</strong>
+          </p>
+          <div class="metod-kaydir">
+            <table class="metod-tablo">
+              <thead>
+                <tr><th>Ay</th><th>Perakende</th><th>Toptan</th><th>Çarpan</th><th>Neden?</th></tr>
+              </thead>
+              <tbody>
+                <tr class="yuksek"><td>Ocak</td><td>0,71</td><td>0,99</td><td><b>1,405</b></td>
+                    <td>Perakendenin en zayıf ayı, bayi sezon öncesi yükleniyor</td></tr>
+                <tr class="yuksek"><td>Şubat</td><td>0,72</td><td>0,94</td><td><b>1,306</b></td>
+                    <td>Sezon öncesi yükleme sürüyor</td></tr>
+                <tr class="yuksek"><td>Mart</td><td>0,94</td><td>1,12</td><td><b>1,204</b></td>
+                    <td>Yılın en yüksek toptan ayı</td></tr>
+                <tr><td>Nisan</td><td>0,90</td><td>0,94</td><td>1,049</td><td>Dengeleniyor</td></tr>
+                <tr><td>Mayıs</td><td>1,07</td><td>1,04</td><td>0,977</td><td>Dengeli ay</td></tr>
+                <tr><td>Haziran</td><td>1,07</td><td>1,09</td><td>1,017</td><td>Dengeli ay</td></tr>
+                <tr class="dusuk"><td>Temmuz</td><td>1,28</td><td>1,02</td><td><b>0,801</b></td>
+                    <td>Perakende zirvede, satış stoktan karşılanıyor</td></tr>
+                <tr><td>Ağustos</td><td>1,04</td><td>0,98</td><td>0,938</td>
+                    <td>Perakende toptanın üzerinde</td></tr>
+                <tr><td>Eylül</td><td>0,92</td><td>1,00</td><td>1,092</td>
+                    <td>Sezon öncesi hafif yükleme</td></tr>
+                <tr class="dusuk"><td>Ekim</td><td>1,09</td><td>0,93</td><td><b>0,856</b></td>
+                    <td>Bayi stok eritiyor</td></tr>
+                <tr><td>Kasım</td><td>1,13</td><td>1,10</td><td>0,974</td><td>Dengeli ay</td></tr>
+                <tr class="dusuk"><td>Aralık</td><td>1,14</td><td>0,83</td><td><b>0,734</b></td>
+                    <td>Yıl sonu: bayi stoktan satıyor, sipariş vermiyor</td></tr>
+              </tbody>
+            </table>
+          </div>
+
+          <h3>3. Hesap</h3>
+          <pre class="formul">Toptan Satış Adet Bütçe = Perakende Satış Adet Bütçe × Çarpan(ay)</pre>
+          <p class="ornek">
+            <b>Örnek.</b> 2027 Ocak için perakende bütçen 1.387 adet ise,
+            toptan bütçen <b>1.387 × 1,405 = 1.949 adet</b> olur.<br>
+            Aynı ürün için 2027 Aralık'ta perakende bütçen 1.387 adet olsaydı,
+            toptan bütçen <b>1.387 × 0,734 = 1.018 adet</b> olurdu.
+          </p>
+
+          <h3>4. Ne kadar güvenilir?</h3>
+          <p>
+            Aşağıdaki sapma oranları, 2023-2025 yıllarında model geçmiş veriyle
+            sınanarak ölçülmüştür. Perakende bütçesinin doğru olduğu varsayılır;
+            ölçülen yalnızca dönüşümün kendi hatasıdır.
+          </p>
+          <table class="mini">
+            <tr><th>Kırılım</th><th>Sapma</th><th>Kullanım</th></tr>
+            <tr><td>Toplam × Ay</td><td>±%10</td><td>Planlamaya uygun</td></tr>
+            <tr><td>ÜH2 × Ay</td><td>±%25</td><td>Yönlendirici</td></tr>
+            <tr><td>ÜH4 × Ay</td><td>±%37</td><td>Yalnızca sistem beslemesi</td></tr>
+          </table>
+          <p class="not">
+            Tek bir ürün grubunun tek bir aydaki bayi siparişi doğası gereği
+            değişkendir; bu sapma modelin zayıflığından değil, işin doğasından gelir.
+            <strong>Toplulaştırdıkça isabet artar.</strong> Çarpan kullanmak toplam
+            seviyedeki sapmayı %14'ten %10'a indirir — asıl kazanç buradadır.
+            Taahhüt verirken ÜH2 veya toplam seviyeyi kullanın.
+          </p>
+
+          <h3>5. Modelin bilmediği: stok politikası</h3>
+          <p>
+            Çarpanlar, bayi stok seviyesinin bugünkü haliyle kalacağını varsayar.
+            Şirket "seneye %10 daha az stokla çalışacağız" derse, bayinin stoğunu
+            eritmesi için toptan bütçesinin ayrıca aşağı çekilmesi gerekir.
+            Bu bir <strong>bütçe kararıdır, veriden gelmez</strong>; Toptan Bütçe
+            ekranındaki <strong>Bayi Stok Politikası %</strong> alanından girilir.
+          </p>
+
+          <details class="kaynak">
+            <summary>Metodoloji ve veri kaynağı</summary>
+            <ul>
+              <li><b>Veri:</b> 2021-2025, aylık, ÜH4 kırılımında, adet bazında.
+                  Yalnızca <b>bayi kanalı</b>. Yedek parça, proje/kurumsal, solar ve
+                  pazaryeri kanalları kapsam dışıdır; bunlar ayrı bütçelenir.</li>
+              <li><b>Çarpan:</b> Toptanın aylık payı ÷ perakendenin aylık payı.
+                  Son beş tam yılın ortalaması.</li>
+              <li><b>Neden ürün grubu bazında ayrı çarpan yok?</b> Denendi, ulusal
+                  çarpanı geçemedi. Mevsimsel kategorilerde beş yıllık veri, grup
+                  bazında güvenilir bir aylık profil çıkarmaya yetmiyor.</li>
+              <li><b>Neden gecikme terimi yok?</b> Toptan, perakendeyi önden
+                  götürmüyor. Fark yalnızca mevsimsel dağılımda.</li>
+              <li><b>Güncelleme:</b> Çarpanlar her bütçe döneminde son beş yıllık
+                  veriyle yenilenir. Sadece <code>assets/donusum.js</code> içindeki
+                  <code>CARPAN</code> ve <code>K</code> değişir, kod değişmez.</li>
+            </ul>
+          </details>
+
+        </section>
       </div>
-
-      <div class="kpis kanit-kpis" id="kanitKpis"></div>
-
-      <div class="panel">
-        <h2>Toptan, Perakendeyi Ne Zaman Besliyor?</h2>
-        <div id="kanitLeadLag" class="kanit-leadlag"></div>
-        <div class="note" id="kanitLeadLagNote"></div>
-      </div>
-
-      <div class="panel">
-        <h2>Hangi Ay Dolum, Hangi Ay Eritme? (Toptan/Perakende)</h2>
-        <div style="overflow:auto">
-          <table id="kanitHeatmap"></table>
-        </div>
-        <div class="legend">
-          <span><span class="kanit-swatch" style="background:#2e7d32"></span>&lt; 1 — eritme</span>
-          <span><span class="kanit-swatch" style="background:#b26a00"></span>~ 1 — dengeli</span>
-          <span><span class="kanit-swatch" style="background:#c62828"></span>&gt; 1 — dolum</span>
-        </div>
-        <div class="note">Değerler 0,5–2,0 aralığına kırpılmıştır. SOLAR ENERJİ, HAVALANDIRMA, HİJYEN, PROFESYONEL GÖRÜNTÜLEME ve (İPTAL)/GRUPSUZ gruplar uç/güvenilmez rasyo nedeniyle gösterilmez.</div>
-      </div>
-
-      <div class="panel">
-        <h2>Kategori Bazında Ortalama Toptan/Perakende</h2>
-        <div id="kanitYillikRasyo" class="kanit-barlist"></div>
-      </div>
-
-      <div class="panel">
-        <h2>Mevsim İmzaları</h2>
-        <div class="action-row" id="kanitMevsim"></div>
-      </div>
-
-      <div class="foot" id="kanitFootnote"></div>
     </div>
 
     <!-- ========== TAB: FORECAST ========== -->
@@ -539,8 +618,6 @@
 <script src="assets/hierarchy.js"></script>
 <script src="assets/realdata.js"></script>
 <script src="assets/data.js"></script>
-<script src="assets/toptan_katsayi.js"></script>
-<script src="assets/kanit.js"></script>
 <script src="assets/donusum.js"></script>
 <script src="assets/app.js"></script>
 </body>

@@ -43,7 +43,7 @@ YASAK — son kullanıcılar İngilizce kullanamaz.
 ## 2) Teknik Mimari ve Dosya Yapısı
 Framework/derleme YOK. Live Server veya `python -m http.server` ile açılır.
 Script yükleme sırası KRİTİK: **hierarchy.js → realdata.js → data.js →
-toptan_katsayi.js → kanit.js → donusum.js → app.js**. (app.js her zaman EN SON;
+donusum.js → app.js**. (app.js her zaman EN SON;
 bir IIFE olduğu için ondan önce yüklenen modüllerin global'lerini görür.)
 
 ```
@@ -299,7 +299,7 @@ stil + sarmalayıcı yapı katmanındadır.
 - **KPI şeridi KOMPAKT:** `#kpis` kartlarında etiket üstte, BÜYÜK rakam ile
   birim/alt-not AYNI satırda (grid alan atamasıyla, baseline hizalı) → kart
   yüksekliği ~yarıya indi. Bu düzen SADECE `#kpis`'e uygulanır — `.rollup-kpis`
-  ve `.kanit-kpis`'in `.sub`'ı tam cümledir, onlar dikey (yığılmış) kalır.
+  `.sub`'ı tam cümledir, o dikey (yığılmış) kalır.
   `renderKpis()` DEĞİŞMEDİ, salt CSS.
 - **Durum Dağılımı şeridi KALDIRILDI** (`#durumKpis` + `renderDurumKpis()` +
   `.durum-kpis` CSS bloğu, hepsi silindi). Önce 4 dev kart, sonra tek satırlık ince
@@ -440,8 +440,9 @@ gerçek veriyle bağlandığında (bkz. Bölüm 11.3) bu yeniden değerlendirilm
   (`data-tab="kayitlar"`, eski adı "Kayıtlar" — Özet/Rollup paneli + kayıtlı çalışmalar,
   bkz. Bölüm 14) · **Toptan Bütçe** (`data-tab="toptan"`, bkz. Bölüm 13) · Kampanya/Özel
   Gün Takvimi (2021+, `data-tab="takvim"`) · **Perakende → Toptan (Metodoloji)**
-  (`data-tab="rasyo"`, eski adı "...(Kanıt)"/"...Rasyo" — statik infografik vitrini,
-  bkz. Bölüm 13.9) · Tahmin (Forecast, `data-tab="forecast"`) · **Senaryo
+  (`data-tab="rasyo"`, eski adları "...(Kanıt)"/"...Rasyo" — son kullanıcıya yönelik
+  STATİK açıklama ekranı, JS ile render EDİLMEZ; bkz. Bölüm 13.9) · Tahmin
+  (Forecast, `data-tab="forecast"`) · **Senaryo
   Karşılaştırma** (`data-tab="senaryo"`, çubuğun EN SONU — bkz. Bölüm 7).
 - Ana tablo blokları: **GERÇEKLEŞEN (LY)** [Stok Adet, Stok%, Satış Adet, Satış%,
   Brüt Kâr (₺), Kâr%, Cover, Turnover, **Ortalama Satış Fiyatı** — 9 kolon] ve
@@ -460,7 +461,7 @@ gerçek veriyle bağlandığında (bkz. Bölüm 11.3) bu yeniden değerlendirilm
   aynı tint. Kâr % hücresinde bir dönem `.heat` pill'i vardı (kâr payına göre
   kırmızı→yeşil tek-bacaklı skala); kullanıcı isteğiyle KALDIRILDI, çünkü tint
   vurgusunu örtüyordu. Onunla birlikte artık ölü kalan `heat()` fonksiyonu ve
-  `.heat` CSS kuralı da SİLİNDİ — geri isteniyorsa yeniden yazılmalı. Kanıt
+  `.heat` CSS kuralı da SİLİNDİ — geri isteniyorsa yeniden yazılmalı. (Eski Kanıt
   sekmesindeki `heatDiverge()` AYRI bir fonksiyondur, ondan etkilenmedi.
 - **KPI şeridi (`#kpis`, 6 kart) — ana tablonun ÜSTÜNDE** (özet önce, detay sonra;
   eskiden tablonun ve parametrelerin ALTINDAydı). Dördü "LY → TY" kıyası (büyük
@@ -519,7 +520,8 @@ gerçek veriyle bağlandığında (bkz. Bölüm 11.3) bu yeniden değerlendirilm
 - `addScenario(name)` — o anki parametre setini senaryoya ekler; `name` boşsa
   otomatik "Senaryo N". Hem başlıktaki `#saveScenarioBtn` hem paneldeki `#saveSc`
   bunu çağırır (kayıt mantığı TEK yerde).
-- `renderKpis / renderScenarios / renderCalendar / renderKanit / renderForecast`.
+- `renderKpis / renderScenarios / renderCalendar / renderForecast`. (`renderKanit*`
+  ailesi KALDIRILDI — Metodoloji sekmesi artık saf statik HTML, bkz. Bölüm 13.9.)
 - **`initInfoModal(btnId, overlayId, closeId)`** — panel başlığındaki `(i)` ikonuyla
   açılan bilgi modal'ını kurar (aç / `×` / overlay / `Esc`). İKİ kez çağrılır:
   `("formulaInfoBtn","formulaModal","formulaModalClose")` ve
@@ -628,7 +630,7 @@ gerçek veriyle bağlandığında (bkz. Bölüm 11.3) bu yeniden değerlendirilm
   yapı/formül değişikliklerinde (Bölüm 5, kolon ekleme/çıkarma) haklı,
   kozmetik işlerde gereksiz yavaşlatır. Şüphedeysen sor, ama varsayılan
   orantılı davranmak olsun.
-- **Detaylı özellik dokümanları ayrı dosyalarda:** "Toptan Bütçe"/"Kanıt"
+- **Detaylı özellik dokümanları ayrı dosyalarda:** "Toptan Bütçe"/"Metodoloji"
   sekmesi için `docs/TOPTAN_KOPRUSU.md`, Rollup paneli için
   `docs/ROLLUP_PANELI.md` — SADECE o özelliğe dokunurken oku, her görevde
   okumana gerek yok.
@@ -719,7 +721,7 @@ gerçek veriyle bağlandığında (bkz. Bölüm 11.3) bu yeniden değerlendirilm
 
 ## 13) Perakende → Toptan Köprüsü (Sell-out → Sell-in) — DETAY AYRI DOSYADA
 
-Toptan Bütçe sekmesi + "Perakende → Toptan (Kanıt)" sekmesi için envanter
+Toptan Bütçe sekmesi + "Perakende → Toptan (Metodoloji)" sekmesi için envanter
 köprüsü formülü (r=0,894 doğrulanmış), mevsimsel katsayı, outlier kuralları,
 Kayıtlar'dan besleme mimarisi ("Revize Et"), Durum/Sevki-durdur mantığı ve
 kanıt vitrini render fonksiyonlarının TAM detayı:

@@ -20,7 +20,7 @@
 > Dosya adı geriye dönük uyumluluk için (`TOPTAN_KOPRUSU.md`) korundu;
 > CLAUDE.md ve kod yorumları bu ada referans veriyor.
 
-> Bu dosya SADECE "Toptan Bütçe" veya "Perakende → Toptan (Kanıt)" sekmelerine
+> Bu dosya SADECE "Toptan Bütçe" veya "Perakende → Toptan (Metodoloji)" sekmelerine
 > dokunurken okunur. CLAUDE.md'nin ana gövdesi bu detayları GEREKTİRMEZ.
 
 ---
@@ -88,6 +88,7 @@ Toptan Bütçe(ÜH4, ay) = Perakende Bütçe + (Hedef Bayi Stok − Mevcut Bayi 
 
 ### 13.6 Veri/Dosya Notları
 - `assets/toptan_katsayi.js`: `const TOPTAN_KATSAYI = { "ÜH2": { "1":kat, ... "12":kat } }`
+  **(BU DOSYA 2026-09-07 İTİBARIYLA PROJEDE YOK — kaldırıldı, bkz. 13.9.)**
   (index.html'de app.js'ten ÖNCE yüklenir).
 - Katsayılar Colab analizinden üretildi (historical Perakende-Toptan.xlsx).
 - Envanter kimliği için ekstra veri gerekmez; mevcut stok_adet + hedef cover yeter.
@@ -139,38 +140,38 @@ bunlar Toptan Bütçe'de çift sayıma yol açar. Kayıtlar'ın mevcut "Sil" but
 temizlenebilir; ayrı bir "Tekilleştir" (aynı 7 alanı paylaşan kayıtlardan en yenisini
 tutup eskilerini silen) özelliği henüz YOK, talep gelirse eklenebilir.
 
-### 13.9 "Perakende → Toptan (Kanıt)" Sekmesi — Statik İnfografik Vitrini
-Eski "Perakende/Toptan Rasyo" sekmesi (yıl bazlı temsili `RATIO` tablosu — kaldırıldı,
-`assets/data.js`'te artık yok) **gerçek analiz kanıtlarını** gösteren bir vitrine
-dönüştürüldü. Amaç: son kullanıcı "toptan neden bu formülle hesaplanıyor" sorusuna
-somut, ölçülmüş kanıtla cevap bulsun (bkz. Bölüm 13.2 envanter kimliği doğrulaması).
+### 13.9 "Perakende → Toptan (Metodoloji)" Sekmesi — SAF STATİK AÇIKLAMA
 
-**Veri:** `assets/kanit.js` → `const KANIT` (özet istatistikler + lead-lag korelasyon
-dizisi + ÜH2 yıllık rasyo listesi + mevsim imzası kartları — hepsi Colab analizinden
-üretilmiş GERÇEK, sabit/geçmiş değerler, sidebar seçimine bağlı DEĞİL). Aylık ısı
-haritası için ayrı veri gerekmedi, mevcut `assets/toptan_katsayi.js` (`TOPTAN_KATSAYI`)
-tekrar kullanıldı. İkisi de `index.html`'de `app.js`'ten ÖNCE yüklenir.
+`data-tab="rasyo"` (id geriye dönük uyumluluk için değişmedi). Sekme **tamamen
+statik HTML**tir: `index.html` içinde tek bir `<section class="metodoloji">`.
+**JS ile render EDİLMEZ**, veri dosyası YOKTUR, hiçbir hesaba dokunmaz.
+Kaynak metin: `docs/metodoloji_ekran.html` (oradaki geçici `<style>` bloğu
+projeye taşınırken `:root` token'larına çevrildi, ham renk/piksel bırakılmadı).
 
-**Render:** `renderKanit()` (app.js) tek seferde DOMContentLoaded'da çalışır — hiçbir
-alt fonksiyonu `updateAll()`'a bağlı değildir, sidebar/parametre değişikliği bu
-sekmeyi ETKİLEMEZ (bilinçli, çünkü veri zaten sabit/geçmiş). Alt fonksiyonlar:
-- `renderKanitKpis()` — 3 KPI kartı (Doğruluk %89, Lead-Time −2 Ay, Test Kapsamı).
-- `renderKanitLeadLag()` — lag −3..+3 bar grafik, saf CSS flexbox (canvas YOK); her
-  kolon üstte pozitif bölge (sıfır çizgisinden yukarı büyür), altta ince negatif bölge
-  (sıfır çizgisinden aşağı büyür); en güçlü lag (`KANIT.ozet.lead_lag_en_guclu`) yeşil
-  vurgulu.
-- `heatDiverge(v)` + `renderKanitHeatmap()` — ÜH2×ay ısı haritası; `isToptanOutlierUh2()`
-  (Bölüm 13.4'teki AYNI fonksiyon, tekrar yazılmadı) ile outlier ÜH2'ler elenir, değerler
-  0,5–2,0'a kırpılır, renk 1,0 pivotlu diverging skala (iki-renk lineer interpolasyon,
-  iki bacaklı). NOT: ana tablodaki tek-bacaklı `heat()` fonksiyonu silindi;
-  `heatDiverge()` ondan bağımsızdır ve YAŞIYOR.
-- `renderKanitYillikRasyo()` — `KANIT.yillik_rasyo` yatay bar liste, 1,0 referans çizgili.
-- `renderKanitMevsim()` — `KANIT.mevsim`, mevcut `.action-row`/`.action-card` kabuğu
-  (önceden kullanılmayan, dead CSS idi) yeniden kullanılarak 4 kart.
-- `renderKanitFootnote()` — sabit dipnot metni.
+İçerik: (1) yıllık toptan = perakende, (2) 12 aylık pay/çarpan tablosu,
+(3) formül + örnek, (4) sapma tablosu ±%10 / ±%25 / ±%37, (5) stok politikası,
+(6) açılır "Metodoloji ve veri kaynağı" bloğu.
 
-**KISIT (bilinçli):** Bu sekme SADECE görsel/kanıt — bütçe hesaplarına (computeFromData,
-computeToptanFromSaved) dokunmaz, hiçbir kullanıcı girdisi almaz.
+**ESKİ "KANIT" İNFOGRAFİK VİTRİNİ KALDIRILDI (2026-09-07) — GERİ EKLEME.**
+Kaldırılan: `assets/kanit.js` (`KANIT`), `assets/toptan_katsayi.js`
+(`TOPTAN_KATSAYI`), `renderKanitKpis/LeadLag/Heatmap/YillikRasyo/Mevsim/Footnote`,
+`renderKanit`, `heatDiverge`, `isToptanOutlierUh2`, tüm `.kanit-*` CSS blokları
+ve iki `<script>` etiketi. **Gerekçe — bu ekranla DOĞRUDAN ÇELİŞİYORDU:**
+
+| Eski vitrin | Yürürlükteki metodoloji |
+|---|---|
+| KPI "Doğruluk %89" (`KANIT.ozet.korelasyon = 0.894`) | Bu, **envanter köprüsünün** kimlik testiydi; köprü kaldırıldı (bkz. üstteki DURUM bloğu) |
+| KPI "Lead-Time −2 Ay" + lead/lag grafiği + dipnot | *"Neden gecikme terimi yok? Toptan, perakendeyi önden götürmüyor."* |
+| Giriş: "Toptan = Perakende + Bayi Stok Değişimi" | `Toptan = Perakende × Çarpan(ay)` |
+
+ÜH2×ay ısı haritası, kategori rasyoları ve mevsim imzaları çelişmiyordu ama
+kullanıcı kararıyla onlar da kaldırıldı: sekme tek bir tutarlı anlatı olsun diye.
+Geri istenirse **yeniden yazılmalı** — gizli/yorumlanmış kod YOK; dosyalar git
+geçmişinde (`ad04b7a` öncesi) duruyor.
+
+**Sonuç — `toptan_katsayi.js` artık projede YOK.** ÜH2×ay katsayı tablosunun son
+kullanıcısı bu ısı haritasıydı. Toptan Bütçe hesabı zaten ulusal çarpanı kullanıyor
+(13.10); ÜH2 bazlı çarpan **eklenmeyecek** (denendi, ulusal çarpanı geçemedi).
 
 ---
 
@@ -189,9 +190,8 @@ yüklenir, sezon sonunda stoktan satar).
 
 **Ürün grubu / bölge bazında ayrı çarpan YOKTUR.** ÜH2 bazlı çarpan denendi ve
 ulusal çarpanı geçemedi (docs/donusum-spec.md §2). `assets/toptan_katsayi.js`
-(`TOPTAN_KATSAYI`, ÜH2×ay) dosyası HÂLÂ YÜKLÜdür ama Toptan Bütçe hesabında
-KULLANILMAZ — yalnızca **Metodoloji sekmesindeki ısı haritasını** besler.
-Silme, Toptan hesabına da geri bağlama.
+(`TOPTAN_KATSAYI`, ÜH2×ay) projeden TAMAMEN KALDIRILDI — tek kullanıcısı olan
+Kanıt ısı haritası da kaldırıldı (bkz. 13.9). Geri ekleme.
 
 #### Tablo — 11 kolon, tamamı salt okunur ve türetilmiş
 
