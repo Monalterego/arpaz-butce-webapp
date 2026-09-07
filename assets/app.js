@@ -1509,10 +1509,9 @@ function updateAll() {
         <td><span class="badge b-amber">${c[4]}</span></td><td class="up">${c[5]}</td></tr>`).join("");
   }
   // --- Toptan (Sell-in) Bütçe — bkz. docs/TOPTAN_KOPRUSU.md 13.10 ---
-  function donusumSatir(perakendeAdet, targetperiod, stokPolitikasi) {
-    const sp = isFinite(stokPolitikasi) ? stokPolitikasi : 0;
+  function donusumSatir(perakendeAdet, targetperiod) {
     if (typeof toptanButce !== "function" || typeof DONUSUM === "undefined") {
-      const c = 1 + sp;
+      const c = 1;
       return { carpan: c, toptanButce: Math.round(Math.max(0, perakendeAdet) * c),
         aciklama: "donusum.js yüklenmedi — çarpan 1,000 kabul edildi" };
     }
@@ -1521,12 +1520,14 @@ function updateAll() {
       // "Tam Yıl" / "—" gibi tek aya inmeyen periyotlar: yıllık çarpan K.
       // (CARPAN'ın perakende sezonuyla AĞIRLIKLI ortalaması tam olarak K'dır —
       // düz ortalaması 1,0294'tür, onu KULLANMA.)
-      const c = DONUSUM.K + sp;
+      const c = DONUSUM.K;
       return { carpan: Math.round(c * 1000) / 1000,
         toptanButce: Math.round(Math.max(0, perakendeAdet) * Math.max(0, c)),
         aciklama: "Hedef Periyot tek bir aya inmiyor (Tam Yıl / belirsiz) — yıllık çarpan K kullanıldı" };
     }
-    const d = toptanButce(perakendeAdet, ay, sp);
+    // 3. parametre (stokPolitikasi) donusum.js API'sinde DURUYOR, varsayılanı 0.
+    // Arayüzden BESLENMİYOR — "Bayi Stok Politikası %" alanı kaldırıldı.
+    const d = toptanButce(perakendeAdet, ay);
     return { carpan: d.carpan, toptanButce: d.toptanButce, aciklama: d.aciklama };
   }
   function toptanCarpanCls(c) {
@@ -1534,30 +1535,17 @@ function updateAll() {
     if (c < 0.90) return " toptan-carpan-dusuk";
     return "";
   }
-  // Bayi Stok Politikası: bayi stok seviyesinin HEDEFLENEN değişimi, perakende
-  // bütçesinin yüzdesi olarak. Çarpana DOĞRUDAN eklenir (donusum.js sözleşmesi).
-  // Perakende ekranındaki "Hedef Stok Büyüme %"den BAĞIMSIZdır — o bayinin kendi
-  // stok bütçesini belirler, bu ise sell-in ile sell-out arasındaki farkı ayarlar.
-  // İkisini BİRLEŞTİRME; farklı katmanlarda, farklı işler.
-  function readToptanStokPolitikasi() {
-    const el = $("t_stokpolitikasi");
-    if (!el) return 0;
-    const v = parseFloat(el.value);
-    return isFinite(v) ? v / 100 : 0;
-  }
-
   // Toptan Bütçe, Kayıtlar'daki (loadSavedMixSets) DONDURULMUŞ satırlardan
   // türetilir — CANLI sidebar seçiminden DEĞİL. buildFlatRows() (Kayıtlar
   // sekmesiyle AYNI düzleştirme) her satırın kendi salesBudget/targetperiod
   // değerini taşır; global parametreler burayı ETKİLEMEZ, sadece yeniden
   // Kaydet/Revize Et yapılan gruplar güncellenir (bkz. docs/TOPTAN_KOPRUSU.md).
   function computeToptanFromSaved() {
-    const stokPolitikasi = readToptanStokPolitikasi();
     // Perakende Bütçe ekranındaki kolon filtreleri burada da geçerli — AYNI
     // rowPassesFilters(), yani iki tablo tek filtre durumunu paylaşır.
     const flat = buildFlatRows().filter(rowPassesFilters);
     const rows = flat.map((r) => {
-      const don = donusumSatir(r.salesBudget, r.targetperiod, stokPolitikasi);
+      const don = donusumSatir(r.salesBudget, r.targetperiod);
       return {
         org: r.salesOrg, region: r.region, uh1: r.uh1, uh2: r.uh2, uh3: r.uh3, name: r.name,
         baseperiod: r.baseperiod, targetperiod: r.targetperiod,
@@ -2185,10 +2173,6 @@ function updateAll() {
     updateAll();
     updateSelInfo();
     updateSaveButtonState();
-    // Bayi Stok Politikası doğrudan çarpanı değiştirir — anında yeniden hesapla.
-    // initNumFields() −/+ butonlarında "input" olayı YAYAR, bu yüzden tek dinleyici yeter.
-    const spEl = $("t_stokpolitikasi");
-    if (spEl) spEl.addEventListener("input", () => { renderToptanFromSaved(); renderToptanRollup(); });
     renderToptanFromSaved(); // ilk yüklemede de Kayıtlar'ın o anki hali gösterilsin
     renderToptanRollup();    // Toptan tabındaki Özet/Rollup da ilk yüklemede Kayıtlar'ı yansıtsın
     renderRollup();          // Özet/Rollup da ilk yüklemede Kayıtlar'ı yansıtsın

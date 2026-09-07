@@ -179,7 +179,7 @@ kullanıcısı bu ısı haritasıydı. Toptan Bütçe hesabı zaten ulusal çarp
 
 ```
 Toptan Bütçe = Perakende Satış Adet Bütçe × Dönüşüm Çarpanı(Hedef Periyot ayı)
-Dönüşüm Çarpanı = DONUSUM.CARPAN[ay-1] + BayiStokPolitikası
+Dönüşüm Çarpanı = DONUSUM.CARPAN[ay-1]
 ```
 
 Çarpanlar `assets/donusum.js` içinde SABİTtir (2021-2025 bayi kanalı verisi,
@@ -210,19 +210,24 @@ Politikası'dır.
 **TOPLAM satırının çarpanı** satır çarpanlarının düz ortalaması DEĞİL,
 `T.toptanButce / T.salesBudget` (gerçekleşen oran) — ay karışımını doğru yansıtır.
 
-#### Bayi Stok Politikası % (`#t_stokpolitikasi`)
-Toptan sekmesinin üstünde, `.numfield` deseni (−/sayı/%/+), varsayılan **0**,
-aralık −30..30. `readToptanStokPolitikasi()` değeri `/100` ile okur ve
-`donusumSatir(..., stokPolitikasi)` üzerinden **çarpana doğrudan ekler**.
-`input` olayında tablo anında yeniden hesaplanır (`initNumFields()` −/+
-butonlarında da `input` YAYDIĞI için tek dinleyici yeter).
+#### Bayi Stok Politikası — KALDIRILDI
 
-- `0` = bayi stok seviyesi sabit kalsın.
-- `-10` = bayi stoğu erisin → toptan bütçesi düşer.
+Bir dönem Toptan sekmesinin üstünde `#t_stokpolitikasi` adlı bir `.numfield`
+vardı (varsayılan 0, aralık −30..30) ve değeri `/100` ile **çarpana doğrudan
+ekleniyordu**. Alan, `readToptanStokPolitikasi()`, `input` dinleyicisi,
+`.params.toptan-params` CSS kuralı ve ekrandaki açıklama metinleri **tamamen
+silindi** (kullanıcı kararı).
 
-**Perakende ekranındaki `Hedef Stok Büyüme %` ile BİRLEŞTİRME.** O, bayinin kendi
-stok bütçesini belirler ve oradan perakende satış bütçesi türer; bu ise sell-in ile
-sell-out arasındaki farkı ayarlar. Farklı katmanlarda, farklı işler.
+`donusum.js` API'si DEĞİŞMEDİ: `toptanButce(adet, periyot, stokPolitikasi = 0)`
+üçüncü parametreyi hâlâ kabul eder. Ama `donusumSatir()` onu **hiç geçmez**,
+yani varsayılan 0 devreye girer. Geri istenirse tek yapılacak, alanı ekleyip
+değerini `donusumSatir` üzerinden bu parametreye taşımaktır.
+
+**Sonuç:** çarpanlar bayi stok seviyesinin sabit kalacağını varsayar. Şirket
+"seneye %10 daha az stokla çalışacağız" derse ekranda bunu söyleyecek bir alan
+YOKTUR; sonucun ayrıca elle düzeltilmesi gerekir (Metodoloji sekmesi 5. bölüm
+bunu açıkça yazar).
+
 
 #### İki tuzak (yaşandı, tekrar etmesin)
 

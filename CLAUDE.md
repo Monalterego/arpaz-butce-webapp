@@ -741,11 +741,12 @@ Durum ("Sevk et"/"Sevki durdur"), yakınsama şeridi, ÜH2×ay mevsimsel katsay�
 kullanımı, Hedef Cover ve Stock Cover kolonları, Toptan Bütçe (Tarihsel Referans)
 ve İma Edilen Stok Değişimi kolonları.
 
-Kullanıcının stok kararını söyleyebileceği tek yer artık **Bayi Stok Politikası %**
-alanıdır (`#t_stokpolitikasi`, Toptan sekmesinin üstünde, varsayılan 0). Değeri
-`/100` ile çarpana DOĞRUDAN eklenir. Perakende ekranındaki **Hedef Stok Büyüme %**
-ile BİRLEŞTİRME — farklı katmanlar: o bayinin kendi stok bütçesini, bu ise sell-in
-ile sell-out arasındaki farkı ayarlar.
+**Bayi Stok Politikası % alanı da KALDIRILDI** (kullanıcı kararı). Bir dönem
+Toptan sekmesinin üstünde `#t_stokpolitikasi` vardı ve değeri çarpana ekleniyordu;
+alan, state'i, event handler'ı ve açıklama metinleri tamamen silindi. `donusum.js`
+API'sinde `toptanButce(adet, periyot, stokPolitikasi = 0)` parametresi DURUYOR ama
+arayüzden BESLENMİYOR — `donusumSatir()` onu hiç geçmez, varsayılan 0 devreye girer.
+Sonuç: toptan bütçesi bayi stok seviyesini sabit varsayar.
 
 **→ `docs/TOPTAN_KOPRUSU.md`** (SADECE bu sekmelere dokunurken oku)
 
