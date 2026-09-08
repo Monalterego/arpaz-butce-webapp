@@ -1656,17 +1656,19 @@ function updateAll() {
       const manuel = toptanManuel.has(anahtar) ? toptanManuel.get(anahtar) : null;
       const taban = manuel != null ? manuel : temel;
       const toptanButce = Math.round(taban * campFactor);
-      // Kolonda UYGULANAN çarpan gösterilir, gerçekleşen oran (toptan ÷ perakende)
-      // DEĞİL. Gerçekleşen oran, toptanın tam sayıya yuvarlanmasından dolayı küçük
-      // adetlerde savruluyordu: perakende 1,94 → toptan 3 → oran 1,546 gibi. Aynı
-      // ayda TEK bir ulusal çarpan olmasına rağmen kolon onlarca farklı değer
-      // gösteriyordu ve kullanıcı haklı olarak "birden fazla çarpan mı var?" diye
-      // sordu. Uygulanan çarpan ay bazında SABİTtir; okunabilir olan budur.
-      // Elle girilmiş satırda uygulanan bir çarpan yoktur — orada tek anlamlı sayı
-      // ima edilen orandır ve satır zaten [Elle] rozetiyle işaretlidir.
-      const carpan = manuel != null
-        ? (r.salesBudget > 0 ? toptanButce / r.salesBudget : 0)
-        : temelCarpan * campFactor;
+      // Kolon SAF aylık dönüşüm çarpanını gösterir (donusum.js, ay bazında sabit,
+      // ulusal). Parametreler (kampanya/gam-kota/stok politikası) ve elle girişler
+      // bu kolonu DEĞİŞTİRMEZ — yalnızca Toptan Bütçe sayısına etki ederler.
+      //
+      // İki kez yanlış kurgulandı, tekrarlama:
+      // 1) Gerçekleşen oran (toptan ÷ perakende) gösteriliyordu; toptan tam sayıya
+      //    yuvarlandığı için küçük adetlerde savruluyordu (perakende 1,94 → toptan
+      //    3 → oran 1,546) ve tek bir ulusal çarpan varken kolon onlarca değer
+      //    gösteriyordu.
+      // 2) Uygulanan çarpan (× kampanya) gösteriliyordu; bu da Paro %10 girilince
+      //    çarpanı 1,405'ten 1,546'ya taşıyordu — oysa çarpan bir VERİ sabitidir,
+      //    kullanıcı parametresi değil.
+      const carpan = don.carpanRaw;
       const aciklama = [
         manuel != null
           ? "Taban: ELLE GİRİLDİ → " + fmtN(manuel) + " adet (formül yerine bu kullanıldı)"
@@ -1694,9 +1696,16 @@ function updateAll() {
 
     const rows = toptanFiltreUygula(tum, toptanSecim());
     const T = rows.reduce((a, r) => {
-      a.salesBudget += r.salesBudget; a.toptanButce += r.toptanButce; return a;
-    }, { salesBudget: 0, toptanButce: 0 });
-    T.carpan = T.salesBudget > 0 ? T.toptanButce / T.salesBudget : 0;
+      a.salesBudget += r.salesBudget;
+      a.toptanButce += r.toptanButce;
+      a.carpanAgirlikli += r.salesBudget * r.carpan;
+      return a;
+    }, { salesBudget: 0, toptanButce: 0, carpanAgirlikli: 0 });
+    // TOPLAM çarpanı da kolonla AYNI şeyi ölçer: saf aylık çarpanların perakende
+    // ağırlıklı ortalaması. Tek ay seçiliyse o ayın çarpanının kendisi çıkar.
+    // Gerçekleşen oran (toptan ÷ perakende) KULLANILMAZ — parametreleri içine
+    // katardı ve kolon ile toplam farklı şeyleri ölçerdi.
+    T.carpan = T.salesBudget > 0 ? T.carpanAgirlikli / T.salesBudget : 0;
     return { rows, T, tum };
   }
 
@@ -1991,7 +2000,7 @@ function updateAll() {
     el.innerHTML = '<div class="saved-mix-table-wrap"><table class="saved-mix-table toptan-fix-table">' +
       '<thead><tr class="saved-mix-header-row">' +
       "<th>Onay Zamanı</th><th>Satış Teşkilatı</th><th>Şube / Bölge</th><th>ÜH1</th><th>ÜH2</th><th>ÜH3</th><th>ÜH4</th>" +
-      "<th>Baz Periyot</th><th>Hedef Periyot</th><th>Perakende Bütçe</th><th>Gerçekleşen Çarpan</th><th>Toptan Bütçe</th><th>Taban</th>" +
+      "<th>Baz Periyot</th><th>Hedef Periyot</th><th>Perakende Bütçe</th><th>Dönüşüm Çarpanı</th><th>Toptan Bütçe</th><th>Taban</th>" +
       "<th>Paro</th><th>Bundle</th><th>Özel gün</th><th>Gam</th><th>Kota</th><th>Stok Pol.</th><th></th>" +
       "</tr></thead><tbody>" + satirlar.join("") + "</tbody></table></div>";
 
