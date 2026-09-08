@@ -232,6 +232,13 @@ tfoot td{background:#eef3f8;font-weight:700;border-top:2px solid var(--navy)}
    720px altındaki tek sütun kırılımı da burada tekrarlanmalı: .params.toptan-camp
    seçicisi baz .params kuralından daha spesifik, aksi halde mobilde 2 sütun kalır. */
 .params.toptan-camp{grid-template-columns:repeat(2,minmax(0,1fr))}
+.revize-filtre{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:var(--s2);margin-bottom:var(--s3)}
+.revize-filtre .rf-alan{display:flex;flex-direction:column;gap:4px;min-width:0}
+.revize-filtre label{font-size:var(--f-label);text-transform:uppercase;letter-spacing:.4px;color:var(--grey);font-weight:600}
+.revize-filtre select{width:100%;padding:6px 8px;border:1px solid var(--line);border-radius:var(--radius-sm);background:var(--surface);font-size:12px;color:var(--ink)}
+.revize-sayac{font-size:var(--f-h2);font-weight:700;color:var(--navy);margin-bottom:var(--s2)}
+@media (max-width:1240px){.revize-filtre{grid-template-columns:repeat(2,minmax(0,1fr))}}
+@media (max-width:720px){.revize-filtre{grid-template-columns:minmax(0,1fr)}}
 .toptan-revize-row{display:flex;align-items:center;gap:var(--s2);margin-top:var(--s3);flex-wrap:wrap}
 .toptan-revize-row .note{margin:0;flex:1;min-width:200px}
 .toptan-revize-row .note.karisik{color:var(--warn);font-weight:600}

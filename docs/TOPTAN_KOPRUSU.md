@@ -290,9 +290,31 @@ Kimlik anahtarı `toptanFixKey(dims)` — 8 alanın `␟` ile birleşimi.
 aynı anahtarı üretsin diye. Yeni bir dims alanı eklersen `TOPTAN_DIM_ALANLARI`'nı
 güncelle — eski kayıtların anahtarı değişir ve eşleşmeyi kaybederler.
 
-#### "Revize Et" (`#toptanRevizeBtn`)
-Görünen satır sayısını onay kutusunda gösterir, onaylanınca her görünen satır için
-**kendi tam dims kimliğiyle upsert** eder (varsa günceller, yoksa ekler).
+#### Yazma yolu: SADECE "Revize Toptan Bütçe" sekmesi (`data-tab="revize"`)
+Toptan Bütçe sekmesindeki panel (`t_m_*`) **hiçbir zaman kayıt yazmaz** — yalnızca
+canlı önizleme. Store'a yazan TEK yer Revize sekmesidir. (Bir dönem Toptan panelinde
+`#toptanRevizeBtn` vardı; kaldırıldı, `initToptanRevize()` de silindi.)
+
+Revize sekmesi:
+- **Filtre bloğu** (`r_f_org` … `r_f_target`, 8 dropdown): boş = "hepsi".
+  `revizeFiltreleriDoldur()` **kaskad** doldurur — her dropdown'ın seçenekleri
+  KENDİNDEN ÖNCEKİ seçimlerle daraltılmış satır kümesinden üretilir (ÜH4, ÜH3'e göre
+  daralır). Seçim artık geçerli değilse "Tümü"ye düşer, böylece 0 satır döndüren
+  kombinasyon seçilemez.
+- **Eşleşen satırlar tablosu** + "N satır eşleşiyor" sayacı. Satırlar **MEVCUT**
+  değerleriyle listelenir: kayıtlı düzeltmesi varsa onunla, yoksa **saf formülle**
+  (`canliParams: bosToptanParams()`) — Toptan sekmesinin önizleme paneli buraya
+  SIZMAZ. Panele değer yazmak bu tabloyu değiştirmez; kaydedene kadar önizleme yok.
+- **Parametreler** `r_m_*` + `r_stokpolitikasi` (Bayi Stok Politikası burada VAR;
+  Toptan sekmesinden kaldırılmıştı). `t_m_*`'dan tamamen bağımsız.
+- **"Revize Et & Kaydet"** (`#revizeKaydetBtn`): eşleşen her satır için kendi tam
+  dims kimliğiyle upsert. Altında "N satır güncellenecek"; eşleşen 0 ise buton pasif.
+- **Kayıtlı Düzeltmeler** listesi bu sekmenin altındadır (Toptan sekmesinden
+  BURAYA TAŞINDI; `#toptanFixList` id'si korundu, `renderToptanFixes()` aynı).
+
+`computeToptanFromSaved(opts)` iki seçenek alır — argümansız çağrı davranışı
+DEĞİŞTİRMEZ: `opts.tumSatirlar` Perakende Bütçe kolon filtrelerini atlar,
+`opts.canliParams` düzeltmesi olmayan satırlar için kullanılacak parametreleri verir.
 
 #### Render önceliği
 Her satır çizilirken kendi dims'ine TAM eşleşen kayıt aranır:

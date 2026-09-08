@@ -438,7 +438,9 @@ gerçek veriyle bağlandığında (bkz. Bölüm 11.3) bu yeniden değerlendirilm
 - Sekmeler (üst navy bar içinde, soldan sağa GÜNCEL sıra — sadece buton metni/sırası,
   `data-tab` değerleri DEĞİŞMEDİ): **Bütçe & Stok Karışımı** (`data-tab="miks"`, ana) · **Perakende Bütçe**
   (`data-tab="kayitlar"`, eski adı "Kayıtlar" — Özet/Rollup paneli + kayıtlı çalışmalar,
-  bkz. Bölüm 14) · **Toptan Bütçe** (`data-tab="toptan"`, bkz. Bölüm 13) · Kampanya/Özel
+  bkz. Bölüm 14) · **Toptan Bütçe** (`data-tab="toptan"`, bkz. Bölüm 13) · **Revize Toptan
+  Bütçe** (`data-tab="revize"` — toptanDuzeltmeleri store'una YAZAN TEK sekme;
+  8 kaskad filtre + kendi `r_m_*` parametreleri, bkz. Bölüm 13.11) · Kampanya/Özel
   Gün Takvimi (2021+, `data-tab="takvim"`) · **Perakende → Toptan (Metodoloji)**
   (`data-tab="rasyo"`, eski adları "...(Kanıt)"/"...Rasyo" — son kullanıcıya yönelik
   STATİK açıklama ekranı, JS ile render EDİLMEZ; bkz. Bölüm 13.9) · Tahmin
@@ -748,11 +750,12 @@ API'sinde `toptanButce(adet, periyot, stokPolitikasi = 0)` parametresi DURUYOR a
 arayüzden BESLENMİYOR — `donusumSatir()` onu hiç geçmez, varsayılan 0 devreye girer.
 Sonuç: toptan bütçesi bayi stok seviyesini sabit varsayar.
 
-Toptan sekmesinde ayrıca **Planlama Parametreleri (Toptan)** (`t_m_*`, Miks'teki
-`m_*`'dan AYRI, oturumluk önizleme) ve **"Revize Et" → Toptan Düzeltmeleri** store'u
-(`localStorage["arpaz_toptan_duzeltmeleri"]`, satır bazlı kalıcı override) vardır.
-Kayıtlı düzeltmesi olan satır canlı paneli DEĞİL kaydı kullanır ve "Revize Edildi"
-rozeti taşır. Panel yükleme kuralı ve üç tuzağı için bkz. Bölüm 13.11.
+Toptan sekmesindeki **Planlama Parametreleri (Toptan)** (`t_m_*`, Miks'teki `m_*`'dan
+AYRI) yalnızca **canlı önizlemedir, ASLA kayıt yazmaz**. Kalıcı satır bazlı override
+(`localStorage["arpaz_toptan_duzeltmeleri"]`) **SADECE "Revize Toptan Bütçe"
+sekmesinden** (`data-tab="revize"`, kendi `r_m_*` / `r_stokpolitikasi` alanları + 8
+kaskad filtre dropdown'ı) yazılır. Kayıtlı düzeltmesi olan satır formülü DEĞİL kaydı
+kullanır ve "Revize Edildi" rozeti taşır. Detay: Bölüm 13.11.
 
 **→ `docs/TOPTAN_KOPRUSU.md`** (SADECE bu sekmelere dokunurken oku)
 
