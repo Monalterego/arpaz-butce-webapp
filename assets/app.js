@@ -1656,9 +1656,17 @@ function updateAll() {
       const manuel = toptanManuel.has(anahtar) ? toptanManuel.get(anahtar) : null;
       const taban = manuel != null ? manuel : temel;
       const toptanButce = Math.round(taban * campFactor);
-      // Gösterilen çarpan HER ZAMAN gerçekleşen orandır (toptan ÷ perakende),
-      // böylece elle girişte de kolon tutarlı okunur.
-      const carpan = r.salesBudget > 0 ? toptanButce / r.salesBudget : 0;
+      // Kolonda UYGULANAN çarpan gösterilir, gerçekleşen oran (toptan ÷ perakende)
+      // DEĞİL. Gerçekleşen oran, toptanın tam sayıya yuvarlanmasından dolayı küçük
+      // adetlerde savruluyordu: perakende 1,94 → toptan 3 → oran 1,546 gibi. Aynı
+      // ayda TEK bir ulusal çarpan olmasına rağmen kolon onlarca farklı değer
+      // gösteriyordu ve kullanıcı haklı olarak "birden fazla çarpan mı var?" diye
+      // sordu. Uygulanan çarpan ay bazında SABİTtir; okunabilir olan budur.
+      // Elle girilmiş satırda uygulanan bir çarpan yoktur — orada tek anlamlı sayı
+      // ima edilen orandır ve satır zaten [Elle] rozetiyle işaretlidir.
+      const carpan = manuel != null
+        ? (r.salesBudget > 0 ? toptanButce / r.salesBudget : 0)
+        : temelCarpan * campFactor;
       const aciklama = [
         manuel != null
           ? "Taban: ELLE GİRİLDİ → " + fmtN(manuel) + " adet (formül yerine bu kullanıldı)"
