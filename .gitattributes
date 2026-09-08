@@ -1,0 +1,12 @@
+# Satır sonu: depoda ve çalışma dizininde HER ZAMAN LF.
+#
+# NEDEN: core.autocrlf=true olduğu için `git checkout` dosyaları CRLF'e
+# çeviriyordu. Bu, dosyaya regex/metin tabanlı düzenleme yapan her aracı
+# sessizce bozuyor — "\n" arayan bir desen "\r\n" ile eşleşmiyor ve
+# değişiklik "anchor bulunamadı" diye başarısız oluyor (yaşandı: index.html
+# bir checkout sonrası tamamen CRLF olunca sonraki tüm düzenlemeler patladı).
+# Bu satır o hata sınıfını tamamen kapatır. KALDIRMA.
+* text=auto eol=lf
+
+# Türetilmiş/büyük veri dosyası — diff'te gürültü yapmasın.
+assets/realdata.js linguist-generated=true
