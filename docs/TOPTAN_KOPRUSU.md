@@ -271,11 +271,16 @@ DEĞİL — silindiler.
 Toptan = Perakende × [DönüşümÇarpanı(ay) + StokPolitikası%] × Π(1 + Paro/Bundle/ÖzelGün/Gam/Kota %)
 ```
 
-#### Panel (`#t_m_paro` … `#t_m_kota`)
-Miks ekranındaki `m_*` alanlarından **AYRI**; ortak state YOK, localStorage YOK.
-Sayfa yenilenince sıfırlanır, kayıtlı Perakende Bütçe kayıtlarına YAZILMAZ, Miks
-ekranındaki canlı tabloyu ETKİLEMEZ. `stokPolitikasi` şemada durur ama arayüzde
-karşılığı yoktur (alan kaldırıldı, bkz. 13.10) — her zaman 0.
+#### Toptan Bütçe sekmesinde parametre kartı YOKTUR
+Bir dönem orada "Planlama Parametreleri (Toptan)" kartı (`t_m_*`) vardı ve canlı
+önizleme yapıyordu; **kaldırıldı**. Onunla birlikte `readToptanPanelParams()`,
+`syncToptanPanelFromFixes()`, `#toptanRevizeNote`, `#t_mult_total` ve parametre
+input dinleyicileri de silindi. `TOPTAN_CAMP` artık DOM'a bağlı değildir, yalnızca
+`{key,label}` taşır (rozet tooltip'i, düzeltme listesi ve çarpan hesabı için).
+
+Sonuç: **Toptan Bütçe sekmesi hiçbir kullanıcı girdisi almaz.** Her satır ya kayıtlı
+düzeltmesiyle ya da SAF formülle hesaplanır — `computeToptanFromSaved()`'in
+varsayılan `canliParams`'ı artık `bosToptanParams()` (hepsi %0).
 
 #### Store: `toptanDuzeltmeleri` (`localStorage["arpaz_toptan_duzeltmeleri"]`)
 Kayıtlı mix set'leriyle aynı desen (JSON dizi). Kayıt şeması:

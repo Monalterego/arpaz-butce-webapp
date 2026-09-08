@@ -329,38 +329,6 @@
         </div>
         <div class="note"><b>Toptan Bütçe = Perakende Satış Adet Bütçe × Dönüşüm Çarpanı.</b> Çarpan, Hedef Periyot ayının ulusal toptan/perakende oranıdır (2021-2025 bayi kanalı verisinden türetildi, donusum.js). Yıllık olarak toptan ≈ perakendedir (K = 1,0011); aylık dağılımları farklıdır — bayi Ocak-Mart'ta yüklenir (Ocak 1,405), Temmuz ve Aralık'ta stoktan satar, sipariş vermez (Aralık 0,734). <b>Ürün grubu bazında ayrı çarpan yoktur</b> — denendi, ulusal çarpanı geçemedi. <b>Doğruluk beklentisi:</b> ÜH4 × Ay seviyesinde sapma ±%37; bu indirilemez, tek bir ürün grubunun tek bir aydaki bayi siparişi değişkendir. Toplulaştırdıkça iyileşir (Toplam × Ay ±%10). <b>Kapsam:</b> yalnızca bayi kanalı — yedek parça, proje/kurumsal, solar ve pazaryeri ayrı bütçelenir. Kaynak: Kayıtlar sekmesindeki tüm kayıtlı gruplar; Perakende Bütçe ekranında uyguladığınız filtreler bu tabloya da yansır. Tüm kolonlar salt okunur ve türetilmiştir.</div>
       </div>
-
-      <!-- PARAMETRELER (TOPTAN) — Miks ekranındakinden AYRI, bağımsız state.
-           ID'ler t_m_* (Miks'te m_*); aynı state'i PAYLAŞMAZLAR. Bu değerler
-           hiçbir yere KAYDEDİLMEZ (localStorage yok), sayfa yenilenince sıfırlanır,
-           kayıtlı Perakende Bütçe kayıtlarına YAZILMAZ ve Miks ekranındaki canlı
-           tabloyu ETKİLEMEZ. -->
-      <div class="panel">
-        <h2>Planlama Parametreleri (Toptan) <span class="pill">Kullanıcı Girişi</span></h2>
-        <div class="params toptan-camp">
-          <div class="pgroup">
-            <div class="ptitle">Kampanya Çarpanları</div>
-            <div class="prow"><label for="t_m_paro">Paro</label>
-              <div class="numfield"><button type="button" class="nf-btn" data-step="t_m_paro" data-dir="-1" tabindex="-1" aria-label="azalt">−</button><input type="number" id="t_m_paro" value="0" step="1" min="-30" max="40"><span class="nf-suffix">%</span><button type="button" class="nf-btn" data-step="t_m_paro" data-dir="1" tabindex="-1" aria-label="artır">+</button></div></div>
-            <div class="prow"><label for="t_m_bundle">Bundle</label>
-              <div class="numfield"><button type="button" class="nf-btn" data-step="t_m_bundle" data-dir="-1" tabindex="-1" aria-label="azalt">−</button><input type="number" id="t_m_bundle" value="0" step="1" min="-30" max="40"><span class="nf-suffix">%</span><button type="button" class="nf-btn" data-step="t_m_bundle" data-dir="1" tabindex="-1" aria-label="artır">+</button></div></div>
-            <div class="prow"><label for="t_m_event">Özel gün</label>
-              <div class="numfield"><button type="button" class="nf-btn" data-step="t_m_event" data-dir="-1" tabindex="-1" aria-label="azalt">−</button><input type="number" id="t_m_event" value="0" step="1" min="-30" max="40"><span class="nf-suffix">%</span><button type="button" class="nf-btn" data-step="t_m_event" data-dir="1" tabindex="-1" aria-label="artır">+</button></div></div>
-          </div>
-          <div class="pgroup">
-            <div class="ptitle">Gam &amp; Kota</div>
-            <div class="prow"><label for="t_m_gam">Gam değişimi</label>
-              <div class="numfield"><button type="button" class="nf-btn" data-step="t_m_gam" data-dir="-1" tabindex="-1" aria-label="azalt">−</button><input type="number" id="t_m_gam" value="0" step="1" min="-30" max="40"><span class="nf-suffix">%</span><button type="button" class="nf-btn" data-step="t_m_gam" data-dir="1" tabindex="-1" aria-label="artır">+</button></div></div>
-            <div class="prow"><label for="t_m_kota">Kota ayı</label>
-              <div class="numfield"><button type="button" class="nf-btn" data-step="t_m_kota" data-dir="-1" tabindex="-1" aria-label="azalt">−</button><input type="number" id="t_m_kota" value="0" step="1" min="-30" max="40"><span class="nf-suffix">%</span><button type="button" class="nf-btn" data-step="t_m_kota" data-dir="1" tabindex="-1" aria-label="artır">+</button></div></div>
-            <div class="mult-total"><span>Toplam Çarpan</span><span id="t_mult_total">1,00x</span></div>
-          </div>
-        </div>
-        <div class="toptan-revize-row">
-          <span class="note" id="toptanRevizeNote"></span>
-        </div>
-        <div class="note">Bu çarpanlar SADECE Toptan Bütçe tablosunu ve yukarıdaki Özet/Rollup'ı etkiler; dönüşüm çarpanının üzerine çarpımsal olarak binerler. Perakende (Kaynak) sütununa ve kayıtlı bütçelere DOKUNMAZLAR. Bütçe &amp; Stok Karışımı ekranındaki aynı isimli alanlardan bağımsızdır ve sayfa yenilenince sıfırlanır.</div>
-      </div>
     </div>
 
     <!-- ========== TAB: REVIZE TOPTAN BÜTÇE ========== -->

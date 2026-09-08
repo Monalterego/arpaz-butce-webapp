@@ -750,8 +750,9 @@ API'sinde `toptanButce(adet, periyot, stokPolitikasi = 0)` parametresi DURUYOR a
 arayüzden BESLENMİYOR — `donusumSatir()` onu hiç geçmez, varsayılan 0 devreye girer.
 Sonuç: toptan bütçesi bayi stok seviyesini sabit varsayar.
 
-Toptan sekmesindeki **Planlama Parametreleri (Toptan)** (`t_m_*`, Miks'teki `m_*`'dan
-AYRI) yalnızca **canlı önizlemedir, ASLA kayıt yazmaz**. Kalıcı satır bazlı override
+Toptan Bütçe sekmesi **hiçbir kullanıcı girdisi ALMAZ** — oradaki "Planlama
+Parametreleri (Toptan)" kartı (`t_m_*`) kaldırıldı; her satır ya kayıtlı
+düzeltmesiyle ya da saf formülle hesaplanır. Kalıcı satır bazlı override
 (`localStorage["arpaz_toptan_duzeltmeleri"]`) **SADECE "Revize Toptan Bütçe"
 sekmesinden** (`data-tab="revize"`, kendi `r_m_*` / `r_stokpolitikasi` alanları + 8
 kaskad filtre dropdown'ı) yazılır. Kayıtlı düzeltmesi olan satır formülü DEĞİL kaydı
