@@ -1780,9 +1780,12 @@ function updateAll() {
       "<td>" + escapeHtml(r.targetperiod) + "</td>" +
       '<td class="num-cell">' + fmtN(r.salesBudget) + "</td>" +
       '<td class="num-cell' + toptanCarpanCls(r.carpan) + '" title="' + escapeAttribute(r.carpanAciklama) + '">' + fmtD3(r.carpan) + "</td>" +
+      // type="number" tr-TR binlik ayracını GÖSTEREMEZ ("1084" çıkar, tablonun geri
+      // kalanı "1.084" yazarken). Bu yüzden type="text" + inputmode="numeric":
+      // değer fmtN ile biçimli durur, girişte parseToptanAdet() ayracı temizler.
       '<td class="toptancell">' +
-        '<input type="number" class="toptanin" id="tman_' + i + '" data-anahtar="' + escapeAttribute(r.anahtar) + '" ' +
-        'min="0" step="1" value="' + r.toptanButce + '" ' +
+        '<input type="text" inputmode="numeric" class="toptanin" id="tman_' + i + '" ' +
+        'data-anahtar="' + escapeAttribute(r.anahtar) + '" value="' + fmtN(r.toptanButce) + '" ' +
         'title="' + escapeAttribute(r.carpanAciklama) + '">' +
         (r.manuel != null ? '<span class="badge b-amber toptan-manuel-rozet" title="Bu satırın tabanı elle girildi. Kampanya/gam-kota çarpanları bunun ÜZERİNE biner; Bayi Stok Politikası etkilemez. Hücreyi boşaltıp Enter\'a basarsanız formüle döner.">Elle</span>' : "") +
       "</td>" +
@@ -1801,6 +1804,14 @@ function updateAll() {
 
   // Hücre düzenlemesi "change"de işlenir ("input" değil): kullanıcı yazarken her
   // tuşta tabloyu yeniden kurmak odağı kaybettirir. Boşaltılırsa formüle döner.
+  // "1.084" / "1084" / "1 084" → 1084. tr-TR binlik ayracı (.) ve boşluk atılır,
+  // ondalık virgül noktaya çevrilir. Geçersizse null.
+  function parseToptanAdet(s) {
+    const temiz = String(s).replace(/[.\s ]/g, "").replace(",", ".");
+    if (temiz === "") return null;
+    const v = parseFloat(temiz);
+    return isFinite(v) ? v : null;
+  }
   function bindToptanManuelInputs(tbody) {
     tbody.querySelectorAll("input.toptanin").forEach((inp) => {
       inp.addEventListener("change", () => {
@@ -1808,8 +1819,8 @@ function updateAll() {
         const ham = inp.value.trim();
         if (ham === "") toptanManuel.delete(anahtar);
         else {
-          const v = parseFloat(ham);
-          if (!isFinite(v) || v < 0) { renderToptanFromSaved(); return; }
+          const v = parseToptanAdet(ham);
+          if (v == null || v < 0) { renderToptanFromSaved(); return; }
           // Girilen değer SONUÇtur; tabana çevirmek için kampanya çarpanını geri al.
           // Böylece kullanıcı hücreye ne yazdıysa (çarpanlar sabitken) onu görür.
           const f = toptanCampFactor(readToptanParams());
