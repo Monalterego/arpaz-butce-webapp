@@ -263,25 +263,6 @@
          Bütçe sekmesine set olarak akar. -->
     <div class="tabpane" data-pane="toptan" style="display:none">
       <div class="panel">
-        <h2>Revize Kapsamı <span class="pill">Filtre</span></h2>
-        <div class="note" style="margin-bottom:var(--s2)">Önce neyi revize edeceğinizi seçin — <b>onay yalnızca aşağıda görünen satırlara uygulanır.</b> Boş bıraktığınız alan "hepsi" demektir; ÜH2/ÜH3/ÜH4 bir üst seviyedeki seçime göre daralır.</div>
-        <div class="revize-filtre">
-          <div class="rf-alan"><label for="t_f_org">Satış Teşkilatı</label><select id="t_f_org"></select></div>
-          <div class="rf-alan"><label for="t_f_region">Şube / Bölge</label><select id="t_f_region"></select></div>
-          <div class="rf-alan"><label for="t_f_uh1">ÜH1</label><select id="t_f_uh1"></select></div>
-          <div class="rf-alan"><label for="t_f_uh2">ÜH2</label><select id="t_f_uh2"></select></div>
-          <div class="rf-alan"><label for="t_f_uh3">ÜH3</label><select id="t_f_uh3"></select></div>
-          <div class="rf-alan"><label for="t_f_uh4">ÜH4</label><select id="t_f_uh4"></select></div>
-          <div class="rf-alan"><label for="t_f_base">Baz Periyot (LY)</label><select id="t_f_base"></select></div>
-          <div class="rf-alan"><label for="t_f_target">Hedef Periyot (TY)</label><select id="t_f_target"></select></div>
-        </div>
-        <div class="revize-sayac-row">
-          <span class="revize-sayac" id="toptanSayac">—</span>
-          <button type="button" class="btn ghost mini" id="toptanFiltreTemizleBtn">Filtreleri Temizle</button>
-        </div>
-      </div>
-
-      <div class="panel">
         <h2>Özet / Rollup <span class="pill">Toptan bütçenin LY → TY alt-toplamı</span></h2>
         <div class="rollup-controls">
           <div class="segmented" id="toptanRollupLevelSeg">
@@ -308,6 +289,25 @@
         </div>
       </div>
       <div class="panel">
+        <h2>Revize Kapsamı <span class="pill">Filtre</span></h2>
+        <div class="note" style="margin-bottom:var(--s2)">Önce neyi revize edeceğinizi seçin — <b>onay yalnızca aşağıda görünen satırlara uygulanır.</b> Boş bıraktığınız alan "hepsi" demektir; ÜH2/ÜH3/ÜH4 bir üst seviyedeki seçime göre daralır.</div>
+        <div class="revize-filtre">
+          <div class="rf-alan"><label for="t_f_org">Satış Teşkilatı</label><select id="t_f_org"></select></div>
+          <div class="rf-alan"><label for="t_f_region">Şube / Bölge</label><select id="t_f_region"></select></div>
+          <div class="rf-alan"><label for="t_f_uh1">ÜH1</label><select id="t_f_uh1"></select></div>
+          <div class="rf-alan"><label for="t_f_uh2">ÜH2</label><select id="t_f_uh2"></select></div>
+          <div class="rf-alan"><label for="t_f_uh3">ÜH3</label><select id="t_f_uh3"></select></div>
+          <div class="rf-alan"><label for="t_f_uh4">ÜH4</label><select id="t_f_uh4"></select></div>
+          <div class="rf-alan"><label for="t_f_base">Baz Periyot (LY)</label><select id="t_f_base"></select></div>
+          <div class="rf-alan"><label for="t_f_target">Hedef Periyot (TY)</label><select id="t_f_target"></select></div>
+        </div>
+        <div class="revize-sayac-row">
+          <span class="revize-sayac" id="toptanSayac">—</span>
+          <button type="button" class="btn ghost mini" id="toptanFiltreTemizleBtn">Filtreleri Temizle</button>
+        </div>
+      </div>
+
+      <div class="panel">
         <h2 style="display:flex;align-items:center;gap:8px;">Toptan Bütçe Tablosu <span class="pill">Sell-in</span>
           <button type="button" class="info-ico" id="toptanInfoBtn" title="Toptan bütçesi nasıl hesaplanıyor?" aria-label="Toptan bütçesi nasıl hesaplanıyor?">i</button>
         </h2>
@@ -324,14 +324,16 @@
             <col style="width:85px">  <!-- Hedef Periyot (TY) -->
             <col style="width:112px"> <!-- Perakende Bütçe -->
             <col style="width:104px"> <!-- Dönüşüm Çarpanı -->
-            <col style="width:120px"> <!-- Toptan Bütçe -->
+            <col style="width:120px"> <!-- Toptan Bütçe (elle düzenlenebilir) -->
+            <col style="width:132px"> <!-- Toptan Ortalama Satış Fiyatı (TY) (elle, ZORUNLU) -->
+            <col style="width:140px"> <!-- Toptan Satış Tutar Bütçe (türetilmiş) -->
           </colgroup>
           <thead>
             <tr>
               <th colspan="6" class="tgrp-secim">TEŞKİLAT &amp; ÜRÜN</th>
               <th colspan="2" class="tgrp-periyot">PERİYOT</th>
               <th colspan="1" class="tgrp-perakende">PERAKENDE (KAYNAK)</th>
-              <th colspan="2" class="tgrp-sonuc">TOPTAN SONUCU</th>
+              <th colspan="4" class="tgrp-sonuc">TOPTAN SONUCU</th>
             </tr>
             <tr>
               <th>Satış Teşkilatı</th>
@@ -344,7 +346,9 @@
               <th>Hedef Periyot (TY)</th>
               <th title="Perakende Satış Adet Bütçe — kayıttan geldiği gibi, salt okunur">Perakende Bütçe</th>
               <th title="Satıra UYGULANAN çarpan = Hedef Periyot ayının ulusal toptan/perakende oranı (donusum.js, 2021-2025 bayi kanalı) + Bayi Stok Politikası, × kampanya/gam-kota çarpanları. Aynı ay ve aynı parametrelerdeki tüm satırlarda AYNIDIR. Elle rakam girilmiş satırlarda uygulanan çarpan yoktur; orada ima edilen oran (toptan ÷ perakende) gösterilir. Hücrenin üzerine gelince kırılım görünür.">Dönüşüm Çarpanı</th>
-              <th title="Toptan Bütçe — ELLE DÜZENLENEBİLİR. Yazdığınız değer yeni taban olur, kampanya/gam-kota çarpanları onun üzerine biner. Hücreyi boşaltıp Enter'a basarsanız formüle döner.">Toptan Bütçe ✎</th>
+              <th title="Toptan Bütçe (adet) — ELLE DÜZENLENEBİLİR. Yazdığınız değer yeni taban olur, kampanya/gam-kota çarpanları onun üzerine biner. Hücreyi boşaltıp Enter'a basarsanız formüle döner.">Toptan Bütçe ✎</th>
+              <th title="Toptan Ortalama Satış Fiyatı (TY) — ELLE GİRİLİR, ZORUNLUDUR. Bayiye kesilecek ortalama birim fiyat. Perakende fiyatından farklıdır, o yüzden otomatik doldurulmaz. Fiyatı girilmemiş satır varken onay yapılamaz.">Toptan Ort. Satış Fiyatı (TY) ✎</th>
+              <th title="Toptan Satış Tutar Bütçe = Toptan Bütçe (adet) × Toptan Ortalama Satış Fiyatı (TY). Türetilmiştir, elle girilmez.">Toptan Satış Tutar Bütçe</th>
             </tr>
           </thead>
           <tbody id="toptanRows"></tbody>

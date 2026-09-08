@@ -1598,6 +1598,11 @@ function updateAll() {
   // durumu. Filtre değişse de oturum boyunca korunur (anahtar dims'tir),
   // sayfa yenilenince sıfırlanır. Kalıcılık yalnızca onayla gelir.
   const toptanManuel = new Map();
+  // Toptan Ortalama Satış Fiyatı (TY) — aynı felsefe, ama ZORUNLU alan:
+  // fiyatı girilmemiş satır varken "Onayla & Kaydet" pasiftir. Otomatik
+  // doldurulmaz; kayıttaki perakende TY fiyatı bayiye kesilen fiyat DEĞİLDİR,
+  // onu varsayılan yapmak sessizce yanlış bir tutar üretirdi.
+  const toptanFiyat = new Map();
 
   // --- Kaskad filtre (Toptan çalışma ekranı) ---
   const TOPTAN_FILTRE = [
@@ -1685,11 +1690,14 @@ function updateAll() {
           : "Kampanya & Gam/Kota: etkisiz (tüm alanlar %0)",
         "SONUÇ: " + fmtN(toptanButce) + " adet · gerçekleşen oran " + fmtD3(carpan),
       ].join("\n");
+      const fiyat = toptanFiyat.has(anahtar) ? toptanFiyat.get(anahtar) : null;
+      const tutar = fiyat != null ? toptanButce * fiyat : null;
       return {
         org: r.salesOrg, region: r.region, uh1: r.uh1, uh2: r.uh2, uh3: r.uh3, name: r.name,
         baseperiod: r.baseperiod, targetperiod: r.targetperiod,
         salesBudget: r.salesBudget,
         temel: Math.round(temel), manuel, carpan, carpanAciklama: aciklama, toptanButce,
+        fiyat, tutar,
         dims, anahtar,
       };
     });
@@ -1699,8 +1707,9 @@ function updateAll() {
       a.salesBudget += r.salesBudget;
       a.toptanButce += r.toptanButce;
       a.carpanAgirlikli += r.salesBudget * r.carpan;
+      if (r.tutar != null) a.tutar += r.tutar; else a.fiyatsiz++;
       return a;
-    }, { salesBudget: 0, toptanButce: 0, carpanAgirlikli: 0 });
+    }, { salesBudget: 0, toptanButce: 0, carpanAgirlikli: 0, tutar: 0, fiyatsiz: 0 });
     // TOPLAM çarpanı da kolonla AYNI şeyi ölçer: saf aylık çarpanların perakende
     // ağırlıklı ortalaması. Tek ay seçiliyse o ayın çarpanının kendisi çıkar.
     // Gerçekleşen oran (toptan ÷ perakende) KULLANILMAZ — parametreleri içine
@@ -1787,9 +1796,9 @@ function updateAll() {
       const mesaj = hicKayitYok
         ? "Önce Bütçe & Stok Karışımı ekranından bütçe çalışıp kaydedin. Toptan bütçesi Perakende Bütçe kayıtlarından otomatik türetilir."
         : "Bu filtreyle eşleşen satır yok. Yukarıdaki seçimleri gevşetin.";
-      tbody.innerHTML = '<tr><td colspan="11" style="text-align:center;color:var(--grey);padding:18px">' + mesaj + "</td></tr>";
+      tbody.innerHTML = '<tr><td colspan="13" style="text-align:center;color:var(--grey);padding:18px">' + mesaj + "</td></tr>";
       $("toptanFoot").innerHTML = "";
-      guncelleToptanOnayNote(0);
+      guncelleToptanOnayNote(0, 0);
       autoFitToptanColumns();
       return;
     }
@@ -1809,21 +1818,32 @@ function updateAll() {
       // kalanı "1.084" yazarken). Bu yüzden type="text" + inputmode="numeric":
       // değer fmtN ile biçimli durur, girişte parseToptanAdet() ayracı temizler.
       '<td class="toptancell">' +
-        '<input type="text" inputmode="numeric" class="toptanin" id="tman_' + i + '" ' +
+        '<input type="text" inputmode="numeric" class="toptanin toptanadetin" id="tman_' + i + '" ' +
         'data-anahtar="' + escapeAttribute(r.anahtar) + '" value="' + fmtN(r.toptanButce) + '" ' +
         'title="' + escapeAttribute(r.carpanAciklama) + '">' +
         (r.manuel != null ? '<span class="badge b-amber toptan-manuel-rozet" title="Bu satırın tabanı elle girildi. Kampanya/gam-kota çarpanları bunun ÜZERİNE biner; Bayi Stok Politikası etkilemez. Hücreyi boşaltıp Enter\'a basarsanız formüle döner.">Elle</span>' : "") +
       "</td>" +
+      // Fiyat ZORUNLU: boşken hücre kırmızı çerçeveli, onay pasif.
+      '<td class="toptancell' + (r.fiyat == null ? " toptancell-eksik" : "") + '">' +
+        '<input type="text" inputmode="decimal" class="toptanin toptanfiyatin" id="tfiy_' + i + '" ' +
+        'data-anahtar="' + escapeAttribute(r.anahtar) + '" value="' + (r.fiyat != null ? fmtD2(r.fiyat) : "") + '" ' +
+        'placeholder="zorunlu" title="Toptan Ortalama Satış Fiyatı (TY) — bayiye kesilecek ortalama birim fiyat. Girilmeden onay yapılamaz.">' +
+      "</td>" +
+      '<td class="num-cell toptan-highlight">' + (r.tutar != null ? fmtN(r.tutar) : "—") + "</td>" +
       "</tr>").join("");
 
     $("toptanFoot").innerHTML =
       "<td>TOPLAM</td><td>—</td><td>—</td><td>—</td><td>—</td><td>—</td><td>—</td><td>—</td>" +
       '<td class="num-cell">' + fmtN(data.T.salesBudget) + "</td>" +
-      '<td class="num-cell' + toptanCarpanCls(data.T.carpan) + '" title="Toplam Toptan ÷ Toplam Perakende (satır çarpanlarının düz ortalaması DEĞİL)">' + fmtD3(data.T.carpan) + "</td>" +
-      '<td class="num-cell toptan-highlight">' + fmtN(data.T.toptanButce) + "</td>";
+      '<td class="num-cell' + toptanCarpanCls(data.T.carpan) + '" title="Saf aylık çarpanların perakende ağırlıklı ortalaması">' + fmtD3(data.T.carpan) + "</td>" +
+      '<td class="num-cell">' + fmtN(data.T.toptanButce) + "</td>" +
+      // Ortalama fiyat = toplam tutar ÷ toplam adet (düz ortalama DEĞİL); fiyatı
+      // eksik satır varsa toplam tutar yanıltıcı olur, o yüzden "—" gösterilir.
+      "<td>" + (data.T.fiyatsiz === 0 && data.T.toptanButce > 0 ? fmtD2(data.T.tutar / data.T.toptanButce) : "—") + "</td>" +
+      '<td class="num-cell toptan-highlight">' + (data.T.fiyatsiz === 0 ? fmtN(data.T.tutar) : "—") + "</td>";
 
     bindToptanManuelInputs(tbody);
-    guncelleToptanOnayNote(data.rows.length);
+    guncelleToptanOnayNote(data.rows.length, data.T.fiyatsiz);
     autoFitToptanColumns();
   }
 
@@ -1837,8 +1857,13 @@ function updateAll() {
     const v = parseFloat(temiz);
     return isFinite(v) ? v : null;
   }
+  // DİKKAT: .toptanin ORTAK STİL sınıfıdır (adet + fiyat ikisinde de var).
+  // Dinleyici seçicisi olarak KULLANMA — fiyat yazınca adet handler'ı da tetiklenir
+  // ve girilen fiyat adet olarak kaydedilir (bu hata yaşandı: fiyat 1.250,50
+  // girilince adet 36'dan 1.251'e sıçradı). Davranış sınıfları ayrı:
+  // .toptanadetin ve .toptanfiyatin.
   function bindToptanManuelInputs(tbody) {
-    tbody.querySelectorAll("input.toptanin").forEach((inp) => {
+    tbody.querySelectorAll("input.toptanadetin").forEach((inp) => {
       inp.addEventListener("change", () => {
         const anahtar = inp.dataset.anahtar;
         const ham = inp.value.trim();
@@ -1856,17 +1881,41 @@ function updateAll() {
       });
       inp.addEventListener("keydown", (e) => { if (e.key === "Enter") inp.blur(); });
     });
+    tbody.querySelectorAll("input.toptanfiyatin").forEach((inp) => {
+      inp.addEventListener("change", () => {
+        const anahtar = inp.dataset.anahtar;
+        const ham = inp.value.trim();
+        if (ham === "") toptanFiyat.delete(anahtar);
+        else {
+          const v = parseToptanAdet(ham); // aynı tr-TR ayraç mantığı (1.234,56)
+          if (v == null || v <= 0) { renderToptanFromSaved(); return; }
+          toptanFiyat.set(anahtar, v);
+        }
+        renderToptanFromSaved();
+        renderToptanRollup();
+      });
+      inp.addEventListener("keydown", (e) => { if (e.key === "Enter") inp.blur(); });
+    });
   }
 
-  function guncelleToptanOnayNote(n) {
+  // Fiyat ZORUNLU: kapsamdaki her satırın Toptan Ortalama Satış Fiyatı (TY)
+  // girilmiş olmalı, aksi halde onay pasif. Adet var ama fiyat yoksa tutar
+  // hesaplanamaz; eksik tutarla kayıt donmasın diye kapıyı burada tutuyoruz.
+  function guncelleToptanOnayNote(n, fiyatsiz) {
     const note = $("toptanOnayNote");
     const btn = $("toptanOnayBtn");
     const elle = toptanManuel.size;
-    if (btn) btn.disabled = n === 0;
+    const eksik = fiyatsiz || 0;
+    if (btn) btn.disabled = n === 0 || eksik > 0;
     if (!note) return;
-    note.textContent = n === 0
-      ? "Kapsamda satır yok — onaylanacak bir şey bulunamadı."
-      : fmtN(n) + " satır onaylanacak" + (elle ? " · " + fmtN(elle) + " satırda elle giriş var" : "") + ".";
+    if (n === 0) { note.textContent = "Kapsamda satır yok — onaylanacak bir şey bulunamadı."; note.classList.remove("karisik"); return; }
+    if (eksik > 0) {
+      note.classList.add("karisik");
+      note.textContent = fmtN(eksik) + " satırda Toptan Ortalama Satış Fiyatı girilmemiş — onay için tümü doldurulmalı.";
+      return;
+    }
+    note.classList.remove("karisik");
+    note.textContent = fmtN(n) + " satır onaylanacak" + (elle ? " · " + fmtN(elle) + " satırda elle giriş var" : "") + ".";
   }
 
   // ==========================================================================
@@ -1933,7 +1982,7 @@ function updateAll() {
         fmtN(data.rows.length) + " satır onaylanacak ve Revize Toptan Bütçe'ye kayıt olarak akacak.",
         "",
         "Kapsam: " + toptanKapsamOzeti(toptanSecim()),
-        "Toplam toptan: " + fmtN(data.T.toptanButce) + " adet",
+        "Toplam toptan: " + fmtN(data.T.toptanButce) + " adet · " + fmtN(data.T.tutar) + " ₺",
         elleSayisi ? "Elle girilmiş satır: " + fmtN(elleSayisi) : "Elle giriş yok",
         "Parametreler: " + (parts.length ? parts.join(" · ") : "tümü %0"),
         "",
@@ -1952,6 +2001,7 @@ function updateAll() {
           baseperiod: r.baseperiod, targetperiod: r.targetperiod,
           perakendeBudget: r.salesBudget, temel: r.temel,
           elle: r.manuel != null, carpan: r.carpan, toptanButce: r.toptanButce,
+          fiyat: r.fiyat, tutar: r.tutar,
         })),
       };
       const list = loadToptanSets();
@@ -1989,7 +2039,9 @@ function updateAll() {
           "<td>" + escapeHtml(r.targetperiod || "—") + "</td>" +
           '<td class="num-cell">' + fmtN(r.perakendeBudget || 0) + "</td>" +
           "<td>" + fmtD3(r.carpan || 0) + "</td>" +
-          '<td class="num-cell toptan-highlight">' + fmtN(r.toptanButce || 0) + "</td>" +
+          '<td class="num-cell">' + fmtN(r.toptanButce || 0) + "</td>" +
+          "<td>" + (r.fiyat != null ? fmtD2(r.fiyat) : "—") + "</td>" +
+          '<td class="num-cell toptan-highlight">' + (r.tutar != null ? fmtN(r.tutar) : "—") + "</td>" +
           "<td>" + (r.elle ? '<span class="badge b-amber">Elle</span>' : "—") + "</td>" +
           "<td>" + yuzde(p.paro) + "</td><td>" + yuzde(p.bundle) + "</td><td>" + yuzde(p.event) + "</td>" +
           "<td>" + yuzde(p.gam) + "</td><td>" + yuzde(p.kota) + "</td><td>" + yuzde(p.stokPolitikasi) + "</td>" +
@@ -2000,7 +2052,8 @@ function updateAll() {
     el.innerHTML = '<div class="saved-mix-table-wrap"><table class="saved-mix-table toptan-fix-table">' +
       '<thead><tr class="saved-mix-header-row">' +
       "<th>Onay Zamanı</th><th>Satış Teşkilatı</th><th>Şube / Bölge</th><th>ÜH1</th><th>ÜH2</th><th>ÜH3</th><th>ÜH4</th>" +
-      "<th>Baz Periyot</th><th>Hedef Periyot</th><th>Perakende Bütçe</th><th>Dönüşüm Çarpanı</th><th>Toptan Bütçe</th><th>Taban</th>" +
+      "<th>Baz Periyot</th><th>Hedef Periyot</th><th>Perakende Bütçe</th><th>Dönüşüm Çarpanı</th><th>Toptan Bütçe</th>" +
+      "<th>Toptan Ort. Satış Fiyatı (TY)</th><th>Toptan Satış Tutar Bütçe</th><th>Taban</th>" +
       "<th>Paro</th><th>Bundle</th><th>Özel gün</th><th>Gam</th><th>Kota</th><th>Stok Pol.</th><th></th>" +
       "</tr></thead><tbody>" + satirlar.join("") + "</tbody></table></div>";
 
