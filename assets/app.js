@@ -1400,7 +1400,7 @@ function updateAll() {
                                     // başlık yüksekliği 0 ölçülür, filtre satırı
                                     // başlığın üstüne biner (Toptan'dakiyle aynı tuzak)
     }
-    if (t === "revize") renderRevize();
+    if (t === "revize") renderRevizeSets();
     if (t === "toptan") {
       renderToptanFromSaved(); // sekme her açıldığında Kayıtlar'ın GÜNCEL halini yansıt
       renderToptanRollup();
@@ -1528,21 +1528,48 @@ function updateAll() {
     return { carpanRaw: d.carpan, aciklama: d.aciklama };
   }
 
-  // --- Kampanya/Gam-Kota parametrelerinin ORTAK tanımı (key + etiket) ---
-  // Dönüşüm çarpanının ÜZERİNE çarpımsal biner: Π(1 + değer/100).
-  // DOM'a bağlı DEĞİLDİR — Toptan Bütçe sekmesindeki "Planlama Parametreleri
-  // (Toptan)" kartı kaldırıldı; bu alanların tek girişi artık "Revize Toptan
-  // Bütçe" sekmesidir (REVIZE_CAMP, kendi r_m_* id'leriyle). Buradaki liste
-  // rozet tooltip'i, düzeltme listesi ve çarpan hesabı için kullanılır.
+  // ==========================================================================
+  // TOPTAN BÜTÇE — ÇALIŞMA EKRANI
+  // --------------------------------------------------------------------------
+  // Boru hattı: Bütçe & Stok Karışımı → Perakende Bütçe (kayıt) →
+  //             Toptan Bütçe (BURASI: filtrele · revize et · onayla) →
+  //             Revize Toptan Bütçe (kayıt).
+  //
+  // Toptan Bütçe, Bütçe & Stok Karışımı'nın toptan taraftaki muadilidir:
+  // ÜZERİNDE ÇALIŞILIR ama kendisi kayıt DEĞİLDİR. Elle girişler ve parametreler
+  // bellekte durur (localStorage YOK), sayfa yenilenince sıfırlanır. Kalıcı olan
+  // tek şey "Onayla & Kaydet" ile dondurulan setlerdir.
+  //
+  // HESAP ZİNCİRİ:
+  //   temel  = Perakende × [DönüşümÇarpanı(ay) + BayiStokPolitikası%]
+  //   taban  = elle girilen değer varsa O, yoksa temel
+  //   Toptan = taban × Π(1 + kampanya/gam-kota %)
+  //
+  // Yani elle giriş DÖNÜŞÜMÜ değiştirir (bu yüzden stok politikası elle girilmiş
+  // satırı etkilemez — dönüşüm zaten kullanıcının sayısıyla değiştirilmiştir),
+  // kampanya çarpanları ise sonuçtan SONRA biner.
+  // ==========================================================================
   const TOPTAN_CAMP = [
-    { key: "paro", label: "Paro" },
-    { key: "bundle", label: "Bundle" },
-    { key: "event", label: "Özel gün" },
-    { key: "gam", label: "Gam değişimi" },
-    { key: "kota", label: "Kota ayı" },
+    { id: "t_m_paro", key: "paro", label: "Paro" },
+    { id: "t_m_bundle", key: "bundle", label: "Bundle" },
+    { id: "t_m_event", key: "event", label: "Özel gün" },
+    { id: "t_m_gam", key: "gam", label: "Gam değişimi" },
+    { id: "t_m_kota", key: "kota", label: "Kota ayı" },
   ];
   function bosToptanParams() {
     return { paro: 0, bundle: 0, event: 0, gam: 0, kota: 0, stokPolitikasi: 0 };
+  }
+  function readToptanParams() {
+    const p = bosToptanParams();
+    TOPTAN_CAMP.forEach((c) => {
+      const el = $(c.id);
+      const v = el ? parseFloat(el.value) : 0;
+      p[c.key] = isFinite(v) ? v : 0;
+    });
+    const sp = $("t_stokpolitikasi");
+    const spv = sp ? parseFloat(sp.value) : 0;
+    p.stokPolitikasi = isFinite(spv) ? spv : 0;
+    return p;
   }
   function toptanCampFactor(p) {
     return TOPTAN_CAMP.reduce((f, c) => f * (1 + (Number(p[c.key]) || 0) / 100), 1);
@@ -1550,110 +1577,127 @@ function updateAll() {
   function toptanCampParts(p) {
     return TOPTAN_CAMP.filter((c) => (Number(p[c.key]) || 0) !== 0).map((c) => {
       const v = Number(p[c.key]);
-      return `${c.label} ${v > 0 ? "+" : "−"}%${String(Math.abs(v)).replace(".", ",")}`;
+      return c.label + " " + (v > 0 ? "+" : "−") + "%" + String(Math.abs(v)).replace(".", ",");
     });
   }
 
-  // ---- Toptan Düzeltmeleri: satır bazlı KALICI parametre override'ı ----
-  // Kayıtlı mix set'leriyle AYNI desen (localStorage + JSON dizi). Bir kayıt, kendi
-  // tam dims kimliğine TAM eşleşen satıra uygulanır; o satır artık canlı paneli
-  // DEĞİL kaydı kullanır. Kayıt yoksa davranış eskisi gibi: canlı panel = geçici
-  // önizleme, hiçbir yere yazılmaz.
-  const TOPTAN_FIX_KEY = "arpaz_toptan_duzeltmeleri";
-  function loadToptanFixes() {
-    try {
-      const raw = localStorage.getItem(TOPTAN_FIX_KEY);
-      if (!raw) return [];
-      const parsed = JSON.parse(raw);
-      return Array.isArray(parsed) ? parsed : [];
-    } catch (e) { return []; }
-  }
-  function saveToptanFixes(list) {
-    try { localStorage.setItem(TOPTAN_FIX_KEY, JSON.stringify(list)); } catch (e) { /* geç */ }
-  }
+  // --- Satır kimliği (TEK yerde) ---
+  // buildFlatRows() çıktısı org'u salesOrg, ÜH4'ü name olarak taşır. Tablo, elle
+  // giriş haritası, filtre ve onaylanan set AYNI anahtarı üretsin diye burada.
   const TOPTAN_DIM_ALANLARI = ["org", "region", "uh1", "uh2", "uh3", "uh4", "baseperiod", "targetperiod"];
   function toptanFixKey(d) {
-    return TOPTAN_DIM_ALANLARI.map((k) => String((d && d[k]) == null ? "" : d[k])).join("\u241F");
+    return TOPTAN_DIM_ALANLARI.map((k) => String((d && d[k]) == null ? "" : d[k])).join("␟");
   }
-  // buildFlatRows() çıktısı org'u salesOrg, ÜH4'ü name olarak taşır — kimlik burada
-  // TEK yerde kurulsun ki tablo, Revize Et ve düzeltme listesi aynı anahtarı üretsin.
   function toptanRowDims(r) {
     return { org: r.salesOrg, region: r.region, uh1: r.uh1, uh2: r.uh2, uh3: r.uh3,
       uh4: r.name, baseperiod: r.baseperiod, targetperiod: r.targetperiod };
   }
-  function toptanFixMap() {
-    const m = new Map();
-    loadToptanFixes().forEach((f) => { if (f && f.dims) m.set(toptanFixKey(f.dims), f); });
-    return m;
+
+  // --- Elle girişler: BELLEKTE, kalıcı DEĞİL ---
+  // Miks ekranındaki state.covers ile aynı felsefe: çalışma ekranının geçici
+  // durumu. Filtre değişse de oturum boyunca korunur (anahtar dims'tir),
+  // sayfa yenilenince sıfırlanır. Kalıcılık yalnızca onayla gelir.
+  const toptanManuel = new Map();
+
+  // --- Kaskad filtre (Toptan çalışma ekranı) ---
+  const TOPTAN_FILTRE = [
+    { id: "t_f_org", key: "org" },
+    { id: "t_f_region", key: "region" },
+    { id: "t_f_uh1", key: "uh1" },
+    { id: "t_f_uh2", key: "uh2" },
+    { id: "t_f_uh3", key: "uh3" },
+    { id: "t_f_uh4", key: "uh4" },
+    { id: "t_f_base", key: "baseperiod" },
+    { id: "t_f_target", key: "targetperiod" },
+  ];
+  function toptanSecim() {
+    const s = {};
+    TOPTAN_FILTRE.forEach((f) => { const el = $(f.id); s[f.key] = el ? el.value : ""; });
+    return s;
   }
-  function toptanCarpanCls(c) {
-    if (c > 1.10) return " toptan-carpan-yuksek";
-    if (c < 0.90) return " toptan-carpan-dusuk";
-    return "";
+  function toptanFiltreUygula(rows, sec) {
+    return rows.filter((r) => TOPTAN_FILTRE.every((f) => !sec[f.key] || String(r.dims[f.key]) === sec[f.key]));
   }
-  // Toptan Bütçe, Kayıtlar'daki (loadSavedMixSets) DONDURULMUŞ satırlardan
-  // türetilir — CANLI sidebar seçiminden DEĞİL. buildFlatRows() (Kayıtlar
-  // sekmesiyle AYNI düzleştirme) her satırın kendi salesBudget/targetperiod
-  // değerini taşır; global parametreler burayı ETKİLEMEZ, sadece yeniden
-  // Kaydet/Revize Et yapılan gruplar güncellenir (bkz. docs/TOPTAN_KOPRUSU.md).
-  // opts.tumSatirlar  → Perakende Bütçe sekmesinin kolon filtrelerini ATLA (Revize
-  //                     sekmesi kendi filtresini uygular).
-  // opts.canliParams  → kayıtlı düzeltmesi OLMAYAN satırlar için kullanılacak
-  //                     parametreler. Verilmezse HEPSİ %0 (saf formül) — Toptan
-  //                     sekmesindeki canlı önizleme paneli kaldırıldı.
-  // Varsayılan çağrı (argümansız) DAVRANIŞI DEĞİŞTİRMEZ.
-  function computeToptanFromSaved(opts) {
-    const o = opts || {};
-    const flat = o.tumSatirlar ? buildFlatRows() : buildFlatRows().filter(rowPassesFilters);
-    const canliParams = o.canliParams || bosToptanParams();
-    const fixler = toptanFixMap();
-    const rows = flat.map((r) => {
+  // Her dropdown'ın seçenekleri KENDİNDEN ÖNCEKİ seçimlerle daraltılmış kümeden
+  // üretilir (ÜH4, ÜH3'e göre daralır). Geçersiz kalan seçim "Tümü"ye düşer, yani
+  // kullanıcı 0 satır döndüren bir kombinasyon seçemez.
+  function toptanFiltreleriDoldur(rows) {
+    let havuz = rows;
+    TOPTAN_FILTRE.forEach((f) => {
+      const el = $(f.id);
+      if (!el) return;
+      const degerler = Array.from(new Set(havuz.map((r) => String(r.dims[f.key] == null ? "" : r.dims[f.key]))))
+        .filter((v) => v !== "").sort((a, b) => a.localeCompare(b, "tr"));
+      const gecerli = degerler.includes(el.value) ? el.value : "";
+      el.innerHTML = '<option value="">Tümü</option>' +
+        degerler.map((v) => '<option value="' + escapeAttribute(v) + '">' + escapeHtml(v) + '</option>').join("");
+      el.value = gecerli;
+      if (gecerli) havuz = havuz.filter((r) => String(r.dims[f.key]) === gecerli);
+    });
+  }
+
+  // --- Hesap ---
+  // Perakende Bütçe sekmesinin kolon filtreleri BURAYA uygulanmaz; bu ekranın
+  // kendi kaskad filtresi vardır (kapsam = onaylanacak küme).
+  function computeToptanFromSaved() {
+    const params = readToptanParams();
+    const campFactor = toptanCampFactor(params);
+    const campParts = toptanCampParts(params);
+    const spPct = Number(params.stokPolitikasi) || 0;
+
+    const tum = buildFlatRows().map((r) => {
       const don = donusumSatir(r.salesBudget, r.targetperiod);
-      // Kayıtlı düzeltme varsa CANLI paneli DEĞİL onu kullan.
       const dims = toptanRowDims(r);
-      const fix = fixler.get(toptanFixKey(dims));
-      const params = fix ? Object.assign(bosToptanParams(), fix.params) : canliParams;
-      const camp = { factor: toptanCampFactor(params), parts: toptanCampParts(params) };
-      // Toptan = Perakende × [Dönüşüm Çarpanı(ay)] × Π(1 + kampanya/gam-kota %)
-      // Tutar HAM çarpanla hesaplanır (görüntülenen 3 ondalık değerle değil) ki
-      // tüm alanlar %0 iken sonuç önceki davranışla BİREBİR aynı kalsın.
-      const carpanRaw = (don.carpanRaw + (Number(params.stokPolitikasi) || 0) / 100) * camp.factor;
-      const carpan = Math.round(carpanRaw * 1000) / 1000;
-      const toptanButce = Math.round(Math.max(0, r.salesBudget) * carpanRaw);
-      const carpanAciklama = [
-        `Temel çarpan: ${fmtD3(don.carpanRaw)} — ${don.aciklama}`,
-        camp.parts.length
-          ? `Kampanya & Gam/Kota: ×${fmtD3(camp.factor)}  (${camp.parts.join(" · ")})`
+      const anahtar = toptanFixKey(dims);
+      // temel = dönüşüm (stok politikası dönüşümün parçası)
+      const temelCarpan = don.carpanRaw + spPct / 100;
+      const temel = Math.max(0, r.salesBudget) * temelCarpan;
+      // taban = elle giriş varsa o, yoksa temel
+      const manuel = toptanManuel.has(anahtar) ? toptanManuel.get(anahtar) : null;
+      const taban = manuel != null ? manuel : temel;
+      const toptanButce = Math.round(taban * campFactor);
+      // Gösterilen çarpan HER ZAMAN gerçekleşen orandır (toptan ÷ perakende),
+      // böylece elle girişte de kolon tutarlı okunur.
+      const carpan = r.salesBudget > 0 ? toptanButce / r.salesBudget : 0;
+      const aciklama = [
+        manuel != null
+          ? "Taban: ELLE GİRİLDİ → " + fmtN(manuel) + " adet (formül yerine bu kullanıldı)"
+          : "Taban: " + fmtN(Math.round(temel)) + " adet = " + fmtN(r.salesBudget) + " × " + fmtD3(temelCarpan),
+        manuel != null
+          ? "Dönüşüm çarpanı: " + fmtD3(don.carpanRaw) + " — " + don.aciklama + " (elle giriş bunu geçersiz kıldı)"
+          : "Dönüşüm çarpanı: " + fmtD3(don.carpanRaw) + " — " + don.aciklama,
+        spPct !== 0
+          ? "Bayi Stok Politikası: " + (spPct > 0 ? "+" : "−") + "%" + String(Math.abs(spPct)).replace(".", ",") +
+            (manuel != null ? " (elle girilmiş satırı ETKİLEMEZ)" : " → çarpana eklendi")
+          : "Bayi Stok Politikası: %0",
+        campParts.length
+          ? "Kampanya & Gam/Kota: ×" + fmtD3(campFactor) + "  (" + campParts.join(" · ") + ")"
           : "Kampanya & Gam/Kota: etkisiz (tüm alanlar %0)",
-        `Toplam çarpan: ${fmtD3(carpan)}`,
-        fix ? `Kaynak: KAYITLI düzeltme (${fix.savedAt || "—"})` : "Kaynak: paneldeki canlı değerler (geçici önizleme)",
+        "SONUÇ: " + fmtN(toptanButce) + " adet · gerçekleşen oran " + fmtD3(carpan),
       ].join("\n");
       return {
         org: r.salesOrg, region: r.region, uh1: r.uh1, uh2: r.uh2, uh3: r.uh3, name: r.name,
         baseperiod: r.baseperiod, targetperiod: r.targetperiod,
         salesBudget: r.salesBudget,
-        carpan, carpanAciklama, toptanButce,
-        dims, fix: fix || null, params,
+        temel: Math.round(temel), manuel, carpan, carpanAciklama: aciklama, toptanButce,
+        dims, anahtar,
       };
     });
+
+    const rows = toptanFiltreUygula(tum, toptanSecim());
     const T = rows.reduce((a, r) => {
       a.salesBudget += r.salesBudget; a.toptanButce += r.toptanButce; return a;
     }, { salesBudget: 0, toptanButce: 0 });
-    // TOPLAM satırın çarpanı satır çarpanlarının düz ortalaması DEĞİL, gerçekleşen
-    // orandır (toplam toptan ÷ toplam perakende) — ay karışımını doğru yansıtır.
     T.carpan = T.salesBudget > 0 ? T.toptanButce / T.salesBudget : 0;
-    return { rows, T };
+    return { rows, T, tum };
   }
 
-  // --- Toptan Bütçe tablosu: sütun genişlikleri hücre içeriğine göre otomatik ---
-  // Ana #grid'in aksine (elle ölçülüp sabitlenmiş genişlikler + kullanıcı sürükleme),
-  // bu tablonun içeriği seçime göre çok değişken (farklı ÜH4 adları, farklı büyüklükte
-  // sayılar) — bu yüzden HER render'da GERÇEK içerikten yeniden ölçülür. table-layout:
-  // fixed KORUNUR (table-layout:auto #grid'de öngörülemez sıkışmaya yol açtığı için
-  // reddedilmişti, bkz. #grid{width:...} yorumu) — sadece <colgroup>'taki piksel
-  // değerleri ve tablo genişliği JS ile güncellenir. Satır yüksekliği zaten HTML
-  // tablolarının doğal davranışıyla içeriğe göre otomatik (hiçbir yerde sabit
-  // yükseklik verilmedi), bu yüzden ayrı bir satır-yüksekliği hesabı gerekmiyor.
+  function toptanCarpanCls(c) {
+    if (c > 1.10) return " toptan-carpan-yuksek";
+    if (c < 0.90) return " toptan-carpan-dusuk";
+    return "";
+  }
+
   const TOPTAN_COL_MIN = 40;
   const TOPTAN_COL_MAX = 340;
   const TOPTAN_CELL_PAD = 20;   // th/td yatay padding (8+8) + güvenlik payı
@@ -1672,11 +1716,12 @@ function updateAll() {
       Array.from(tr.children).forEach((td, i) => {
         if (i >= widths.length) return;
         const badge = td.querySelector(".badge");
-        // td.textContent rozet metnini ZATEN içerir. Eskiden sadece rozet metni
-        // ölçülüyordu; Durum kolonunda hücre = yalnız rozet olduğu için fark yoktu.
-        // İma Edilen Stok Değişimi hücresinde sayı + rozet BİRLİKTE duruyor, bu
-        // yüzden tüm hücre metni ölçülmeli — aksi halde kolon dar kalır.
-        const text = td.textContent.trim();
+        // td.textContent rozet metnini ZATEN içerir.
+        // DİKKAT: Toptan Bütçe hücresi artık bir <input>; textContent'i BOŞtur ve
+        // ölçüm o kolonu sıfıra çökertir. Bu yüzden input'un değeri de sayılır,
+        // üstüne input'un kendi border/padding'i için sabit pay eklenir.
+        const inp = td.querySelector("input");
+        const text = (inp ? inp.value + "0000" : "") + td.textContent.trim();
         const bold = td.classList.contains("num-cell") || td.classList.contains("toptan-highlight");
         const pad = badge ? TOPTAN_CELL_PAD + TOPTAN_BADGE_PAD : TOPTAN_CELL_PAD;
         const w = measureTextWidth(text, bold ? boldCellFont : cellFont) + pad;
@@ -1701,276 +1746,235 @@ function updateAll() {
   // Toptan Bütçe sekmesinde artık parametre kartı YOKTUR (kaldırıldı) — orası
   // düzeltmesi olan satırı kayıttan, olmayanı SAF formülden hesaplar. Kampanya/
   // gam-kota/stok politikası girişinin TEK yeri burasıdır.
-  const REVIZE_CAMP = [
-    { id: "r_m_paro", key: "paro", label: "Paro" },
-    { id: "r_m_bundle", key: "bundle", label: "Bundle" },
-    { id: "r_m_event", key: "event", label: "Özel gün" },
-    { id: "r_m_gam", key: "gam", label: "Gam değişimi" },
-    { id: "r_m_kota", key: "kota", label: "Kota ayı" },
-  ];
-  const REVIZE_FILTRE = [
-    { id: "r_f_org", key: "org" },
-    { id: "r_f_region", key: "region" },
-    { id: "r_f_uh1", key: "uh1" },
-    { id: "r_f_uh2", key: "uh2" },
-    { id: "r_f_uh3", key: "uh3" },
-    { id: "r_f_uh4", key: "uh4" },
-    { id: "r_f_base", key: "baseperiod" },
-    { id: "r_f_target", key: "targetperiod" },
-  ];
-  function readRevizeParams() {
-    const p = bosToptanParams();
-    REVIZE_CAMP.forEach((c) => {
-      const el = $(c.id);
-      const v = el ? parseFloat(el.value) : 0;
-      p[c.key] = isFinite(v) ? v : 0;
-    });
-    const sp = $("r_stokpolitikasi");
-    const spv = sp ? parseFloat(sp.value) : 0;
-    p.stokPolitikasi = isFinite(spv) ? spv : 0;
-    return p;
-  }
-  // Revize sekmesi TÜM kayıtlı satırları görür (Perakende Bütçe kolon filtreleri
-  // BURAYA uygulanmaz) ve düzeltmesi olmayan satırları SAF formülle gösterir —
-  // Toptan sekmesinin canlı önizleme paneli buraya sızmasın.
-  function revizeTumSatirlar() {
-    return computeToptanFromSaved({ tumSatirlar: true, canliParams: bosToptanParams() }).rows;
-  }
-  function revizeSecim() {
-    const s = {};
-    REVIZE_FILTRE.forEach((f) => { const el = $(f.id); s[f.key] = el ? el.value : ""; });
-    return s;
-  }
-  function revizeEslesen(rows, sec) {
-    return rows.filter((r) => REVIZE_FILTRE.every((f) => !sec[f.key] || String(r.dims[f.key]) === sec[f.key]));
-  }
-  // Kaskad: her dropdown'ın seçenekleri, KENDİNDEN ÖNCEKİ seçimlerle daraltılmış
-  // satır kümesinden üretilir. Böylece ÜH4, ÜH3 seçimine göre daralır; kullanıcı
-  // hiçbir zaman 0 satır döndüren bir kombinasyon seçemez.
-  function revizeFiltreleriDoldur(rows) {
-    let havuz = rows;
-    REVIZE_FILTRE.forEach((f) => {
-      const el = $(f.id);
-      if (!el) return;
-      const degerler = Array.from(new Set(havuz.map((r) => String(r.dims[f.key] == null ? "" : r.dims[f.key]))))
-        .filter((v) => v !== "").sort((a, b) => a.localeCompare(b, "tr"));
-      const oncekiDeger = el.value;
-      const gecerli = degerler.includes(oncekiDeger) ? oncekiDeger : "";
-      el.innerHTML = '<option value="">Tümü</option>' +
-        degerler.map((v) => `<option value="${escapeAttribute(v)}">${escapeHtml(v)}</option>`).join("");
-      el.value = gecerli;
-      if (gecerli) havuz = havuz.filter((r) => String(r.dims[f.key]) === gecerli);
-    });
-  }
-  function renderRevizeEslesen(rows) {
-    const el = $("revizeEslesenList");
-    if (!el) return;
-    if (!rows.length) {
-      el.innerHTML = '<div class="saved-mix-empty">Bu filtreyle eşleşen satır yok. Filtreleri gevşetin ya da önce Bütçe &amp; Stok Karışımı ekranından bütçe çalışıp kaydedin.</div>';
+  function renderToptanFromSaved() {
+    const tbody = $("toptanRows");
+    if (!tbody) return;
+    const data = computeToptanFromSaved();
+
+    toptanFiltreleriDoldur(data.tum);
+    const sayac = $("toptanSayac");
+    if (sayac) sayac.textContent = fmtN(data.rows.length) + " satır kapsamda";
+    const multEl = $("t_mult_total");
+    if (multEl) multEl.textContent = fmtX(toptanCampFactor(readToptanParams()));
+
+    if (!data.rows.length) {
+      const hicKayitYok = !buildFlatRows().length;
+      const mesaj = hicKayitYok
+        ? "Önce Bütçe & Stok Karışımı ekranından bütçe çalışıp kaydedin. Toptan bütçesi Perakende Bütçe kayıtlarından otomatik türetilir."
+        : "Bu filtreyle eşleşen satır yok. Yukarıdaki seçimleri gevşetin.";
+      tbody.innerHTML = '<tr><td colspan="11" style="text-align:center;color:var(--grey);padding:18px">' + mesaj + "</td></tr>";
+      $("toptanFoot").innerHTML = "";
+      guncelleToptanOnayNote(0);
+      autoFitToptanColumns();
       return;
     }
-    const satirlar = rows.map((r) => `<tr>
-      <td>${escapeHtml(r.org)}</td>
-      <td>${escapeHtml(r.region)}</td>
-      <td>${escapeHtml(r.uh1)}</td>
-      <td>${escapeHtml(r.uh2)}</td>
-      <td>${escapeHtml(r.uh3)}</td>
-      <td>${escapeHtml(r.name)}</td>
-      <td>${escapeHtml(r.baseperiod)}</td>
-      <td>${escapeHtml(r.targetperiod)}</td>
-      <td>${fmtN(r.salesBudget)}</td>
-      <td>${fmtD3(r.carpan)}</td>
-      <td>${fmtN(r.toptanButce)}</td>
-      <td>${r.fix ? '<span class="badge b-blue">Revize Edildi</span>' : "—"}</td>
-    </tr>`).join("");
-    el.innerHTML = `<div class="saved-mix-table-wrap">
-      <table class="saved-mix-table toptan-fix-table">
-        <thead><tr class="saved-mix-header-row">
-          <th>Satış Teşkilatı</th><th>Şube / Bölge</th><th>ÜH1</th><th>ÜH2</th><th>ÜH3</th><th>ÜH4</th>
-          <th>Baz Periyot</th><th>Hedef Periyot</th><th>Perakende Bütçe</th>
-          <th>Dönüşüm Çarpanı</th><th>Toptan Bütçe</th><th>Durum</th>
-        </tr></thead>
-        <tbody>${satirlar}</tbody>
-      </table>
-    </div>`;
-  }
-  function renderRevize() {
-    if (!$("revizeEslesenList")) return;
-    const tum = revizeTumSatirlar();
-    revizeFiltreleriDoldur(tum);              // kaskad seçenekler + geçersiz seçimi temizle
-    const eslesen = revizeEslesen(tum, revizeSecim());
-    const sayacEl = $("revizeSayac");
-    if (sayacEl) sayacEl.textContent = `${fmtN(eslesen.length)} satır eşleşiyor`;
-    renderRevizeEslesen(eslesen);
 
-    const multEl = $("r_mult_total");
-    if (multEl) {
-      const p = readRevizeParams();
-      multEl.textContent = fmtX(REVIZE_CAMP.reduce((f, c) => f * (1 + (Number(p[c.key]) || 0) / 100), 1));
-    }
-    const btn = $("revizeKaydetBtn");
-    const note = $("revizeKaydetNote");
-    if (btn) btn.disabled = eslesen.length === 0;
-    if (note) {
-      note.textContent = eslesen.length
-        ? `${fmtN(eslesen.length)} satır güncellenecek.`
-        : "Eşleşen satır yok — kaydedilecek bir şey bulunamadı.";
-    }
-    renderToptanFixes();
+    tbody.innerHTML = data.rows.map((r, i) => '<tr>' +
+      "<td>" + escapeHtml(r.org) + "</td>" +
+      "<td>" + escapeHtml(r.region) + "</td>" +
+      "<td>" + escapeHtml(r.uh1) + "</td>" +
+      "<td>" + escapeHtml(r.uh2) + "</td>" +
+      "<td>" + escapeHtml(r.uh3) + "</td>" +
+      "<td>" + escapeHtml(r.name) + "</td>" +
+      "<td>" + escapeHtml(r.baseperiod) + "</td>" +
+      "<td>" + escapeHtml(r.targetperiod) + "</td>" +
+      '<td class="num-cell">' + fmtN(r.salesBudget) + "</td>" +
+      '<td class="num-cell' + toptanCarpanCls(r.carpan) + '" title="' + escapeAttribute(r.carpanAciklama) + '">' + fmtD3(r.carpan) + "</td>" +
+      '<td class="toptancell">' +
+        '<input type="number" class="toptanin" id="tman_' + i + '" data-anahtar="' + escapeAttribute(r.anahtar) + '" ' +
+        'min="0" step="1" value="' + r.toptanButce + '" ' +
+        'title="' + escapeAttribute(r.carpanAciklama) + '">' +
+        (r.manuel != null ? '<span class="badge b-amber toptan-manuel-rozet" title="Bu satırın tabanı elle girildi. Kampanya/gam-kota çarpanları bunun ÜZERİNE biner; Bayi Stok Politikası etkilemez. Hücreyi boşaltıp Enter\'a basarsanız formüle döner.">Elle</span>' : "") +
+      "</td>" +
+      "</tr>").join("");
+
+    $("toptanFoot").innerHTML =
+      "<td>TOPLAM</td><td>—</td><td>—</td><td>—</td><td>—</td><td>—</td><td>—</td><td>—</td>" +
+      '<td class="num-cell">' + fmtN(data.T.salesBudget) + "</td>" +
+      '<td class="num-cell' + toptanCarpanCls(data.T.carpan) + '" title="Toplam Toptan ÷ Toplam Perakende (satır çarpanlarının düz ortalaması DEĞİL)">' + fmtD3(data.T.carpan) + "</td>" +
+      '<td class="num-cell toptan-highlight">' + fmtN(data.T.toptanButce) + "</td>";
+
+    bindToptanManuelInputs(tbody);
+    guncelleToptanOnayNote(data.rows.length);
+    autoFitToptanColumns();
   }
-  function initRevize() {
-    REVIZE_FILTRE.forEach((f) => {
-      const el = $(f.id);
-      if (el) el.addEventListener("change", renderRevize);
+
+  // Hücre düzenlemesi "change"de işlenir ("input" değil): kullanıcı yazarken her
+  // tuşta tabloyu yeniden kurmak odağı kaybettirir. Boşaltılırsa formüle döner.
+  function bindToptanManuelInputs(tbody) {
+    tbody.querySelectorAll("input.toptanin").forEach((inp) => {
+      inp.addEventListener("change", () => {
+        const anahtar = inp.dataset.anahtar;
+        const ham = inp.value.trim();
+        if (ham === "") toptanManuel.delete(anahtar);
+        else {
+          const v = parseFloat(ham);
+          if (!isFinite(v) || v < 0) { renderToptanFromSaved(); return; }
+          // Girilen değer SONUÇtur; tabana çevirmek için kampanya çarpanını geri al.
+          // Böylece kullanıcı hücreye ne yazdıysa (çarpanlar sabitken) onu görür.
+          const f = toptanCampFactor(readToptanParams());
+          toptanManuel.set(anahtar, f > 0 ? v / f : v);
+        }
+        renderToptanFromSaved();
+        renderToptanRollup();
+      });
+      inp.addEventListener("keydown", (e) => { if (e.key === "Enter") inp.blur(); });
     });
-    REVIZE_CAMP.concat([{ id: "r_stokpolitikasi" }]).forEach((c) => {
+  }
+
+  function guncelleToptanOnayNote(n) {
+    const note = $("toptanOnayNote");
+    const btn = $("toptanOnayBtn");
+    const elle = toptanManuel.size;
+    if (btn) btn.disabled = n === 0;
+    if (!note) return;
+    note.textContent = n === 0
+      ? "Kapsamda satır yok — onaylanacak bir şey bulunamadı."
+      : fmtN(n) + " satır onaylanacak" + (elle ? " · " + fmtN(elle) + " satırda elle giriş var" : "") + ".";
+  }
+
+  // ==========================================================================
+  // ONAYLANMIŞ REVİZYON SETLERİ — "Revize Toptan Bütçe" sekmesinin kaynağı
+  // Perakende Bütçe (savedMixSets) ile AYNI desen: bir onay = bir SET, içinde
+  // o anki filtreye uyan tüm satırların DONDURULMUŞ değerleri. Sonradan
+  // parametre oynatmak kaydı DEĞİŞTİRMEZ; güncellemek için yeniden onaylanır.
+  // ==========================================================================
+  const TOPTAN_SET_KEY = "arpaz_toptan_revize_setleri";
+  function loadToptanSets() {
+    try {
+      const raw = localStorage.getItem(TOPTAN_SET_KEY);
+      if (!raw) return [];
+      const parsed = JSON.parse(raw);
+      return Array.isArray(parsed) ? parsed : [];
+    } catch (e) { return []; }
+  }
+  function saveToptanSets(list) {
+    try { localStorage.setItem(TOPTAN_SET_KEY, JSON.stringify(list)); } catch (e) { /* geç */ }
+  }
+  function toptanKapsamOzeti(sec) {
+    const etiket = { org: "Teşkilat", region: "Bölge", uh1: "ÜH1", uh2: "ÜH2", uh3: "ÜH3",
+      uh4: "ÜH4", baseperiod: "Baz", targetperiod: "Hedef" };
+    const secili = TOPTAN_FILTRE.filter((f) => sec[f.key]).map((f) => etiket[f.key] + ": " + sec[f.key]);
+    return secili.length ? secili.join(" · ") : "Tümü (filtresiz)";
+  }
+  // Filtre ve parametre değişimlerinde tablo + rollup anında yeniden hesaplanır.
+  // initNumFields() −/+ butonlarında "input" olayı YAYAR, tek dinleyici yeter.
+  function initToptanParamListeners() {
+    const tazele = () => { renderToptanFromSaved(); renderToptanRollup(); };
+    TOPTAN_FILTRE.forEach((f) => { const el = $(f.id); if (el) el.addEventListener("change", tazele); });
+    TOPTAN_CAMP.concat([{ id: "t_stokpolitikasi" }]).forEach((c) => {
       const el = $(c.id);
-      if (el) el.addEventListener("input", renderRevize);
+      if (el) el.addEventListener("input", tazele);
     });
-    const btn = $("revizeKaydetBtn");
+  }
+
+  function initToptanOnay() {
+    const sifirla = $("toptanSifirlaBtn");
+    if (sifirla) sifirla.addEventListener("click", () => {
+      if (!toptanManuel.size) return;
+      if (!confirm(fmtN(toptanManuel.size) + " satırdaki elle giriş silinecek ve o satırlar formüle dönecek.\n\nDevam edilsin mi?")) return;
+      toptanManuel.clear();
+      renderToptanFromSaved();
+      renderToptanRollup();
+    });
+    const btn = $("toptanOnayBtn");
     if (!btn) return;
     btn.addEventListener("click", () => {
-      const eslesen = revizeEslesen(revizeTumSatirlar(), revizeSecim());
-      if (!eslesen.length) return; // buton zaten pasif
-      const p = readRevizeParams();
-      const parts = REVIZE_CAMP.filter((c) => (Number(p[c.key]) || 0) !== 0)
-        .map((c) => `${c.label} ${p[c.key] > 0 ? "+" : "−"}%${String(Math.abs(p[c.key])).replace(".", ",")}`);
-      if (p.stokPolitikasi) parts.push(`Bayi Stok Politikası ${p.stokPolitikasi > 0 ? "+" : "−"}%${String(Math.abs(p.stokPolitikasi)).replace(".", ",")}`);
+      const data = computeToptanFromSaved();
+      if (!data.rows.length) return; // buton zaten pasif
+      const p = readToptanParams();
+      const parts = toptanCampParts(p);
+      if (p.stokPolitikasi) {
+        parts.push("Bayi Stok Politikası " + (p.stokPolitikasi > 0 ? "+" : "−") + "%" + String(Math.abs(p.stokPolitikasi)).replace(".", ","));
+      }
+      const elleSayisi = data.rows.filter((r) => r.manuel != null).length;
       const onay = [
-        fmtN(eslesen.length) + " satır güncellenecek.",
+        fmtN(data.rows.length) + " satır onaylanacak ve Revize Toptan Bütçe'ye kayıt olarak akacak.",
         "",
-        "Uygulanacak parametreler:",
-        parts.length ? parts.join("\n") : "Tüm parametreler %0 — bu satırlardaki mevcut düzeltmeler %0'a eşitlenir.",
+        "Kapsam: " + toptanKapsamOzeti(toptanSecim()),
+        "Toplam toptan: " + fmtN(data.T.toptanButce) + " adet",
+        elleSayisi ? "Elle girilmiş satır: " + fmtN(elleSayisi) : "Elle giriş yok",
+        "Parametreler: " + (parts.length ? parts.join(" · ") : "tümü %0"),
         "",
         "Devam edilsin mi?",
       ].join("\n");
       if (!confirm(onay)) return;
 
-      const list = loadToptanFixes();
-      const idx = new Map();
-      list.forEach((f, i) => { if (f && f.dims) idx.set(toptanFixKey(f.dims), i); });
-      const now = new Date().toLocaleString("tr-TR");
-      eslesen.forEach((r) => {
-        const kayit = { dims: r.dims, params: Object.assign(bosToptanParams(), p), savedAt: now };
-        const k = toptanFixKey(r.dims);
-        if (idx.has(k)) list[idx.get(k)] = kayit;   // upsert: varsa güncelle
-        else { idx.set(k, list.length); list.push(kayit); }
-      });
-      saveToptanFixes(list);
-      renderRevize();
-      renderToptanFromSaved();
-      renderToptanRollup();
+      const set = {
+        id: "tset_" + Date.now() + "_" + Math.random().toString(36).slice(2, 7),
+        savedAt: new Date().toLocaleString("tr-TR"),
+        kapsam: toptanSecim(),
+        kapsamOzeti: toptanKapsamOzeti(toptanSecim()),
+        params: Object.assign(bosToptanParams(), p),
+        rows: data.rows.map((r) => ({
+          org: r.org, region: r.region, uh1: r.uh1, uh2: r.uh2, uh3: r.uh3, uh4: r.name,
+          baseperiod: r.baseperiod, targetperiod: r.targetperiod,
+          perakendeBudget: r.salesBudget, temel: r.temel,
+          elle: r.manuel != null, carpan: r.carpan, toptanButce: r.toptanButce,
+        })),
+      };
+      const list = loadToptanSets();
+      list.unshift(set);
+      saveToptanSets(list.slice(0, 25)); // savedMixSets ile aynı sınır
+      renderRevizeSets();
+      showTab("revize"); // Miks ekranındaki "Senaryo kaydet" gibi: sonucu göster
     });
   }
 
-  // "Toptan Düzeltmeleri" listesi — Kayıtlar sekmesindeki tabloyla AYNI desen
-  // (.saved-mix-table-wrap/.saved-mix-table); sadece min-width override edildi.
-  function renderToptanFixes() {
-    const el = $("toptanFixList");
+  // Revize Toptan Bütçe sekmesi — SALT OKUNUR kayıt listesi.
+  // Perakende Bütçe'deki .saved-mix-table deseni; min-width override edilir.
+  function renderRevizeSets() {
+    const el = $("revizeSetList");
     if (!el) return;
-    const list = loadToptanFixes();
-    if (!list.length) {
-      el.innerHTML = '<div class="saved-mix-empty">Henüz kayıtlı toptan düzeltmesi yok. Tabloyu filtreleyip parametreleri girdikten sonra "Revize Et" ile kaydedin.</div>';
+    const sets = loadToptanSets();
+    if (!sets.length) {
+      el.innerHTML = '<div class="saved-mix-empty">Henüz onaylanmış revizyon yok. Toptan Bütçe ekranında kapsamı filtreleyip revize ettikten sonra "Onayla &amp; Kaydet" ile buraya gönderin.</div>';
       return;
     }
     const yuzde = (v) => (Number(v) || 0) === 0 ? "—" : ((Number(v) > 0 ? "+" : "−") + "%" + String(Math.abs(Number(v))).replace(".", ","));
-    const satirlar = list.map((f) => {
-      const d = f.dims || {};
-      const p = Object.assign(bosToptanParams(), f.params);
-      return `<tr>
-        <td>${escapeHtml(f.savedAt || "—")}</td>
-        <td>${escapeHtml(d.org || "—")}</td>
-        <td>${escapeHtml(d.region || "—")}</td>
-        <td>${escapeHtml(d.uh1 || "—")}</td>
-        <td>${escapeHtml(d.uh2 || "—")}</td>
-        <td>${escapeHtml(d.uh3 || "—")}</td>
-        <td>${escapeHtml(d.uh4 || "—")}</td>
-        <td>${escapeHtml(d.baseperiod || "—")}</td>
-        <td>${escapeHtml(d.targetperiod || "—")}</td>
-        <td>${yuzde(p.paro)}</td>
-        <td>${yuzde(p.bundle)}</td>
-        <td>${yuzde(p.event)}</td>
-        <td>${yuzde(p.gam)}</td>
-        <td>${yuzde(p.kota)}</td>
-        <td>${fmtX(toptanCampFactor(p))}</td>
-        <td><button type="button" class="btn ghost mini" data-delete-fix="${escapeAttribute(toptanFixKey(d))}">Sil</button></td>
-      </tr>`;
-    }).join("");
-    el.innerHTML = `<div class="saved-mix-table-wrap">
-      <table class="saved-mix-table toptan-fix-table">
-        <thead><tr class="saved-mix-header-row">
-          <th>Kayıt Zamanı</th><th>Satış Teşkilatı</th><th>Şube / Bölge</th><th>ÜH1</th><th>ÜH2</th>
-          <th>ÜH3</th><th>ÜH4</th><th>Baz Periyot</th><th>Hedef Periyot</th>
-          <th>Paro</th><th>Bundle</th><th>Özel gün</th><th>Gam</th><th>Kota</th><th>Toplam Çarpan</th><th></th>
-        </tr></thead>
-        <tbody>${satirlar}</tbody>
-      </table>
-    </div>`;
-    el.querySelectorAll("[data-delete-fix]").forEach((btn) => {
-      btn.addEventListener("click", () => {
-        const k = btn.getAttribute("data-delete-fix");
-        saveToptanFixes(loadToptanFixes().filter((f) => toptanFixKey(f && f.dims) !== k));
-        renderToptanFromSaved();
-        renderToptanRollup();
-        renderRevize(); // eşleşen tablo + liste + sayaç birlikte tazelensin
+    const satirlar = [];
+    sets.forEach((s) => {
+      const p = Object.assign(bosToptanParams(), s.params);
+      (s.rows || []).forEach((r) => {
+        satirlar.push("<tr>" +
+          "<td>" + escapeHtml(s.savedAt || "—") + "</td>" +
+          "<td>" + escapeHtml(r.org || "—") + "</td>" +
+          "<td>" + escapeHtml(r.region || "—") + "</td>" +
+          "<td>" + escapeHtml(r.uh1 || "—") + "</td>" +
+          "<td>" + escapeHtml(r.uh2 || "—") + "</td>" +
+          "<td>" + escapeHtml(r.uh3 || "—") + "</td>" +
+          "<td>" + escapeHtml(r.uh4 || "—") + "</td>" +
+          "<td>" + escapeHtml(r.baseperiod || "—") + "</td>" +
+          "<td>" + escapeHtml(r.targetperiod || "—") + "</td>" +
+          '<td class="num-cell">' + fmtN(r.perakendeBudget || 0) + "</td>" +
+          "<td>" + fmtD3(r.carpan || 0) + "</td>" +
+          '<td class="num-cell toptan-highlight">' + fmtN(r.toptanButce || 0) + "</td>" +
+          "<td>" + (r.elle ? '<span class="badge b-amber">Elle</span>' : "—") + "</td>" +
+          "<td>" + yuzde(p.paro) + "</td><td>" + yuzde(p.bundle) + "</td><td>" + yuzde(p.event) + "</td>" +
+          "<td>" + yuzde(p.gam) + "</td><td>" + yuzde(p.kota) + "</td><td>" + yuzde(p.stokPolitikasi) + "</td>" +
+          '<td><button type="button" class="btn ghost mini" data-delete-tset="' + escapeAttribute(s.id) + '">Sil</button></td>' +
+        "</tr>");
       });
     });
-  }
+    el.innerHTML = '<div class="saved-mix-table-wrap"><table class="saved-mix-table toptan-fix-table">' +
+      '<thead><tr class="saved-mix-header-row">' +
+      "<th>Onay Zamanı</th><th>Satış Teşkilatı</th><th>Şube / Bölge</th><th>ÜH1</th><th>ÜH2</th><th>ÜH3</th><th>ÜH4</th>" +
+      "<th>Baz Periyot</th><th>Hedef Periyot</th><th>Perakende Bütçe</th><th>Gerçekleşen Çarpan</th><th>Toptan Bütçe</th><th>Taban</th>" +
+      "<th>Paro</th><th>Bundle</th><th>Özel gün</th><th>Gam</th><th>Kota</th><th>Stok Pol.</th><th></th>" +
+      "</tr></thead><tbody>" + satirlar.join("") + "</tbody></table></div>";
 
-  // Satır kayıtlı bir düzeltme taşıyorsa görsel işaret + hangi parametreler/ne zaman.
-  function toptanRevizeBadge(r) {
-    if (!r.fix) return "";
-    const parts = toptanCampParts(r.params);
-    const baslik = [
-      "Bu satır KAYITLI bir toptan düzeltmesi kullanıyor — paneldeki canlı değerler bu satırı etkilemez.",
-      "Kayıt zamanı: " + (r.fix.savedAt || "—"),
-      parts.length ? "Parametreler: " + parts.join(" · ") : "Parametreler: tümü %0",
-    ].join("\n");
-    return `<span class="badge b-blue" title="${escapeHtml(baslik)}">Revize Edildi</span>`;
-  }
-  function renderToptanFromSaved() {
-    const tbody = $("toptanRows");
-    if (!tbody) return;
-    const data = computeToptanFromSaved();
-    if (!data.rows.length) {
-      // Filtre yüzünden mi boş, gerçekten kayıt yok mu? İkisi FARKLI mesaj —
-      // "kayıt yok" derken aslında filtrelenmiş olmak kullanıcıyı yanıltır.
-      const hicKayitYok = !buildFlatRows().length;
-      const mesaj = hicKayitYok
-        ? "Önce Perakende Bütçe ekranından bütçe çalışın. Toptan bütçesi otomatik türetilir."
-        : "Perakende Bütçe ekranındaki filtreler bu tabloya da uygulanıyor ve hiçbir satır kalmadı. Filtreleri gevşetin.";
-      tbody.innerHTML = `<tr><td colspan="11" style="text-align:center;color:var(--grey);padding:18px">${mesaj}</td></tr>`;
-      $("toptanFoot").innerHTML = "";
-      autoFitToptanColumns();
-      return;
-    }
-    tbody.innerHTML = data.rows.map((r) => `
-      <tr>
-        <td>${r.org}</td>
-        <td>${r.region}</td>
-        <td>${r.uh1}</td>
-        <td>${r.uh2}</td>
-        <td>${r.uh3}</td>
-        <td>${r.name}</td>
-        <td>${r.baseperiod}</td>
-        <td>${r.targetperiod}</td>
-        <td class="num-cell">${fmtN(r.salesBudget)}</td>
-        <td class="num-cell${toptanCarpanCls(r.carpan)}" title="${escapeHtml(r.carpanAciklama)}">${fmtD3(r.carpan)}</td>
-        <td class="num-cell toptan-highlight">${fmtN(r.toptanButce)} ${toptanRevizeBadge(r)}</td>
-      </tr>`).join("");
-    $("toptanFoot").innerHTML = `
-      <td>TOPLAM</td>
-      <td>—</td>
-      <td>—</td>
-      <td>—</td>
-      <td>—</td>
-      <td>—</td>
-      <td>—</td>
-      <td>—</td>
-      <td class="num-cell">${fmtN(data.T.salesBudget)}</td>
-      <td class="num-cell${toptanCarpanCls(data.T.carpan)}" title="Toplam Toptan ÷ Toplam Perakende Bütçe (satır çarpanlarının düz ortalaması DEĞİL)">${fmtD3(data.T.carpan)}</td>
-      <td class="num-cell toptan-highlight">${fmtN(data.T.toptanButce)}</td>`;
-    autoFitToptanColumns();
+    // Silme SET bazlıdır: bir satırdaki "Sil" o onayın TÜM satırlarını kaldırır
+    // (Perakende Bütçe'deki setId davranışıyla aynı).
+    el.querySelectorAll("[data-delete-tset]").forEach((btn) => {
+      btn.addEventListener("click", () => {
+        const id = btn.getAttribute("data-delete-tset");
+        const hedef = loadToptanSets().find((s) => s.id === id);
+        const n = hedef && hedef.rows ? hedef.rows.length : 0;
+        if (!confirm("Bu onayın TÜM satırları silinecek (" + fmtN(n) + " satır).\n\nDevam edilsin mi?")) return;
+        saveToptanSets(loadToptanSets().filter((s) => s.id !== id));
+        renderRevizeSets();
+      });
+    });
   }
 
   function renderForecast(model) {
@@ -2487,11 +2491,12 @@ function updateAll() {
     updateAll();
     updateSelInfo();
     updateSaveButtonState();
-    initRevize();
+    initToptanOnay();
+    initToptanParamListeners();
     renderToptanFromSaved(); // ilk yüklemede de Kayıtlar'ın o anki hali gösterilsin
     renderToptanRollup();    // Toptan tabındaki Özet/Rollup da ilk yüklemede Kayıtlar'ı yansıtsın
     renderRollup();          // Özet/Rollup da ilk yüklemede Kayıtlar'ı yansıtsın
-    renderRevize();
+    renderRevizeSets();
     renderCalendar();
   });
 })();

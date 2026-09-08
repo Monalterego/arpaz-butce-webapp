@@ -255,8 +255,29 @@
       <div class="foot">Kaynak: gerçek demo veri (2025-07…2026-07, aylık ortalama). Brüt kâr sentetiktir. IT tam veri verdiğinde yalnızca bu katman API'ye bağlanacak.</div>
     </div>
 
-    <!-- ========== TAB: TOPTAN ========== -->
+    <!-- ========== TAB: TOPTAN (ÇALIŞMA EKRANI) ==========
+         Boru hattı: Bütçe & Stok Karışımı → Perakende Bütçe (kayıt) →
+         BURASI (filtrele · revize et · onayla) → Revize Toptan Bütçe (kayıt).
+         Bu ekran Bütçe & Stok Karışımı'nın toptan tarafındaki muadilidir:
+         çalışılır ama kendisi kayıt DEĞİLDİR. Onaylanan iş Revize Toptan
+         Bütçe sekmesine set olarak akar. -->
     <div class="tabpane" data-pane="toptan" style="display:none">
+      <div class="panel">
+        <h2>Revize Kapsamı <span class="pill">Filtre</span></h2>
+        <div class="note" style="margin-bottom:var(--s2)">Önce neyi revize edeceğinizi seçin — <b>onay yalnızca aşağıda görünen satırlara uygulanır.</b> Boş bıraktığınız alan "hepsi" demektir; ÜH2/ÜH3/ÜH4 bir üst seviyedeki seçime göre daralır.</div>
+        <div class="revize-filtre">
+          <div class="rf-alan"><label for="t_f_org">Satış Teşkilatı</label><select id="t_f_org"></select></div>
+          <div class="rf-alan"><label for="t_f_region">Şube / Bölge</label><select id="t_f_region"></select></div>
+          <div class="rf-alan"><label for="t_f_uh1">ÜH1</label><select id="t_f_uh1"></select></div>
+          <div class="rf-alan"><label for="t_f_uh2">ÜH2</label><select id="t_f_uh2"></select></div>
+          <div class="rf-alan"><label for="t_f_uh3">ÜH3</label><select id="t_f_uh3"></select></div>
+          <div class="rf-alan"><label for="t_f_uh4">ÜH4</label><select id="t_f_uh4"></select></div>
+          <div class="rf-alan"><label for="t_f_base">Baz Periyot (LY)</label><select id="t_f_base"></select></div>
+          <div class="rf-alan"><label for="t_f_target">Hedef Periyot (TY)</label><select id="t_f_target"></select></div>
+        </div>
+        <div class="revize-sayac" id="toptanSayac">—</div>
+      </div>
+
       <div class="panel">
         <h2>Özet / Rollup <span class="pill">Toptan bütçenin LY → TY alt-toplamı</span></h2>
         <div class="rollup-controls">
@@ -320,75 +341,62 @@
               <th>Hedef Periyot (TY)</th>
               <th title="Perakende Satış Adet Bütçe — kayıttan geldiği gibi, salt okunur">Perakende Bütçe</th>
               <th title="Hedef Periyot ayının ulusal toptan/perakende oranı (donusum.js, 2021-2025 bayi kanalı). Hücrenin üzerine gelince o ayın gerekçesi görünür.">Dönüşüm Çarpanı</th>
-              <th title="Toptan Bütçe = Perakende Satış Adet Bütçe × Dönüşüm Çarpanı">Toptan Bütçe</th>
+              <th title="Toptan Bütçe — ELLE DÜZENLENEBİLİR. Yazdığınız değer yeni taban olur, kampanya/gam-kota çarpanları onun üzerine biner. Hücreyi boşaltıp Enter'a basarsanız formüle döner.">Toptan Bütçe ✎</th>
             </tr>
           </thead>
           <tbody id="toptanRows"></tbody>
           <tfoot><tr id="toptanFoot"></tr></tfoot>
         </table>
         </div>
-        <div class="note"><b>Toptan Bütçe = Perakende Satış Adet Bütçe × Dönüşüm Çarpanı.</b> Çarpan, Hedef Periyot ayının ulusal toptan/perakende oranıdır (2021-2025 bayi kanalı verisinden türetildi, donusum.js). Yıllık olarak toptan ≈ perakendedir (K = 1,0011); aylık dağılımları farklıdır — bayi Ocak-Mart'ta yüklenir (Ocak 1,405), Temmuz ve Aralık'ta stoktan satar, sipariş vermez (Aralık 0,734). <b>Ürün grubu bazında ayrı çarpan yoktur</b> — denendi, ulusal çarpanı geçemedi. <b>Doğruluk beklentisi:</b> ÜH4 × Ay seviyesinde sapma ±%37; bu indirilemez, tek bir ürün grubunun tek bir aydaki bayi siparişi değişkendir. Toplulaştırdıkça iyileşir (Toplam × Ay ±%10). <b>Kapsam:</b> yalnızca bayi kanalı — yedek parça, proje/kurumsal, solar ve pazaryeri ayrı bütçelenir. Kaynak: Kayıtlar sekmesindeki tüm kayıtlı gruplar; Perakende Bütçe ekranında uyguladığınız filtreler bu tabloya da yansır. Tüm kolonlar salt okunur ve türetilmiştir.</div>
-      </div>
-    </div>
-
-    <!-- ========== TAB: REVIZE TOPTAN BÜTÇE ========== -->
-    <!-- toptanDuzeltmeleri store'una YAZAN TEK YER burasıdır. Toptan Bütçe
-         sekmesindeki panel yalnızca canlı önizlemedir, kayıt yapmaz. -->
-    <div class="tabpane" data-pane="revize" style="display:none">
-      <div class="panel">
-        <h2>Revize Edilecek Satırlar <span class="pill">Filtre</span></h2>
-        <div class="note" style="margin-bottom:var(--s2)">Boş bıraktığınız her alan "hepsi" anlamına gelir. ÜH2/ÜH3/ÜH4 bir üst seviyedeki seçime göre daralır.</div>
-        <div class="revize-filtre">
-          <div class="rf-alan"><label for="r_f_org">Satış Teşkilatı</label><select id="r_f_org"></select></div>
-          <div class="rf-alan"><label for="r_f_region">Şube / Bölge</label><select id="r_f_region"></select></div>
-          <div class="rf-alan"><label for="r_f_uh1">ÜH1</label><select id="r_f_uh1"></select></div>
-          <div class="rf-alan"><label for="r_f_uh2">ÜH2</label><select id="r_f_uh2"></select></div>
-          <div class="rf-alan"><label for="r_f_uh3">ÜH3</label><select id="r_f_uh3"></select></div>
-          <div class="rf-alan"><label for="r_f_uh4">ÜH4</label><select id="r_f_uh4"></select></div>
-          <div class="rf-alan"><label for="r_f_base">Baz Periyot (LY)</label><select id="r_f_base"></select></div>
-          <div class="rf-alan"><label for="r_f_target">Hedef Periyot (TY)</label><select id="r_f_target"></select></div>
-        </div>
-        <div class="revize-sayac" id="revizeSayac">—</div>
-        <div id="revizeEslesenList"></div>
+        <div class="note"><b>Toptan Bütçe = [Perakende × (Dönüşüm Çarpanı + Bayi Stok Politikası)] × Kampanya/Gam-Kota çarpanları.</b> Dönüşüm çarpanı, Hedef Periyot ayının ulusal toptan/perakende oranıdır (2021-2025 bayi kanalı, donusum.js): yıllık toptan ≈ perakende (K = 1,0011) ama aylık dağılım farklıdır — bayi Ocak-Mart'ta yüklenir (Ocak 1,405), Temmuz ve Aralık'ta stoktan satar (Aralık 0,734). <b>Toptan Bütçe hücresine elle rakam yazabilirsiniz</b>; yazdığınız değer yeni TABAN olur ve aşağıdaki kampanya/gam-kota çarpanları onun üzerine biner. Hücreyi boşaltırsanız formüle döner. <b>Doğruluk beklentisi:</b> ÜH4 × Ay seviyesinde ±%37, toplulaştırdıkça iyileşir (Toplam × Ay ±%10). <b>Kapsam:</b> yalnızca bayi kanalı. Kaynak: Perakende Bütçe sekmesindeki kayıtlar.</div>
       </div>
 
+      <!-- PLANLAMA PARAMETRELERİ + ONAY -->
       <div class="panel">
-        <h2>Uygulanacak Parametreler <span class="pill">Kullanıcı Girişi</span></h2>
+        <h2>Planlama Parametreleri (Toptan) <span class="pill">Kullanıcı Girişi</span></h2>
         <div class="params toptan-camp">
           <div class="pgroup">
             <div class="ptitle">Kampanya Çarpanları</div>
-            <div class="prow"><label for="r_m_paro">Paro</label>
-              <div class="numfield"><button type="button" class="nf-btn" data-step="r_m_paro" data-dir="-1" tabindex="-1" aria-label="azalt">−</button><input type="number" id="r_m_paro" value="0" step="1" min="-30" max="40"><span class="nf-suffix">%</span><button type="button" class="nf-btn" data-step="r_m_paro" data-dir="1" tabindex="-1" aria-label="artır">+</button></div></div>
-            <div class="prow"><label for="r_m_bundle">Bundle</label>
-              <div class="numfield"><button type="button" class="nf-btn" data-step="r_m_bundle" data-dir="-1" tabindex="-1" aria-label="azalt">−</button><input type="number" id="r_m_bundle" value="0" step="1" min="-30" max="40"><span class="nf-suffix">%</span><button type="button" class="nf-btn" data-step="r_m_bundle" data-dir="1" tabindex="-1" aria-label="artır">+</button></div></div>
-            <div class="prow"><label for="r_m_event">Özel gün</label>
-              <div class="numfield"><button type="button" class="nf-btn" data-step="r_m_event" data-dir="-1" tabindex="-1" aria-label="azalt">−</button><input type="number" id="r_m_event" value="0" step="1" min="-30" max="40"><span class="nf-suffix">%</span><button type="button" class="nf-btn" data-step="r_m_event" data-dir="1" tabindex="-1" aria-label="artır">+</button></div></div>
+            <div class="prow"><label for="t_m_paro">Paro</label>
+              <div class="numfield"><button type="button" class="nf-btn" data-step="t_m_paro" data-dir="-1" tabindex="-1" aria-label="azalt">−</button><input type="number" id="t_m_paro" value="0" step="1" min="-30" max="40"><span class="nf-suffix">%</span><button type="button" class="nf-btn" data-step="t_m_paro" data-dir="1" tabindex="-1" aria-label="artır">+</button></div></div>
+            <div class="prow"><label for="t_m_bundle">Bundle</label>
+              <div class="numfield"><button type="button" class="nf-btn" data-step="t_m_bundle" data-dir="-1" tabindex="-1" aria-label="azalt">−</button><input type="number" id="t_m_bundle" value="0" step="1" min="-30" max="40"><span class="nf-suffix">%</span><button type="button" class="nf-btn" data-step="t_m_bundle" data-dir="1" tabindex="-1" aria-label="artır">+</button></div></div>
+            <div class="prow"><label for="t_m_event">Özel gün</label>
+              <div class="numfield"><button type="button" class="nf-btn" data-step="t_m_event" data-dir="-1" tabindex="-1" aria-label="azalt">−</button><input type="number" id="t_m_event" value="0" step="1" min="-30" max="40"><span class="nf-suffix">%</span><button type="button" class="nf-btn" data-step="t_m_event" data-dir="1" tabindex="-1" aria-label="artır">+</button></div></div>
           </div>
           <div class="pgroup">
             <div class="ptitle">Gam &amp; Kota</div>
-            <div class="prow"><label for="r_m_gam">Gam değişimi</label>
-              <div class="numfield"><button type="button" class="nf-btn" data-step="r_m_gam" data-dir="-1" tabindex="-1" aria-label="azalt">−</button><input type="number" id="r_m_gam" value="0" step="1" min="-30" max="40"><span class="nf-suffix">%</span><button type="button" class="nf-btn" data-step="r_m_gam" data-dir="1" tabindex="-1" aria-label="artır">+</button></div></div>
-            <div class="prow"><label for="r_m_kota">Kota ayı</label>
-              <div class="numfield"><button type="button" class="nf-btn" data-step="r_m_kota" data-dir="-1" tabindex="-1" aria-label="azalt">−</button><input type="number" id="r_m_kota" value="0" step="1" min="-30" max="40"><span class="nf-suffix">%</span><button type="button" class="nf-btn" data-step="r_m_kota" data-dir="1" tabindex="-1" aria-label="artır">+</button></div></div>
-            <div class="mult-total"><span>Toplam Çarpan</span><span id="r_mult_total">1,00x</span></div>
+            <div class="prow"><label for="t_m_gam">Gam değişimi</label>
+              <div class="numfield"><button type="button" class="nf-btn" data-step="t_m_gam" data-dir="-1" tabindex="-1" aria-label="azalt">−</button><input type="number" id="t_m_gam" value="0" step="1" min="-30" max="40"><span class="nf-suffix">%</span><button type="button" class="nf-btn" data-step="t_m_gam" data-dir="1" tabindex="-1" aria-label="artır">+</button></div></div>
+            <div class="prow"><label for="t_m_kota">Kota ayı</label>
+              <div class="numfield"><button type="button" class="nf-btn" data-step="t_m_kota" data-dir="-1" tabindex="-1" aria-label="azalt">−</button><input type="number" id="t_m_kota" value="0" step="1" min="-30" max="40"><span class="nf-suffix">%</span><button type="button" class="nf-btn" data-step="t_m_kota" data-dir="1" tabindex="-1" aria-label="artır">+</button></div></div>
+            <div class="mult-total"><span>Toplam Çarpan</span><span id="t_mult_total">1,00x</span></div>
           </div>
           <div class="pgroup">
             <div class="ptitle">Bayi Stok Politikası</div>
-            <div class="prow"><label for="r_stokpolitikasi">Bayi Stok Politikası</label>
-              <div class="numfield"><button type="button" class="nf-btn" data-step="r_stokpolitikasi" data-dir="-1" tabindex="-1" aria-label="azalt">−</button><input type="number" id="r_stokpolitikasi" value="0" step="1" min="-30" max="40"><span class="nf-suffix">%</span><button type="button" class="nf-btn" data-step="r_stokpolitikasi" data-dir="1" tabindex="-1" aria-label="artır">+</button></div></div>
-            <div class="weights-note">Bayi stok seviyesinin hedeflenen değişimi. Dönüşüm çarpanına <b>eklenir</b> (kampanya çarpanları gibi çarpılmaz). Perakende ekranındaki <b>Hedef Stok Büyüme</b>'den bağımsız bir karardır.</div>
+            <div class="prow"><label for="t_stokpolitikasi">Bayi Stok Politikası</label>
+              <div class="numfield"><button type="button" class="nf-btn" data-step="t_stokpolitikasi" data-dir="-1" tabindex="-1" aria-label="azalt">−</button><input type="number" id="t_stokpolitikasi" value="0" step="1" min="-30" max="30"><span class="nf-suffix">%</span><button type="button" class="nf-btn" data-step="t_stokpolitikasi" data-dir="1" tabindex="-1" aria-label="artır">+</button></div></div>
+            <div class="weights-note">Dönüşüm çarpanına <b>eklenir</b> (kampanya çarpanları gibi çarpılmaz), yani dönüşümün bir parçasıdır. Bu yüzden <b>elle rakam girilmiş satırları etkilemez</b> — orada dönüşüm zaten sizin verdiğiniz sayıyla değiştirilmiştir. Perakende ekranındaki Hedef Stok Büyüme'den bağımsız bir karardır.</div>
           </div>
         </div>
         <div class="toptan-revize-row">
-          <span class="note" id="revizeKaydetNote"></span>
-          <button type="button" class="btn" id="revizeKaydetBtn">Revize Et &amp; Kaydet</button>
+          <span class="note" id="toptanOnayNote"></span>
+          <button type="button" class="btn ghost" id="toptanSifirlaBtn">Elle Girişleri Temizle</button>
+          <button type="button" class="btn" id="toptanOnayBtn">Onayla &amp; Kaydet</button>
         </div>
+        <div class="note">Onay, <b>yalnızca yukarıdaki filtreye uyan satırları</b> kaydeder. Kaydedilen set dondurulur: sonradan parametre oynatmak eski kayıtları DEĞİŞTİRMEZ. Elle girişler ve parametreler bu ekranın çalışma durumudur — sayfa yenilenince sıfırlanır, onaylamadan hiçbir yere yazılmaz.</div>
       </div>
+    </div>
 
+    <!-- ========== TAB: REVIZE TOPTAN BÜTÇE (KAYIT LİSTESİ) ==========
+         Perakende Bütçe sekmesinin toptan taraftaki muadili: SALT OKUNUR.
+         Buraya yalnızca Toptan Bütçe ekranında "Onayla & Kaydet" ile
+         dondurulan setler akar. Burada düzenleme/parametre YOKTUR. -->
+    <div class="tabpane" data-pane="revize" style="display:none">
       <div class="panel">
-        <h2>Kayıtlı Düzeltmeler <span class="pill">Kalıcı</span></h2>
-        <div class="note" style="margin-bottom:var(--s2)">Bir kayıt, kendi tam kimliğine (Teşkilat · Bölge · ÜH1-ÜH4 · Baz/Hedef Periyot) TAM eşleşen satıra uygulanır ve o satır artık formülle değil bu kayıtlı değerlerle hesaplanır. Kaydı silmek satırı saf formüle geri döndürür.</div>
-        <div id="toptanFixList"></div>
+        <h2>Revize Toptan Bütçe <span class="pill">Onaylanmış Kayıtlar</span></h2>
+        <div class="note" style="margin-bottom:var(--s2)">Her satır, Toptan Bütçe ekranında onaylandığı andaki <b>dondurulmuş</b> değerdir — sonradan parametre oynatmak bu kayıtları DEĞİŞTİRMEZ. Güncellemek için Toptan Bütçe ekranına dönüp yeniden onaylayın. "Sil", o onayın TÜM satırlarını kaldırır.</div>
+        <div id="revizeSetList"></div>
       </div>
     </div>
 
