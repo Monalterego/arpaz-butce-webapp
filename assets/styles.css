@@ -271,8 +271,11 @@ tfoot td{background:#eef3f8;font-weight:700;border-top:2px solid var(--navy)}
 .toptan-revize-row .note.karisik{color:var(--warn);font-weight:600}
 /* .saved-mix-table deseni yeniden kullanılıyor ama onun min-width:3286px'i bu 16
    kolonluk tablo için yanlış — sadece o ezilir, gerisi (başlık/zebra/hover) aynen gelir. */
+/* .saved-mix-table'ın 3286px min-width'i bu tabloya ait DEĞİL — genişlik
+   REVIZE_SET_COLUMNS toplamından inline yazılır (bkz. renderRevizeSets).
+   nowrap KULLANMA: table-layout:fixed ile birlikte uzun ÜH metinlerini
+   hücreden taşırıp üst üste bindiriyordu; referans tablodaki gibi sarsın. */
 .saved-mix-table.toptan-fix-table{min-width:0}
-.saved-mix-table.toptan-fix-table th,.saved-mix-table.toptan-fix-table td{white-space:nowrap}
 @media (max-width:720px){.params.toptan-camp{grid-template-columns:minmax(0,1fr)}}
 #toptanGrid td.toptan-carpan-yuksek{background:rgba(46,125,50,.10)}
 #toptanGrid td.toptan-carpan-dusuk{background:rgba(198,40,40,.10)}

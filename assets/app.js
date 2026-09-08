@@ -2067,6 +2067,36 @@ function updateAll() {
 
   // Revize Toptan Bütçe sekmesi — SALT OKUNUR kayıt listesi.
   // Perakende Bütçe'deki .saved-mix-table deseni; min-width override edilir.
+  // Kolon tanımları — SAVED_MIX_COLUMNS ile AYNI desen: başlık ve genişlik tek
+  // listede, hem <colgroup> hem <thead> buradan üretilir. Genişlikler referans
+  // tablodaki muadil kolonlardan alındı (teşkilat/ÜH/periyot birebir aynı).
+  // DİKKAT: .saved-mix-table "table-layout:fixed" kullanır — colgroup YOKSA
+  // kolonlar eşit bölünür ve uzun ÜH2/ÜH3/ÜH4 metinleri üst üste biner
+  // (bu hata yaşandı). Kolon eklerken bu listeye genişliğiyle ekle.
+  const REVIZE_SET_COLUMNS = [
+    { label: "Onay Zamanı", width: 92 },
+    { label: "Satış Teşkilatı", width: 68 },
+    { label: "Şube / Bölge", width: 164 },
+    { label: "ÜH1", width: 140 },
+    { label: "ÜH2", width: 240 },
+    { label: "ÜH3", width: 262 },
+    { label: "ÜH4", width: 260 },
+    { label: "Baz Periyot", width: 85 },
+    { label: "Hedef Periyot", width: 85 },
+    { label: "Perakende Bütçe", width: 82 },
+    { label: "Dönüşüm Çarpanı", width: 78 },
+    { label: "Toptan Bütçe", width: 84 },
+    { label: "Toptan Ort. Satış Fiyatı (TY)", width: 96 },
+    { label: "Toptan Satış Tutar Bütçe", width: 110 },
+    { label: "Taban", width: 62 },
+    { label: "Paro", width: 58 },
+    { label: "Bundle", width: 58 },
+    { label: "Özel gün", width: 62 },
+    { label: "Gam", width: 58 },
+    { label: "Kota", width: 58 },
+    { label: "Stok Pol.", width: 62 },
+    { label: "", width: 56 },
+  ];
   function renderRevizeSets() {
     const el = $("revizeSetList");
     if (!el) return;
@@ -2102,12 +2132,12 @@ function updateAll() {
         "</tr>");
       });
     });
-    el.innerHTML = '<div class="saved-mix-table-wrap"><table class="saved-mix-table toptan-fix-table">' +
+    const toplamGenislik = REVIZE_SET_COLUMNS.reduce((a, c) => a + c.width, 0);
+    el.innerHTML = '<div class="saved-mix-table-wrap">' +
+      '<table class="saved-mix-table toptan-fix-table" style="width:' + toplamGenislik + "px;min-width:" + toplamGenislik + 'px">' +
+      "<colgroup>" + REVIZE_SET_COLUMNS.map((c) => '<col style="width:' + c.width + 'px">').join("") + "</colgroup>" +
       '<thead><tr class="saved-mix-header-row">' +
-      "<th>Onay Zamanı</th><th>Satış Teşkilatı</th><th>Şube / Bölge</th><th>ÜH1</th><th>ÜH2</th><th>ÜH3</th><th>ÜH4</th>" +
-      "<th>Baz Periyot</th><th>Hedef Periyot</th><th>Perakende Bütçe</th><th>Dönüşüm Çarpanı</th><th>Toptan Bütçe</th>" +
-      "<th>Toptan Ort. Satış Fiyatı (TY)</th><th>Toptan Satış Tutar Bütçe</th><th>Taban</th>" +
-      "<th>Paro</th><th>Bundle</th><th>Özel gün</th><th>Gam</th><th>Kota</th><th>Stok Pol.</th><th></th>" +
+      REVIZE_SET_COLUMNS.map((c) => "<th>" + escapeHtml(c.label) + "</th>").join("") +
       "</tr></thead><tbody>" + satirlar.join("") + "</tbody></table></div>";
 
     // Silme SET bazlıdır: bir satırdaki "Sil" o onayın TÜM satırlarını kaldırır
