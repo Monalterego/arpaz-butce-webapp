@@ -1753,7 +1753,15 @@ function updateAll() {
 
     toptanFiltreleriDoldur(data.tum);
     const sayac = $("toptanSayac");
-    if (sayac) sayac.textContent = fmtN(data.rows.length) + " satır kapsamda";
+    const sec = toptanSecim();
+    const seciliSayisi = TOPTAN_FILTRE.filter((f) => sec[f.key]).length;
+    if (sayac) {
+      sayac.textContent = fmtN(data.rows.length) + " satır kapsamda" +
+        (seciliSayisi ? " · " + seciliSayisi + " filtre etkin" : " · filtre yok (tümü)");
+    }
+    // Hiç seçim yokken buton ölü durmasın diye pasifleştirilir.
+    const temizleBtn = $("toptanFiltreTemizleBtn");
+    if (temizleBtn) temizleBtn.disabled = seciliSayisi === 0;
     const multEl = $("t_mult_total");
     if (multEl) multEl.textContent = fmtX(toptanCampFactor(readToptanParams()));
 
@@ -1873,6 +1881,11 @@ function updateAll() {
   function initToptanParamListeners() {
     const tazele = () => { renderToptanFromSaved(); renderToptanRollup(); };
     TOPTAN_FILTRE.forEach((f) => { const el = $(f.id); if (el) el.addEventListener("change", tazele); });
+    const temizle = $("toptanFiltreTemizleBtn");
+    if (temizle) temizle.addEventListener("click", () => {
+      TOPTAN_FILTRE.forEach((f) => { const el = $(f.id); if (el) el.value = ""; });
+      tazele(); // toptanFiltreleriDoldur() seçenekleri de yeniden genişletir
+    });
     TOPTAN_CAMP.concat([{ id: "t_stokpolitikasi" }]).forEach((c) => {
       const el = $(c.id);
       if (el) el.addEventListener("input", tazele);
