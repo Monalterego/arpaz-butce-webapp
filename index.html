@@ -407,14 +407,33 @@
       </div>
     </div>
 
-    <!-- ========== TAB: TAKVIM ========== -->
+    <!-- ========== TAB: TAKVIM ==========
+         SALT BİLGİ ekranı. assets/ozelgunler.js (OZEL_GUNLER) gerçek verisini
+         listeler; hiçbir çarpanı, formülü veya state'i beslemez. Kampanya
+         Çarpanları kartlarıyla (Miks / Toptan) BAĞLANTISI YOKTUR. -->
     <div class="tabpane" data-pane="takvim" style="display:none">
       <div class="panel">
-        <h2>Kampanya &amp; Özel Gün Takvimi (2021+) <span class="pill">Prototip Metadata</span></h2>
-        <table id="calTable"><thead><tr>
-          <th>Ay</th><th>Özel Gün / Event</th><th>Tip</th><th>Kampanya</th><th>Çarpan Önerisi</th><th>Geçmiş Uplift*</th>
-        </tr></thead><tbody id="calRows"></tbody></table>
-        <div class="note">* Uplift = kampanya ayı satış / normal ay satış. Gerçek kampanya geçmişi bağlanınca otomatik hesaplanıp çarpan panelini besleyecek.</div>
+        <h2>Kampanya &amp; Özel Gün Takvimi <span class="pill">Bilgi Amaçlı</span></h2>
+        <div class="note" style="margin-bottom:var(--s2)">Bu ekran yalnızca referans içindir — hiçbir çarpanı veya bütçe hesabını etkilemez. Kaynak: Türkiye Özel Günler / Resmî Tatiller 2021-2026 (2027 kısmi, aşağıya bakınız).</div>
+        <div class="takvim-arac">
+          <div class="rf-alan"><label for="cal_yil">Yıl</label><select id="cal_yil"></select></div>
+          <span class="revize-sayac" id="calSayac">—</span>
+        </div>
+        <div id="calBanner"></div>
+        <div style="max-height:560px;overflow:auto">
+          <table id="calTable">
+            <colgroup>
+              <col style="width:110px"><col style="width:110px"><col style="width:340px">
+              <col style="width:190px"><col style="width:130px"><col style="width:220px">
+            </colgroup>
+            <thead><tr>
+              <th>Tarih</th><th>Gün</th><th>Özel Gün / Etkinlik</th>
+              <th>Kategori</th><th title="Resmî tatil statüsü">Resmî Tatil</th><th>Planlama Notu</th>
+            </tr></thead>
+            <tbody id="calRows"></tbody>
+          </table>
+        </div>
+        <div class="note"><b>Sonraki aşama:</b> geçmiş kampanya satış verisi bağlandığında bu takvimden <i>uplift</i> (kampanya dönemi satışı ÷ normal dönem satışı) hesaplanıp Kampanya Çarpanları paneline öneri olarak taşınabilecek. <b>Bugün böyle bir bağlantı YOKTUR</b> — elimizde yalnızca takvim var, satış rakamı yok; çarpanlar elle girilir.</div>
       </div>
     </div>
 
@@ -689,6 +708,7 @@
 <script src="assets/realdata.js"></script>
 <script src="assets/data.js"></script>
 <script src="assets/donusum.js"></script>
+<script src="assets/ozelgunler.js"></script>
 <script src="assets/app.js"></script>
 </body>
 </html>

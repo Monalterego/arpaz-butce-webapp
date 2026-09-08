@@ -1503,11 +1503,64 @@ function updateAll() {
   }
 
   // --- Takvim / Rasyo / Forecast ---
+  // --- Kampanya / Özel Gün Takvimi — SALT BİLGİ ---
+  // Kaynak: assets/ozelgunler.js (OZEL_GUNLER, 278 kayıt, 2021-2027).
+  // Hiçbir çarpanı/formülü/state'i BESLEMEZ. Kampanya Çarpanları kartlarına
+  // (Miks m_*, Toptan t_m_*) bağlanmasın — bilinçli bir sınırdır.
+  // Eski DataService.loadCalendar() prototip verisi kullanımdan kalktı.
+  const TAKVIM_2027_UYARI =
+    "Dinî bayramlar ve kandiller (Ramazan, Kurban Bayramı vb.) Hicri takvime bağlıdır ve " +
+    "Diyanet'in resmi 2027 takvimi yayımlanmadan hesaplanamaz. Bu listede yer almazlar.";
+  // "2021-01-01" → "01.01.2021". Date nesnesi KULLANMA: saat dilimi kayması
+  // tarihi bir gün geriye/ileriye atabilir, veri zaten düz metin.
+  function trTarih(iso) {
+    const p = String(iso).split("-");
+    return p.length === 3 ? p[2] + "." + p[1] + "." + p[0] : String(iso);
+  }
+  function takvimVerisi() {
+    return (typeof OZEL_GUNLER !== "undefined" && Array.isArray(OZEL_GUNLER)) ? OZEL_GUNLER : [];
+  }
+  function initTakvim() {
+    const sel = $("cal_yil");
+    if (!sel) return;
+    const yillar = Array.from(new Set(takvimVerisi().map((g) => g.yil))).sort((a, b) => a - b);
+    if (!yillar.length) return;
+    sel.innerHTML = yillar.map((y) => '<option value="' + y + '">' + y + "</option>").join("");
+    const buYil = new Date().getFullYear();
+    sel.value = String(yillar.includes(buYil) ? buYil : (yillar.includes(2027) ? 2027 : yillar[yillar.length - 1]));
+    sel.addEventListener("change", renderCalendar);
+  }
   function renderCalendar() {
-    $("calRows").innerHTML = DataService.loadCalendar()
-      .map((c) => `<tr><td>${c[0]}</td><td>${c[1]}</td>
-        <td><span class="badge b-blue">${c[2]}</span></td><td>${c[3]}</td>
-        <td><span class="badge b-amber">${c[4]}</span></td><td class="up">${c[5]}</td></tr>`).join("");
+    const tbody = $("calRows");
+    if (!tbody) return;
+    const sel = $("cal_yil");
+    const yil = sel && sel.value ? Number(sel.value) : null;
+    const satirlar = takvimVerisi().filter((g) => yil == null || g.yil === yil)
+      .slice().sort((a, b) => String(a.tarih).localeCompare(String(b.tarih)));
+
+    const sayac = $("calSayac");
+    if (sayac) sayac.textContent = fmtN(satirlar.length) + " kayıt";
+
+    const banner = $("calBanner");
+    if (banner) {
+      banner.innerHTML = yil === 2027
+        ? '<div class="takvim-banner"><b>2027 listesi eksiktir.</b> ' + escapeHtml(TAKVIM_2027_UYARI) + "</div>"
+        : "";
+    }
+
+    if (!satirlar.length) {
+      tbody.innerHTML = '<tr><td colspan="6" style="text-align:center;color:var(--grey);padding:18px">Bu yıl için kayıt yok.</td></tr>';
+      return;
+    }
+    tbody.innerHTML = satirlar.map((g) => "<tr>" +
+      "<td>" + trTarih(g.tarih) + "</td>" +
+      "<td>" + escapeHtml(g.haftaninGunu || "—") + "</td>" +
+      "<td>" + escapeHtml(g.isim || "—") +
+        (g.tahmini2027 ? ' <span class="badge b-amber" title="Gregoryen kural ile hesaplandı, resmi kaynak değil">Hesaplanan</span>' : "") + "</td>" +
+      "<td>" + escapeHtml(g.kategori || "—") + "</td>" +
+      "<td>" + escapeHtml(g.resmiTatilStatu || "—") + "</td>" +
+      "<td>" + escapeHtml(g.planlamaKullanimi || "—") + "</td>" +
+      "</tr>").join("");
   }
   // --- Toptan (Sell-in) Bütçe — bkz. docs/TOPTAN_KOPRUSU.md 13.10 ---
   function donusumSatir(perakendeAdet, targetperiod) {
@@ -2591,6 +2644,7 @@ function updateAll() {
     renderToptanRollup();    // Toptan tabındaki Özet/Rollup da ilk yüklemede Kayıtlar'ı yansıtsın
     renderRollup();          // Özet/Rollup da ilk yüklemede Kayıtlar'ı yansıtsın
     renderRevizeSets();
+    initTakvim();
     renderCalendar();
   });
 })();
