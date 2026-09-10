@@ -272,6 +272,14 @@ tfoot td{background:#eef3f8;font-weight:700;border-top:2px solid var(--navy)}
 #sopTable th.sop-th-gercek{background:var(--green)}
 .sop-gercek-deger{font-weight:700;color:var(--green);font-variant-numeric:tabular-nums}
 .sop-gercek-etiket{display:block;font-size:9px;line-height:1;color:var(--green);opacity:.7;margin-top:2px}
+/* Ocak-Ağustos "Plan" referansı — SALT-OKUNUR. Ölçüleri Eylül-Aralık'taki
+   "gerç." alt-alanıyla (.sop-ger > .sop-gerin) aynı: 74px kutu, kesikli
+   kenarlık, gri. Fark: input değil, etiketi "Plan". */
+.sop-plan-ref{display:inline-flex;justify-content:space-between;align-items:baseline;gap:4px;
+  width:100%;max-width:74px;margin-top:3px;padding:2px 4px;
+  border:1px dashed var(--line);border-radius:5px;background:var(--surface);
+  font-size:10px;color:var(--grey);font-variant-numeric:tabular-nums;line-height:1.3}
+.sop-plan-etiket{font-size:9px;opacity:.8}
 .sop-legend-gercek{display:inline-block;background:var(--greenbg);color:var(--green);
   border:1px solid var(--green);border-radius:4px;padding:1px 6px;font-weight:700;font-size:10px}
 .sop-dagit-bilgi{margin-bottom:var(--s2)}

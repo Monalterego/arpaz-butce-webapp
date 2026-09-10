@@ -1647,9 +1647,40 @@ function updateAll() {
     return taban;
   }
 
-  // Eylül-Aralık kutularına BAŞLANGIÇ değeri basar. Kalan adet önce aylara EŞİT,
-  // sonra ay içinde SKU'lara Ocak-Ağustos paylarına göre bölünür (tek SKU'nun
-  // kendi geçmişine göre değil, ÜH4 toplamına göre — kullanıcı kararı).
+  // SKU'ların Ocak-Ağustos (gerçekleşen) toplamları — dağıtım ağırlığı.
+  // Tek SKU'nun kendi geçmişine göre değil, ÜH4 toplamına göre pay verilir
+  // (kullanıcı kararı); bu dizi sopBol'a ham adet olarak geçer, sopBol zaten
+  // kendi içinde orana çevirir.
+  function sopSkuAgirlik(satirlar, gercekAylar) {
+    return satirlar.map((r) =>
+      gercekAylar.reduce((s, a) => s + (Number((r.aylar || {})[a.key]) || 0), 0));
+  }
+
+  // `toplam`ı önce ay kümesine EŞİT, sonra ay içinde SKU'lara `skuAgirlik`
+  // oranında böler. Dönüş: { "2026-01": [sku0Payı, sku1Payı, ...], ... }
+  // Her iki kademe de sopBol kullandığı için toplam BİREBİR korunur.
+  // Ocak-Ağustos "Plan" referansı ile Eylül-Aralık başlangıç değeri BU TEK
+  // fonksiyondan üretilir — iki ayrı hesap yolu AÇMA.
+  function sopPlanDagit(toplam, aylarListesi, skuAgirlik) {
+    const out = {};
+    if (!aylarListesi.length || toplam <= 0) return out;
+    const aylikPay = sopBol(toplam, aylarListesi.map(() => 1));
+    aylarListesi.forEach((a, ai) => { out[a.key] = sopBol(aylikPay[ai], skuAgirlik); });
+    return out;
+  }
+
+  // Ocak-Ağustos'un "Plan" referansı — SALT GÖSTERİM, hiçbir state'e yazılmaz.
+  // Aylık plan = Yıl Sonu Hedefi / 12. Burada `gercek` toplamı 8 aya bölünüyor;
+  // bu AYNI sayıdır çünkü hedef = gercek × 12/8 ⇒ hedef/12 = gercek/8. Tamsayıya
+  // bölmeyi `gercek` üzerinden yapmak ayrıca şunu garanti eder:
+  //   Ocak-Ağustos planı (= gercek) + Eylül-Aralık planı (= kalanAdet) = Hedef.
+  function sopGercekAyPlani(satirlar, aylar, gercekMi) {
+    const gercekAylar = aylar.filter(gercekMi);
+    const { gercek } = sopYilSonuHedefi(satirlar, aylar, gercekMi);
+    return sopPlanDagit(gercek, gercekAylar, sopSkuAgirlik(satirlar, gercekAylar));
+  }
+
+  // Eylül-Aralık kutularına BAŞLANGIÇ değeri basar (aynı dağıtım mantığı).
   // Kutular EDİTABLE kalır; bu yalnızca başlangıç değeridir.
   // Seçim başına BİR KEZ çalışır (sopState.tohumlanan): kullanıcının sildiği
   // hücre her render'da geri gelmesin, ÜH4'ler arasında gidip gelmek de
@@ -1664,13 +1695,10 @@ function updateAll() {
     const planAylar = aylar.filter((a) => !gercekMi(a));
     if (kalanAdet <= 0 || !planAylar.length) return;
 
-    const gercekAylar = aylar.filter(gercekMi);
-    const skuAgirlik = satirlar.map((r) =>
-      gercekAylar.reduce((s, a) => s + (Number((r.aylar || {})[a.key]) || 0), 0));
-
-    const aylikPay = sopBol(kalanAdet, planAylar.map(() => 1));
-    planAylar.forEach((a, ai) => {
-      const paylar = sopBol(aylikPay[ai], skuAgirlik);
+    const skuAgirlik = sopSkuAgirlik(satirlar, aylar.filter(gercekMi));
+    const dagilim = sopPlanDagit(kalanAdet, planAylar, skuAgirlik);
+    planAylar.forEach((a) => {
+      const paylar = dagilim[a.key] || [];
       satirlar.forEach((r, ri) => {
         const k = sopAnahtar(sopKimlik(r), a.key);
         if (sopState.sop.has(k)) return;   // kullanıcı girdisini EZME
@@ -1745,6 +1773,9 @@ function updateAll() {
         "Yıl Sonu Toptan Hedefi: <b>" + fmtN(yilSonuHedef) + "</b> adet</td>";
     }
 
+    // Ocak-Ağustos "Plan" referansı — render başına BİR KEZ hesaplanır.
+    const gercekAyPlani = sopGercekAyPlani(satirlar, aylar, gercekMi);
+
     tbody.innerHTML = satirlar.map((r, i) => {
       const kimlik = sopKimlik(r);
       const lt = sopLeadTime(r);
@@ -1753,9 +1784,12 @@ function updateAll() {
         // (S&OP ve Gerçekleşen) hiç basılmaz — girilecek bir şey yok.
         if (gercekMi(a)) {
           const gercek = Number((r.aylar || {})[a.key]) || 0;
+          const planV = (gercekAyPlani[a.key] || [])[i] || 0;
           return '<td class="sop-ay sop-gercek" title="Gerçekleşen — ' + escapeAttribute(a.uzun) + ' gerçek toptan adedi (düzenlenemez)">' +
             '<span class="sop-gercek-deger">' + fmtN(gercek) + "</span>" +
-            '<span class="sop-gercek-etiket">Gerçekleşen</span></td>';
+            '<span class="sop-gercek-etiket">Gerçekleşen</span>' +
+            '<span class="sop-plan-ref"><span class="sop-plan-etiket">Plan</span>' +
+              "<span>" + fmtN(planV) + "</span></span></td>";
         }
         // Dondurma penceresi: BUGÜNden (gerçek takvim ayı) lead time kadar ileri.
         const donmus = ai >= donmaBas && ai < donmaBas + lt;
