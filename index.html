@@ -15,6 +15,7 @@
     <button data-tab="kayitlar">Perakende Bütçe</button>
     <button data-tab="toptan">Toptan Bütçe</button>
     <button data-tab="revize">Revize Toptan Bütçe</button>
+    <button data-tab="sop">S&amp;OP Planlama</button>
     <button data-tab="takvim">Kampanya / Özel Gün Takvimi</button>
     <button data-tab="rasyo">Perakende → Toptan (Metodoloji)</button>
     <button data-tab="forecast">Tahmin (Forecast)</button>
@@ -28,6 +29,8 @@
   <button type="button" id="sideToggle" class="side-toggle" aria-expanded="true"
           aria-controls="sideFilters" title="Filtreleri gizle">‹</button>
   <aside class="side" id="sideFilters">
+    <!-- İki blok, tek kabuk: hangi sekmedeysek o görünür (syncSidebarVisibility). -->
+    <div id="miksSideBlock">
     <h3>Teşkilat</h3>
     <label>Satış Teşkilatı</label>
     <select id="h_org"></select>
@@ -48,6 +51,29 @@
     <label>Hedef Periyot (TY)</label>
     <select id="h_targetperiod"><option>2027 Ocak</option></select>
     <div class="note" id="selInfo">Not: Ekran ÜH4'ten çalışır. Gerçek hiyerarşi bağlı; metrikler prototip (deterministik) değerlerdir.</div>
+    </div>
+
+    <!-- S&OP Planlama kaskadı — BÖLGE YOK (org × ÜH1-4 × SKU).
+         Seçenekler SOP_SKU_DATA'nın KENDİSİNDEN üretilir, HIERARCHY'den DEĞİL:
+         iki kaynağın harf durumu farklı ("Aspiratör" / "ASPİRATÖR") ve ham
+         eşleşme 339 ÜH4'ün yalnızca 3'ünü yakalıyor (ölçüldü). Kendi verisinden
+         kurunca bu tuzak yapısal olarak imkânsız. -->
+    <div id="sopSideBlock" style="display:none">
+      <h3>Teşkilat</h3>
+      <label>Satış Teşkilatı</label>
+      <select id="s_org"></select>
+
+      <h3>Ürün Hiyerarşisi</h3>
+      <label>ÜH1</label>
+      <select id="s_uh1"></select>
+      <label>ÜH2</label>
+      <select id="s_uh2"></select>
+      <label>ÜH3</label>
+      <select id="s_uh3"></select>
+      <label>ÜH4</label>
+      <select id="s_uh4"></select>
+      <div class="note" id="sopSelInfo">Bölge kırılımı YOKTUR — S&amp;OP ulusal seviyede planlanır.</div>
+    </div>
   </aside>
 
   <main class="main">
@@ -407,6 +433,46 @@
       </div>
     </div>
 
+    <!-- ========== TAB: S&OP PLANLAMA ==========
+         Pazarlama'nın SAP IBP'ye gireceği aylık SKU-bazlı TOPTAN (sell-in)
+         tahmini. MVP: veri assets/sop_sku_data.js (demo SKU). Girilen S&OP
+         adetleri ve Gerçekleşen değerleri BELLEKTE tutulur (localStorage YOK),
+         sayfa yenilenince sıfırlanır. Diğer sekmelerin state'ine DOKUNMAZ. -->
+    <div class="tabpane" data-pane="sop" style="display:none">
+      <div class="panel">
+        <h2>S&amp;OP Planlama <span class="pill">SKU × Ay · Toptan (sell-in)</span></h2>
+        <div class="note" style="margin-bottom:var(--s2)">Soldaki kaskattan bir ÜH4 seçin; o ürünün SKU'ları aşağıda listelenir. <b>12 aylık ilerleyen pencere</b> gösterilir. S&amp;OP adetleri ileriye dönük plandır — geçmiş veri yalnızca referanstır, hücreler otomatik doldurulmaz.</div>
+
+        <details class="sop-referans" id="sopReferans">
+          <summary>Geçmiş referans — son 3 ayın ortalaması</summary>
+          <div id="sopReferansIcerik"></div>
+        </details>
+
+        <div class="takvim-arac">
+          <span class="revize-sayac" id="sopSayac">—</span>
+          <button type="button" class="btn ghost mini" id="sopGerceklesenToggle">Gerçekleşen girişini göster</button>
+          <button type="button" class="btn ghost mini" id="sopTemizleBtn">Girişleri Temizle</button>
+        </div>
+
+        <div class="sop-table-wrap">
+          <table id="sopTable">
+            <thead>
+              <tr id="sopHeadRow"></tr>
+            </thead>
+            <tbody id="sopRows"></tbody>
+            <tfoot><tr id="sopFoot"></tr></tfoot>
+          </table>
+        </div>
+        <div class="legend">
+          <span class="sop-legend-frozen">🔒</span> Dondurma penceresi — lead time süresince
+          <span class="badge b-green">✓ Uyumlu</span>
+          <span class="badge b-amber">⚠ Sapma</span>
+          <span style="color:var(--grey)">— Karşılaştırma yok</span>
+        </div>
+        <div class="note"><b>Dondurma penceresi</b> her SKU'nun kendi Lead Time'ı kadardır ve tablonun ilk ayından başlar — düzenlemeyi ENGELLEMEZ, yalnızca "tedarik zincirine geç haber olabilir" uyarısıdır. <b>TOPLAM satırındaki rozet</b>, o ayın Hedef Periyot'una denk gelen onaylanmış Toptan Bütçe kaydıyla karşılaştırmadır (aynı org + ÜH1-4, tüm bölgeler toplanır); sapma %20'yi aşarsa ⚠ çıkar. Eşleşen kayıt yoksa "—" gösterilir, karşılaştırma uydurulmaz.</div>
+      </div>
+    </div>
+
     <!-- ========== TAB: TAKVIM ==========
          SALT BİLGİ ekranı. assets/ozelgunler.js (OZEL_GUNLER) gerçek verisini
          listeler; hiçbir çarpanı, formülü veya state'i beslemez. Kampanya
@@ -709,6 +775,7 @@
 <script src="assets/data.js"></script>
 <script src="assets/donusum.js"></script>
 <script src="assets/ozelgunler.js"></script>
+<script src="assets/sop_sku_data.js"></script>
 <script src="assets/app.js"></script>
 </body>
 </html>

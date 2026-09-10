@@ -252,6 +252,40 @@ tfoot td{background:#eef3f8;font-weight:700;border-top:2px solid var(--navy)}
 .revize-filtre label{font-size:var(--f-label);text-transform:uppercase;letter-spacing:.4px;color:var(--grey);font-weight:600}
 .revize-filtre select{width:100%;padding:6px 8px;border:1px solid var(--line);border-radius:var(--radius-sm);background:var(--surface);font-size:12px;color:var(--ink)}
 .revize-sayac{font-size:var(--f-h2);font-weight:700;color:var(--navy);margin-bottom:var(--s2)}
+/* ===== S&OP Planlama ===== */
+.sop-table-wrap{max-height:560px;overflow:auto;border:1px solid var(--line);
+  border-radius:var(--radius-md);background:var(--surface);box-shadow:var(--shadow-sm);margin-bottom:var(--s2)}
+#sopTable{border-collapse:collapse;width:100%;min-width:1560px;font-size:11px}
+#sopTable th,#sopTable td{border:1px solid rgba(11,37,69,.12);padding:5px 6px;text-align:center;vertical-align:top}
+#sopTable th{background:var(--navy);color:#fff;font-size:10px;font-weight:700;
+  position:sticky;top:0;z-index:3;line-height:1.3}
+#sopTable th:first-child,#sopTable td:first-child{text-align:left;white-space:nowrap}
+#sopTable tbody tr:nth-child(even){background:#f8fafc}
+.sop-yil{font-weight:400;opacity:.7;font-size:9px}
+/* Dondurma penceresi: SADECE görsel uyarı — input DISABLED DEĞİL, düzenlenebilir. */
+#sopTable td.sop-frozen{background:#eef1f5}
+.sop-kilit{display:block;font-size:9px;line-height:1;opacity:.55;margin-bottom:1px}
+.sop-in{width:100%;max-width:74px;padding:2px 4px;border:1px solid var(--line);border-radius:5px;
+  text-align:right;font-size:11px;font-variant-numeric:tabular-nums;background:#fffdf6}
+.sop-sop{border-color:var(--amber);color:var(--amber);font-weight:700}
+.sop-sop:focus{outline:2px solid var(--amber);background:#fff}
+.sop-ger{margin-top:3px}
+.sop-gerin{border-style:dashed;color:var(--grey);background:#fff;font-weight:400}
+.sop-dagit{margin-top:3px;font-size:9px;padding:1px 5px;min-height:0}
+.sop-lt input.sop-ltin{width:52px;padding:2px 4px;border:1px solid var(--accent);border-radius:5px;
+  text-align:center;font-size:11px;font-weight:700;color:var(--accent);background:var(--accent-bg)}
+.sop-toplam{font-weight:700;color:var(--navy);font-variant-numeric:tabular-nums}
+.sop-kiyas{margin-top:2px}
+.sop-yok{color:var(--grey)}
+.sop-legend-frozen{display:inline-block;background:#eef1f5;border:1px solid var(--line);
+  border-radius:4px;padding:1px 6px}
+.sop-referans{margin-bottom:var(--s2);font-size:12px}
+.sop-referans summary{cursor:pointer;font-weight:600;color:var(--accent)}
+.sop-ref-table{border-collapse:collapse;margin-top:var(--s1);font-size:11px}
+.sop-ref-table th,.sop-ref-table td{border:1px solid var(--line);padding:4px 10px;text-align:right}
+.sop-ref-table th{background:var(--bg);color:var(--navy);font-weight:600}
+.sop-ref-table th:first-child,.sop-ref-table td:first-child{text-align:left}
+
 /* Takvim (salt bilgi ekranı) araç çubuğu ve 2027 eksiklik uyarısı. */
 .takvim-arac{display:flex;align-items:flex-end;gap:var(--s3);flex-wrap:wrap;margin-bottom:var(--s2)}
 .takvim-arac .rf-alan{min-width:140px}
