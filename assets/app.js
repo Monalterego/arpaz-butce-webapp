@@ -1526,15 +1526,24 @@ function updateAll() {
     "Temmuz", "Ağustos", "Eylül", "Ekim", "Kasım", "Aralık"];
   const SOP_YIL = 2026; // Plan yılı — pencere SABİT: 2026 Ocak → 2026 Aralık
   const sopState = {
-    sop: new Map(),        // "sku␟2026-09" → adet
-    gerceklesen: new Map(),// "sku␟2026-09" → adet
-    leadTime: new Map(),   // "sku" → ay (kullanıcı değiştirebilir)
+    sop: new Map(),        // "kimlik␟2026-09" → adet
+    gerceklesen: new Map(),// "kimlik␟2026-09" → adet
+    leadTime: new Map(),   // "kimlik" → ay (kullanıcı değiştirebilir)
+    tohumlanan: new Set(), // otomatik başlangıç değeri BASILMIŞ seçimler (bkz. sopTohumla)
     gerceklesenAcik: false,
   };
   function sopVeri() {
     return (typeof SOP_SKU_DATA !== "undefined" && Array.isArray(SOP_SKU_DATA)) ? SOP_SKU_DATA : [];
   }
-  function sopAnahtar(sku, ay) { return sku + "␟" + ay; }
+  // SKU adı TEK BAŞINA anahtar DEĞİLDİR: veri dosyasında her ÜH4'ün kendi
+  // "SKU-1/2/3"ü var (1929 kayıt, 3 ayrı ad). Sadece r.sku ile anahtarlanırsa
+  // bir ÜH4'e girilen adet/lead time DİĞER TÜM ÜH4'lere sızar. Bu yüzden
+  // state anahtarı HER ZAMAN tam kimliktir — yeni bir state haritası eklerken
+  // de r.sku değil sopKimlik(r) kullan.
+  function sopKimlik(r) {
+    return [r.org, r.uh1, r.uh2, r.uh3, r.uh4, r.sku].join("␟");
+  }
+  function sopAnahtar(kimlik, ay) { return kimlik + "␟" + ay; }
 
   // TAKVİM YILI penceresi — SABİT 2026 Ocak → 2026 Aralık.
   // (Eskiden "veri dosyasındaki son aydan sonraki 12 ay" şeklinde İLERLEYEN bir
@@ -1597,11 +1606,77 @@ function updateAll() {
       r.uh2 === s.uh2 && r.uh3 === s.uh3 && r.uh4 === s.uh4);
   }
   function sopLeadTime(r) {
-    return sopState.leadTime.has(r.sku) ? sopState.leadTime.get(r.sku) : (Number(r.leadTimeAy) || 0);
+    const k = sopKimlik(r);
+    return sopState.leadTime.has(k) ? sopState.leadTime.get(k) : (Number(r.leadTimeAy) || 0);
   }
-  function sopDeger(harita, sku, ay) {
-    const v = harita.get(sopAnahtar(sku, ay));
+  function sopDeger(harita, kimlik, ay) {
+    const v = harita.get(sopAnahtar(kimlik, ay));
     return v == null ? null : v;
+  }
+
+  // --- Yıl Sonu Toptan Hedefi + Eylül-Aralık otomatik başlangıç değeri ---
+  // BASİT YILLIKLANDIRMA — mevsimsel çarpan YOK (kullanıcı kararı):
+  //   Yıl Sonu Hedefi = Gerçekleşen(Ocak-Ağustos) × 12 / 8
+  //   Kalan Adet      = Yıl Sonu Hedefi − Gerçekleşen
+  // 12 ve 8 elle SABİTLENMEDİ: 8 = veride gerçek rakamı olan ay sayısı,
+  // 12 = pencere uzunluğu. Veri dosyasına 9. ay eklenince oran kendiliğinden
+  // 12/9 olur (bkz. sopSonGercekAy).
+  function sopYilSonuHedefi(satirlar, aylar, gercekMi) {
+    const gercekAylar = aylar.filter(gercekMi);
+    const gercek = satirlar.reduce((acc, r) => acc +
+      gercekAylar.reduce((s, a) => s + (Number((r.aylar || {})[a.key]) || 0), 0), 0);
+    if (!gercekAylar.length || gercek <= 0) return { yilSonuHedef: 0, kalanAdet: 0, gercek };
+    const yilSonuHedef = Math.round(gercek * aylar.length / gercekAylar.length);
+    return { yilSonuHedef, kalanAdet: yilSonuHedef - gercek, gercek };
+  }
+
+  // `toplam`ı `agirliklar` oranında TAM SAYILARA böler ve toplamı BİREBİR korur
+  // (en büyük artık yöntemi). Ağırlıkların hepsi 0 ise EŞİT bölünür.
+  function sopBol(toplam, agirliklar) {
+    const n = agirliklar.length;
+    if (!n) return [];
+    const tw = agirliklar.reduce((x, y) => x + y, 0);
+    const oran = tw > 0 ? agirliklar.map((w) => w / tw) : agirliklar.map(() => 1 / n);
+    const ham = oran.map((o) => toplam * o);
+    const taban = ham.map((h) => Math.floor(h));
+    let artik = toplam - taban.reduce((x, y) => x + y, 0);
+    // Kesirli kısmı en büyük olanlara birer birer dağıt.
+    const sira = ham.map((h, i) => ({ i, kesir: h - Math.floor(h) }))
+      .sort((a, b) => b.kesir - a.kesir);
+    for (let j = 0; artik > 0 && j < sira.length; j++, artik--) taban[sira[j].i] += 1;
+    return taban;
+  }
+
+  // Eylül-Aralık kutularına BAŞLANGIÇ değeri basar. Kalan adet önce aylara EŞİT,
+  // sonra ay içinde SKU'lara Ocak-Ağustos paylarına göre bölünür (tek SKU'nun
+  // kendi geçmişine göre değil, ÜH4 toplamına göre — kullanıcı kararı).
+  // Kutular EDİTABLE kalır; bu yalnızca başlangıç değeridir.
+  // Seçim başına BİR KEZ çalışır (sopState.tohumlanan): kullanıcının sildiği
+  // hücre her render'da geri gelmesin, ÜH4'ler arasında gidip gelmek de
+  // girilen değerleri EZMESİN. "Girişleri Temizle" bu işareti sıfırlar.
+  function sopTohumla(satirlar, aylar, gercekMi) {
+    if (!satirlar.length) return;
+    const isaret = sopKimlik(satirlar[0]);
+    if (sopState.tohumlanan.has(isaret)) return;
+    sopState.tohumlanan.add(isaret);
+
+    const { kalanAdet } = sopYilSonuHedefi(satirlar, aylar, gercekMi);
+    const planAylar = aylar.filter((a) => !gercekMi(a));
+    if (kalanAdet <= 0 || !planAylar.length) return;
+
+    const gercekAylar = aylar.filter(gercekMi);
+    const skuAgirlik = satirlar.map((r) =>
+      gercekAylar.reduce((s, a) => s + (Number((r.aylar || {})[a.key]) || 0), 0));
+
+    const aylikPay = sopBol(kalanAdet, planAylar.map(() => 1));
+    planAylar.forEach((a, ai) => {
+      const paylar = sopBol(aylikPay[ai], skuAgirlik);
+      satirlar.forEach((r, ri) => {
+        const k = sopAnahtar(sopKimlik(r), a.key);
+        if (sopState.sop.has(k)) return;   // kullanıcı girdisini EZME
+        if (paylar[ri] > 0) sopState.sop.set(k, paylar[ri]);
+      });
+    });
   }
 
   // KALDIRILDI (kapsam dışı) — TOPLAM satırındaki "Toptan Bütçe karşılaştırma
@@ -1647,6 +1722,7 @@ function updateAll() {
     const sonGercek = sopSonGercekAy();
     const gercekMi = (a) => !!sonGercek && a.key <= sonGercek;
     const donmaBas = sopBugunIndeks(aylar);
+    sopTohumla(satirlar, aylar, gercekMi); // plan aylarına başlangıç değeri (bir kez)
     const bilgi = $("sopDagitBilgi");
     if (bilgi) bilgi.style.display = sopState.gerceklesenAcik ? "" : "none";
 
@@ -1656,13 +1732,21 @@ function updateAll() {
         aylar.map((a) => '<th' + (gercekMi(a) ? ' class="sop-th-gercek" title="Gerçekleşen ay — gerçek veri, düzenlenemez"' : "") + ">" +
           a.etiket + "<br><span class=\"sop-yil\">" + a.yil + "</span></th>").join("");
     }
+    const hedefRow = $("sopHedefRow");
     if (!satirlar.length) {
       tbody.innerHTML = '<tr><td colspan="' + (3 + aylar.length) + '" style="text-align:center;color:var(--grey);padding:18px">Bu seçim için SKU bulunamadı.</td></tr>';
       $("sopFoot").innerHTML = "";
+      if (hedefRow) hedefRow.innerHTML = "";
       return;
+    }
+    if (hedefRow) {
+      const { yilSonuHedef } = sopYilSonuHedefi(satirlar, aylar, gercekMi);
+      hedefRow.innerHTML = '<td class="sop-hedef" colspan="' + (3 + aylar.length) + '">' +
+        "Yıl Sonu Toptan Hedefi: <b>" + fmtN(yilSonuHedef) + "</b> adet</td>";
     }
 
     tbody.innerHTML = satirlar.map((r, i) => {
+      const kimlik = sopKimlik(r);
       const lt = sopLeadTime(r);
       const hucreler = aylar.map((a, ai) => {
         // GERÇEKLEŞEN ay: veri dosyasındaki gerçek rakam, SALT-OKUNUR. Girdi
@@ -1675,24 +1759,24 @@ function updateAll() {
         }
         // Dondurma penceresi: BUGÜNden (gerçek takvim ayı) lead time kadar ileri.
         const donmus = ai >= donmaBas && ai < donmaBas + lt;
-        const sopV = sopDeger(sopState.sop, r.sku, a.key);
-        const gerV = sopDeger(sopState.gerceklesen, r.sku, a.key);
+        const sopV = sopDeger(sopState.sop, kimlik, a.key);
+        const gerV = sopDeger(sopState.gerceklesen, kimlik, a.key);
         const fark = (gerV != null && sopV != null) ? (gerV - sopV) : null;
         return '<td class="sop-ay' + (donmus ? " sop-frozen" : "") + '"' +
           (donmus ? ' title="Dondurma penceresi — değiştirilebilir ama tedarik zincirine geç haber olabilir"' : "") + ">" +
           (donmus ? '<span class="sop-kilit">🔒</span>' : "") +
-          '<input type="text" inputmode="numeric" class="sop-in sop-sop" data-sku="' + escapeAttribute(r.sku) + '" data-ay="' + a.key + '" ' +
+          '<input type="text" inputmode="numeric" class="sop-in sop-sop" data-k="' + escapeAttribute(kimlik) + '" data-ay="' + a.key + '" ' +
           'value="' + (sopV != null ? fmtN(sopV) : "") + '" placeholder="0">' +
           '<div class="sop-ger" style="display:' + (sopState.gerceklesenAcik ? "block" : "none") + '">' +
-            '<input type="text" inputmode="numeric" class="sop-in sop-gerin" data-sku="' + escapeAttribute(r.sku) + '" data-ay="' + a.key + '" ' +
+            '<input type="text" inputmode="numeric" class="sop-in sop-gerin" data-k="' + escapeAttribute(kimlik) + '" data-ay="' + a.key + '" ' +
             'value="' + (gerV != null ? fmtN(gerV) : "") + '" placeholder="gerç." title="Gerçekleşen (elle girilir)">' +
-            (fark ? '<button type="button" class="btn ghost mini sop-dagit" data-sku="' + escapeAttribute(r.sku) + '" data-ay="' + a.key + '" ' +
+            (fark ? '<button type="button" class="btn ghost mini sop-dagit" data-k="' + escapeAttribute(kimlik) + '" data-ay="' + a.key + '" ' +
               'title="Fark ' + (fark > 0 ? "+" : "") + fmtN(fark) + ' adet. Yıl toplamı sabit kalsın diye kalan (dondurulmamış) aylardan mevcut S&OP ağırlıklarına orantılı olarak düşülür/eklenir.">Dağıt</button>' : "") +
           "</div></td>";
       }).join("");
       return "<tr><td>" + escapeHtml(r.sku) + "</td>" +
         '<td><span class="badge ' + (r.kaynak === "Outsource" ? "b-blue" : "b-grey") + '">' + escapeHtml(r.kaynak) + "</span></td>" +
-        '<td class="sop-lt"><input type="number" class="sop-ltin" data-sku="' + escapeAttribute(r.sku) + '" min="0" max="12" step="1" value="' + lt + '" ' +
+        '<td class="sop-lt"><input type="number" class="sop-ltin" data-k="' + escapeAttribute(kimlik) + '" min="0" max="12" step="1" value="' + lt + '" ' +
           'title="Lead Time (ay) — tedarik değişince değişebilir. Dondurma penceresinin genişliğini belirler."></td>' +
         hucreler + "</tr>";
     }).join("");
@@ -1705,7 +1789,7 @@ function updateAll() {
       foot.innerHTML = "<td>TOPLAM</td><td>—</td><td>—</td>" + aylar.map((a) => {
         const g = gercekMi(a);
         const toplam = satirlar.reduce((acc, r) => acc +
-          (g ? (Number((r.aylar || {})[a.key]) || 0) : (sopDeger(sopState.sop, r.sku, a.key) || 0)), 0);
+          (g ? (Number((r.aylar || {})[a.key]) || 0) : (sopDeger(sopState.sop, sopKimlik(r), a.key) || 0)), 0);
         return '<td class="sop-ay' + (g ? " sop-gercek" : "") + '"><div class="sop-toplam">' + fmtN(toplam) + "</div></td>";
       }).join("");
     }
@@ -1715,8 +1799,8 @@ function updateAll() {
   function bindSopInputs() {
     const tbody = $("sopRows");
     if (!tbody) return;
-    const yaz = (harita, sku, ay, ham) => {
-      const k = sopAnahtar(sku, ay);
+    const yaz = (harita, kimlik, ay, ham) => {
+      const k = sopAnahtar(kimlik, ay);
       if (String(ham).trim() === "") harita.delete(k);
       else {
         const v = parseToptanAdet(ham); // tr-TR binlik ayracını temizler
@@ -1726,22 +1810,22 @@ function updateAll() {
       return true;
     };
     tbody.querySelectorAll("input.sop-sop").forEach((inp) => {
-      inp.addEventListener("change", () => { yaz(sopState.sop, inp.dataset.sku, inp.dataset.ay, inp.value); renderSop(); });
+      inp.addEventListener("change", () => { yaz(sopState.sop, inp.dataset.k, inp.dataset.ay, inp.value); renderSop(); });
       inp.addEventListener("keydown", (e) => { if (e.key === "Enter") inp.blur(); });
     });
     tbody.querySelectorAll("input.sop-gerin").forEach((inp) => {
-      inp.addEventListener("change", () => { yaz(sopState.gerceklesen, inp.dataset.sku, inp.dataset.ay, inp.value); renderSop(); });
+      inp.addEventListener("change", () => { yaz(sopState.gerceklesen, inp.dataset.k, inp.dataset.ay, inp.value); renderSop(); });
       inp.addEventListener("keydown", (e) => { if (e.key === "Enter") inp.blur(); });
     });
     tbody.querySelectorAll("input.sop-ltin").forEach((inp) => {
       inp.addEventListener("change", () => {
         const v = parseInt(inp.value, 10);
-        sopState.leadTime.set(inp.dataset.sku, isFinite(v) && v >= 0 ? v : 0);
+        sopState.leadTime.set(inp.dataset.k, isFinite(v) && v >= 0 ? v : 0);
         renderSop();
       });
     });
     tbody.querySelectorAll("button.sop-dagit").forEach((btn) => {
-      btn.addEventListener("click", () => sopDagit(btn.dataset.sku, btn.dataset.ay));
+      btn.addEventListener("click", () => sopDagit(btn.dataset.k, btn.dataset.ay));
     });
   }
 
@@ -1751,17 +1835,17 @@ function updateAll() {
   //   (a) girilen aydan SONRAKİ ay VE (b) dondurma penceresi DIŞINDA.
   // Dağıtım o ayların MEVCUT S&OP ağırlıklarına orantılıdır; hepsi 0 ise
   // orantı tanımsız olur, o durumda EŞİT bölünür.
-  function sopDagit(sku, ay) {
+  function sopDagit(kimlik, ay) {
     const aylar = sopPencere();
-    const satir = sopSatirlar().find((r) => r.sku === sku);
+    const satir = sopSatirlar().find((r) => sopKimlik(r) === kimlik);
     if (!satir) return;
     const lt = sopLeadTime(satir);
     const sonGercek = sopSonGercekAy();
     const donmaBas = sopBugunIndeks(aylar);
     const idx = aylar.findIndex((a) => a.key === ay);
     if (idx < 0) return;
-    const sopV = sopDeger(sopState.sop, sku, ay);
-    const gerV = sopDeger(sopState.gerceklesen, sku, ay);
+    const sopV = sopDeger(sopState.sop, kimlik, ay);
+    const gerV = sopDeger(sopState.gerceklesen, kimlik, ay);
     if (sopV == null || gerV == null) return;
     const fark = gerV - sopV;
     if (!fark) return;
@@ -1772,7 +1856,7 @@ function updateAll() {
       i > idx && !(sonGercek && a.key <= sonGercek) && !(i >= donmaBas && i < donmaBas + lt));
     if (!hedefler.length) { alert("Dağıtılacak kalan ay yok — bu aydan sonraki tüm aylar dondurma penceresinde ya da pencere sonunda."); return; }
 
-    const agirliklar = hedefler.map((a) => sopDeger(sopState.sop, sku, a.key) || 0);
+    const agirliklar = hedefler.map((a) => sopDeger(sopState.sop, kimlik, a.key) || 0);
     const toplamAgirlik = agirliklar.reduce((x, y) => x + y, 0);
     const paylar = toplamAgirlik > 0
       ? agirliklar.map((w) => (w / toplamAgirlik) * fark)
@@ -1783,8 +1867,8 @@ function updateAll() {
     hedefler.forEach((a, i) => {
       const pay = i === hedefler.length - 1 ? (fark - dagitilan) : Math.round(paylar[i]);
       dagitilan += pay;
-      const mevcut = sopDeger(sopState.sop, sku, a.key) || 0;
-      sopState.sop.set(sopAnahtar(sku, a.key), Math.max(0, mevcut - pay));
+      const mevcut = sopDeger(sopState.sop, kimlik, a.key) || 0;
+      sopState.sop.set(sopAnahtar(kimlik, a.key), Math.max(0, mevcut - pay));
     });
     renderSop();
   }
@@ -1803,9 +1887,10 @@ function updateAll() {
     const tmz = $("sopTemizleBtn");
     if (tmz) tmz.addEventListener("click", () => {
       if (!sopState.sop.size && !sopState.gerceklesen.size) return;
-      if (!confirm("Girilen tüm S&OP ve Gerçekleşen adetleri silinecek (Lead Time değişiklikleri kalır).\n\nDevam edilsin mi?")) return;
+      if (!confirm("Girilen tüm S&OP ve Gerçekleşen adetleri silinecek; plan ayları otomatik BAŞLANGIÇ değerine döner (Lead Time değişiklikleri kalır).\n\nDevam edilsin mi?")) return;
       sopState.sop.clear();
       sopState.gerceklesen.clear();
+      sopState.tohumlanan.clear(); // temizlik = ekranın ilk açılış hâline dönmek
       renderSop();
     });
   }
