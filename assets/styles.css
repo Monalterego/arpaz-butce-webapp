@@ -255,13 +255,29 @@ tfoot td{background:#eef3f8;font-weight:700;border-top:2px solid var(--navy)}
 /* ===== S&OP Planlama ===== */
 .sop-table-wrap{max-height:560px;overflow:auto;border:1px solid var(--line);
   border-radius:var(--radius-md);background:var(--surface);box-shadow:var(--shadow-sm);margin-bottom:var(--s2)}
-#sopTable{border-collapse:collapse;width:100%;min-width:1560px;font-size:11px}
+#sopTable{border-collapse:collapse;width:100%;min-width:1640px;font-size:11px}
 #sopTable th,#sopTable td{border:1px solid rgba(11,37,69,.12);padding:5px 6px;text-align:center;vertical-align:top}
 #sopTable th{background:var(--navy);color:#fff;font-size:10px;font-weight:700;
   position:sticky;top:0;z-index:3;line-height:1.3}
 #sopTable th:first-child,#sopTable td:first-child{text-align:left;white-space:nowrap}
-#sopTable tbody tr:nth-child(even){background:#f8fafc}
+/* rowspan=2 hücreler (SKU/Kaynak/Lead Time) iki satırın ORTASINDA dursun —
+   üste yaslanınca yalnızca Gerçekleşen satırına aitmiş gibi okunuyor. */
+#sopTable td[rowspan]{vertical-align:middle}
+/* Şerit SKU BAŞINA — her SKU İKİ satır olduğu için nth-child(even) SKU'yu
+   ortadan ikiye bölüyordu. app.js tek numaralı SKU'lara .sop-alt basar. */
+#sopTable tbody tr.sop-alt{background:#f8fafc}
+/* SKU grupları arasında ayırıcı — iki satırın tek blok okunması için. */
+#sopTable tbody tr.sop-grup-bas>td{border-top:2px solid rgba(11,37,69,.22)}
 .sop-yil{font-weight:400;opacity:.7;font-size:9px}
+/* Satır etiketi kolonu (4. sabit kolon): "Gerçekleşen" / "Plan / S&OP". */
+#sopTable th.sop-th-etiket{width:78px}
+#sopTable td.sop-satir-etiket{text-align:left;white-space:nowrap;font-size:9px;
+  text-transform:uppercase;letter-spacing:.3px;color:var(--grey);font-weight:700;
+  vertical-align:middle}
+#sopTable td.sop-satir-etiket-plan{color:var(--accent)}
+/* Plan ayında gerçekleşen girişi KAPALIYKEN gösterilen düz metin. */
+.sop-ger-metin{display:inline-block;font-size:11px;color:var(--grey);
+  font-variant-numeric:tabular-nums}
 /* Dondurma penceresi: SADECE görsel uyarı — input DISABLED DEĞİL, düzenlenebilir. */
 #sopTable td.sop-frozen{background:#eef1f5}
 .sop-kilit{display:block;font-size:9px;line-height:1;opacity:.55;margin-bottom:1px}
@@ -271,15 +287,12 @@ tfoot td{background:#eef3f8;font-weight:700;border-top:2px solid var(--navy)}
 #sopTable td.sop-gercek{background:var(--greenbg)}
 #sopTable th.sop-th-gercek{background:var(--green)}
 .sop-gercek-deger{font-weight:700;color:var(--green);font-variant-numeric:tabular-nums}
-.sop-gercek-etiket{display:block;font-size:9px;line-height:1;color:var(--green);opacity:.7;margin-top:2px}
-/* Ocak-Ağustos "Plan" referansı — SALT-OKUNUR. Ölçüleri Eylül-Aralık'taki
-   "gerç." alt-alanıyla (.sop-ger > .sop-gerin) aynı: 74px kutu, kesikli
-   kenarlık, gri. Fark: input değil, etiketi "Plan". */
-.sop-plan-ref{display:inline-flex;justify-content:space-between;align-items:baseline;gap:4px;
-  width:100%;max-width:74px;margin-top:3px;padding:2px 4px;
-  border:1px dashed var(--line);border-radius:5px;background:var(--surface);
-  font-size:10px;color:var(--grey);font-variant-numeric:tabular-nums;line-height:1.3}
-.sop-plan-etiket{font-size:9px;opacity:.8}
+/* Gerçekleşen aylardaki TÜRETİLMİŞ plan değeri (Plan / S&OP satırı).
+   Aynı yeşil kolon zeminini paylaşır ama sayı SOLUK/gri — gerçekleşen
+   rakamla karışmasın: yeşil kalın = gerçek, gri = türetilmiş referans.
+   (.sop-gercek-etiket / .sop-plan-ref hücre içi etiketleri KALDIRILDI:
+   satır etiketi kolonu geldikten sonra 8 kez tekrar ediyorlardı.) */
+.sop-plan-deger{font-weight:400;color:var(--grey);font-variant-numeric:tabular-nums}
 .sop-legend-gercek{display:inline-block;background:var(--greenbg);color:var(--green);
   border:1px solid var(--green);border-radius:4px;padding:1px 6px;font-weight:700;font-size:10px}
 .sop-dagit-bilgi{margin-bottom:var(--s2)}
@@ -287,15 +300,19 @@ tfoot td{background:#eef3f8;font-weight:700;border-top:2px solid var(--navy)}
   text-align:right;font-size:11px;font-variant-numeric:tabular-nums;background:#fffdf6}
 .sop-sop{border-color:var(--amber);color:var(--amber);font-weight:700}
 .sop-sop:focus{outline:2px solid var(--amber);background:#fff}
-.sop-ger{margin-top:3px}
 .sop-gerin{border-style:dashed;color:var(--grey);background:#fff;font-weight:400}
-.sop-dagit{margin-top:3px;font-size:9px;padding:1px 5px;min-height:0}
+/* Dağıt: gerçekleşen girdisinin ALTINA düşer (eskiden .sop-ger sarmalayıcısı
+   blok yapıyordu, o sarmalayıcı iki satırlı düzende kalktı). */
+.sop-dagit{display:block;margin:3px auto 0;font-size:9px;padding:1px 5px;min-height:0}
 .sop-lt input.sop-ltin{width:52px;padding:2px 4px;border:1px solid var(--accent);border-radius:5px;
   text-align:center;font-size:11px;font-weight:700;color:var(--accent);background:var(--accent-bg)}
 .sop-toplam{font-weight:700;color:var(--navy);font-variant-numeric:tabular-nums}
-/* Yıl Sonu Toptan Hedefi — TOPLAM satırının hemen üstünde tek satırlık bilgi. */
+/* Hedef / Gerçekleşen / Kalan özeti — TOPLAM satırının hemen üstünde tek satır.
+   Üç kalem yan yana; dar ekranda alt alta sarar. */
 #sopTable td.sop-hedef{text-align:left;background:var(--accent-bg);color:var(--navy);
   font-size:12px;padding:6px 8px;font-variant-numeric:tabular-nums}
+.sop-hedef-kalem{display:inline-block;margin-right:var(--s3)}
+.sop-hedef-kalem:last-child{margin-right:0}
 /* (.sop-kiyas / .sop-yok kaldırıldı — TOPLAM satırındaki Toptan Bütçe
    karşılaştırma rozetiyle birlikte, bkz. app.js'teki gerekçe yorumu.) */
 .sop-legend-frozen{display:inline-block;background:#eef1f5;border:1px solid var(--line);

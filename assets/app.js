@@ -1754,23 +1754,40 @@ function updateAll() {
     const bilgi = $("sopDagitBilgi");
     if (bilgi) bilgi.style.display = sopState.gerceklesenAcik ? "" : "none";
 
+    // Her SKU İKİ satır: A = Gerçekleşen, B = Plan / S&OP. SKU/Kaynak/Lead Time
+    // hücreleri rowspan=2 ile bu iki satırı kapsar. 4. sabit kolon satır
+    // etiketidir — kolon sayısı değişirse SOP_SABIT_KOLON'u güncelle (thead,
+    // tfoot, hedef satırı ve boş-veri colspan'i buradan besleniyor).
+    const SOP_SABIT_KOLON = 4;
     const head = $("sopHeadRow");
     if (head) {
-      head.innerHTML = "<th>SKU</th><th>Kaynak</th><th>Lead Time (Ay)</th>" +
+      head.innerHTML = "<th>SKU</th><th>Kaynak</th><th>Lead Time (Ay)</th><th class=\"sop-th-etiket\"></th>" +
         aylar.map((a) => '<th' + (gercekMi(a) ? ' class="sop-th-gercek" title="Gerçekleşen ay — gerçek veri, düzenlenemez"' : "") + ">" +
           a.etiket + "<br><span class=\"sop-yil\">" + a.yil + "</span></th>").join("");
     }
     const hedefRow = $("sopHedefRow");
     if (!satirlar.length) {
-      tbody.innerHTML = '<tr><td colspan="' + (3 + aylar.length) + '" style="text-align:center;color:var(--grey);padding:18px">Bu seçim için SKU bulunamadı.</td></tr>';
+      tbody.innerHTML = '<tr><td colspan="' + (SOP_SABIT_KOLON + aylar.length) + '" style="text-align:center;color:var(--grey);padding:18px">Bu seçim için SKU bulunamadı.</td></tr>';
       $("sopFoot").innerHTML = "";
       if (hedefRow) hedefRow.innerHTML = "";
       return;
     }
+
+    const gercekAylar = aylar.filter(gercekMi);
+    const planAylar = aylar.filter((a) => !gercekMi(a));
+    // Hedef / Gerçekleşen / Kalan — HEPSİ sopYilSonuHedefi()'nden, yeniden
+    // hesap YOK. Ay aralığı etiketleri de elle yazılmaz, dizilerden türer.
     if (hedefRow) {
-      const { yilSonuHedef } = sopYilSonuHedefi(satirlar, aylar, gercekMi);
-      hedefRow.innerHTML = '<td class="sop-hedef" colspan="' + (3 + aylar.length) + '">' +
-        "Yıl Sonu Toptan Hedefi: <b>" + fmtN(yilSonuHedef) + "</b> adet</td>";
+      const { yilSonuHedef, kalanAdet, gercek } = sopYilSonuHedefi(satirlar, aylar, gercekMi);
+      const aralik = (l) => (l.length ? l[0].etiket + "-" + l[l.length - 1].etiket : "—");
+      const aylikKalan = planAylar.length
+        ? (kalanAdet / planAylar.length).toLocaleString("tr-TR", { minimumFractionDigits: 1, maximumFractionDigits: 1 })
+        : "—";
+      hedefRow.innerHTML = '<td class="sop-hedef" colspan="' + (SOP_SABIT_KOLON + aylar.length) + '">' +
+        '<span class="sop-hedef-kalem">Yıl Sonu Toptan Hedefi: <b>' + fmtN(yilSonuHedef) + "</b> adet</span>" +
+        '<span class="sop-hedef-kalem">' + aralik(gercekAylar) + " Gerçekleşen Toplam: <b>" + fmtN(gercek) + "</b> adet</span>" +
+        '<span class="sop-hedef-kalem">Kalan (' + aralik(planAylar) + " için): <b>" + fmtN(kalanAdet) +
+          "</b> adet → Aylık: <b>" + aylikKalan + "</b> adet</span></td>";
     }
 
     // Ocak-Ağustos "Plan" referansı — render başına BİR KEZ hesaplanır.
@@ -1779,40 +1796,61 @@ function updateAll() {
     tbody.innerHTML = satirlar.map((r, i) => {
       const kimlik = sopKimlik(r);
       const lt = sopLeadTime(r);
-      const hucreler = aylar.map((a, ai) => {
-        // GERÇEKLEŞEN ay: veri dosyasındaki gerçek rakam, SALT-OKUNUR. Girdi
-        // (S&OP ve Gerçekleşen) hiç basılmaz — girilecek bir şey yok.
+      const altSinif = i % 2 ? " sop-alt" : "";   // şerit SKU BAŞINA (satır başına değil)
+
+      // --- Satır A: GERÇEKLEŞEN ---
+      const gercekHucreler = aylar.map((a, ai) => {
         if (gercekMi(a)) {
           const gercek = Number((r.aylar || {})[a.key]) || 0;
-          const planV = (gercekAyPlani[a.key] || [])[i] || 0;
           return '<td class="sop-ay sop-gercek" title="Gerçekleşen — ' + escapeAttribute(a.uzun) + ' gerçek toptan adedi (düzenlenemez)">' +
-            '<span class="sop-gercek-deger">' + fmtN(gercek) + "</span>" +
-            '<span class="sop-gercek-etiket">Gerçekleşen</span>' +
-            '<span class="sop-plan-ref"><span class="sop-plan-etiket">Plan</span>' +
-              "<span>" + fmtN(planV) + "</span></span></td>";
+            '<span class="sop-gercek-deger">' + fmtN(gercek) + "</span></td>";
         }
-        // Dondurma penceresi: BUGÜNden (gerçek takvim ayı) lead time kadar ileri.
+        // Plan ayında gerçekleşen ELLE girilir. Toggle kapalıyken girdi yerine
+        // düz metin (değer yoksa "—") gösterilir — satır her zaman durur.
         const donmus = ai >= donmaBas && ai < donmaBas + lt;
         const sopV = sopDeger(sopState.sop, kimlik, a.key);
         const gerV = sopDeger(sopState.gerceklesen, kimlik, a.key);
         const fark = (gerV != null && sopV != null) ? (gerV - sopV) : null;
+        if (!sopState.gerceklesenAcik) {
+          return '<td class="sop-ay' + (donmus ? " sop-frozen" : "") + '">' +
+            '<span class="sop-ger-metin">' + (gerV != null ? fmtN(gerV) : "—") + "</span></td>";
+        }
+        return '<td class="sop-ay' + (donmus ? " sop-frozen" : "") + '">' +
+          '<input type="text" inputmode="numeric" class="sop-in sop-gerin" data-k="' + escapeAttribute(kimlik) + '" data-ay="' + a.key + '" ' +
+          'value="' + (gerV != null ? fmtN(gerV) : "") + '" placeholder="gerç." title="Gerçekleşen (elle girilir)">' +
+          (fark ? '<button type="button" class="btn ghost mini sop-dagit" data-k="' + escapeAttribute(kimlik) + '" data-ay="' + a.key + '" ' +
+            'title="Fark ' + (fark > 0 ? "+" : "") + fmtN(fark) + ' adet. Yıl toplamı sabit kalsın diye kalan (dondurulmamış) aylardan mevcut S&OP ağırlıklarına orantılı olarak düşülür/eklenir.">Dağıt</button>' : "") +
+          "</td>";
+      }).join("");
+
+      // --- Satır B: PLAN / S&OP ---
+      const planHucreler = aylar.map((a, ai) => {
+        if (gercekMi(a)) {
+          // Türetilmiş plan referansı — SALT-OKUNUR, state'e yazılmaz.
+          const planV = (gercekAyPlani[a.key] || [])[i] || 0;
+          return '<td class="sop-ay sop-gercek" title="Plan (türetilmiş) — Yıl Sonu Hedefi ÷ ' + aylar.length + ', SKU payına göre">' +
+            '<span class="sop-plan-deger">' + fmtN(planV) + "</span></td>";
+        }
+        // Dondurma penceresi: BUGÜNden (gerçek takvim ayı) lead time kadar ileri.
+        const donmus = ai >= donmaBas && ai < donmaBas + lt;
+        const sopV = sopDeger(sopState.sop, kimlik, a.key);
         return '<td class="sop-ay' + (donmus ? " sop-frozen" : "") + '"' +
           (donmus ? ' title="Dondurma penceresi — değiştirilebilir ama tedarik zincirine geç haber olabilir"' : "") + ">" +
           (donmus ? '<span class="sop-kilit">🔒</span>' : "") +
           '<input type="text" inputmode="numeric" class="sop-in sop-sop" data-k="' + escapeAttribute(kimlik) + '" data-ay="' + a.key + '" ' +
-          'value="' + (sopV != null ? fmtN(sopV) : "") + '" placeholder="0">' +
-          '<div class="sop-ger" style="display:' + (sopState.gerceklesenAcik ? "block" : "none") + '">' +
-            '<input type="text" inputmode="numeric" class="sop-in sop-gerin" data-k="' + escapeAttribute(kimlik) + '" data-ay="' + a.key + '" ' +
-            'value="' + (gerV != null ? fmtN(gerV) : "") + '" placeholder="gerç." title="Gerçekleşen (elle girilir)">' +
-            (fark ? '<button type="button" class="btn ghost mini sop-dagit" data-k="' + escapeAttribute(kimlik) + '" data-ay="' + a.key + '" ' +
-              'title="Fark ' + (fark > 0 ? "+" : "") + fmtN(fark) + ' adet. Yıl toplamı sabit kalsın diye kalan (dondurulmamış) aylardan mevcut S&OP ağırlıklarına orantılı olarak düşülür/eklenir.">Dağıt</button>' : "") +
-          "</div></td>";
+          'value="' + (sopV != null ? fmtN(sopV) : "") + '" placeholder="0"></td>';
       }).join("");
-      return "<tr><td>" + escapeHtml(r.sku) + "</td>" +
-        '<td><span class="badge ' + (r.kaynak === "Outsource" ? "b-blue" : "b-grey") + '">' + escapeHtml(r.kaynak) + "</span></td>" +
-        '<td class="sop-lt"><input type="number" class="sop-ltin" data-k="' + escapeAttribute(kimlik) + '" min="0" max="12" step="1" value="' + lt + '" ' +
-          'title="Lead Time (ay) — tedarik değişince değişebilir. Dondurma penceresinin genişliğini belirler."></td>' +
-        hucreler + "</tr>";
+
+      return '<tr class="sop-grup-bas' + altSinif + '">' +
+          '<td rowspan="2">' + escapeHtml(r.sku) + "</td>" +
+          '<td rowspan="2"><span class="badge ' + (r.kaynak === "Outsource" ? "b-blue" : "b-grey") + '">' + escapeHtml(r.kaynak) + "</span></td>" +
+          '<td class="sop-lt" rowspan="2"><input type="number" class="sop-ltin" data-k="' + escapeAttribute(kimlik) + '" min="0" max="12" step="1" value="' + lt + '" ' +
+            'title="Lead Time (ay) — tedarik değişince değişebilir. Dondurma penceresinin genişliğini belirler."></td>' +
+          '<td class="sop-satir-etiket">Gerçekleşen</td>' + gercekHucreler +
+        "</tr>" +
+        '<tr class="' + altSinif.trim() + '">' +
+          '<td class="sop-satir-etiket sop-satir-etiket-plan">Plan / S&amp;OP</td>' + planHucreler +
+        "</tr>";
     }).join("");
 
     // TOPLAM — gerçekleşen aylarda gerçek verinin, plan aylarında girilen
@@ -1820,7 +1858,7 @@ function updateAll() {
     // gerekçe yukarıdaki blok yorumunda.)
     const foot = $("sopFoot");
     if (foot) {
-      foot.innerHTML = "<td>TOPLAM</td><td>—</td><td>—</td>" + aylar.map((a) => {
+      foot.innerHTML = "<td>TOPLAM</td><td>—</td><td>—</td><td>—</td>" + aylar.map((a) => {
         const g = gercekMi(a);
         const toplam = satirlar.reduce((acc, r) => acc +
           (g ? (Number((r.aylar || {})[a.key]) || 0) : (sopDeger(sopState.sop, sopKimlik(r), a.key) || 0)), 0);
