@@ -441,7 +441,7 @@
     <div class="tabpane" data-pane="sop" style="display:none">
       <div class="panel">
         <h2>S&amp;OP Planlama <span class="pill">SKU × Ay · Toptan (sell-in)</span></h2>
-        <div class="note" style="margin-bottom:var(--s2)">Soldaki kaskattan bir ÜH4 seçin; o ürünün SKU'ları aşağıda listelenir. <b>12 aylık ilerleyen pencere</b> gösterilir. S&amp;OP adetleri ileriye dönük plandır — geçmiş veri yalnızca referanstır, hücreler otomatik doldurulmaz.</div>
+        <div class="note" style="margin-bottom:var(--s2)">Soldaki kaskattan bir ÜH4 seçin; o ürünün SKU'ları aşağıda listelenir. Pencere <b>2026 takvim yılıdır (Ocak → Aralık)</b>. <b>Ocak-Ağustos</b> ayları gerçek veriden otomatik dolar ve <b>düzenlenemez</b>; S&amp;OP adetleri yalnızca <b>Eylül-Aralık</b> için girilir.</div>
 
         <details class="sop-referans" id="sopReferans">
           <summary>Geçmiş referans — son 3 ayın ortalaması</summary>
@@ -454,6 +454,11 @@
           <button type="button" class="btn ghost mini" id="sopTemizleBtn">Girişleri Temizle</button>
         </div>
 
+        <!-- "Kalan Aylara Dağıt" ön bilgisi — SADECE Gerçekleşen girişi açıkken
+             görünür (Dağıt butonu da yalnızca o zaman çıkabilir). renderSop()
+             görünürlüğü sopState.gerceklesenAcik'e göre ayarlar. -->
+        <div class="note sop-dagit-bilgi" id="sopDagitBilgi" style="display:none"><b>Kalan Aylara Dağıt nasıl çalışır?</b> Gerçekleşen, plandan farklıysa: fark kalan (donmamış) aylara, o ayların kendi S&amp;OP ağırlıklarına göre orantılı dağıtılır. Yıl toplamı sabit kalır — fazla sattıysan kalan aylardan düşülür, eksik sattıysan eklenir.</div>
+
         <div class="sop-table-wrap">
           <table id="sopTable">
             <thead>
@@ -464,12 +469,10 @@
           </table>
         </div>
         <div class="legend">
+          <span class="sop-legend-gercek">Gerçekleşen</span> Gerçek veri — düzenlenemez
           <span class="sop-legend-frozen">🔒</span> Dondurma penceresi — lead time süresince
-          <span class="badge b-green">✓ Uyumlu</span>
-          <span class="badge b-amber">⚠ Sapma</span>
-          <span style="color:var(--grey)">— Karşılaştırma yok</span>
         </div>
-        <div class="note"><b>Dondurma penceresi</b> her SKU'nun kendi Lead Time'ı kadardır ve tablonun ilk ayından başlar — düzenlemeyi ENGELLEMEZ, yalnızca "tedarik zincirine geç haber olabilir" uyarısıdır. <b>TOPLAM satırındaki rozet</b>, o ayın Hedef Periyot'una denk gelen onaylanmış Toptan Bütçe kaydıyla karşılaştırmadır (aynı org + ÜH1-4, tüm bölgeler toplanır); sapma %20'yi aşarsa ⚠ çıkar. Eşleşen kayıt yoksa "—" gösterilir, karşılaştırma uydurulmaz.</div>
+        <div class="note"><b>Gerçekleşen aylar</b> (yeşil) veri dosyasındaki gerçek toptan adetleridir; girdi kabul etmezler, TOPLAM satırına da gerçek değerleriyle girerler. <b>Dondurma penceresi</b> (gri 🔒) her SKU'nun kendi Lead Time'ı kadardır ve <b>içinde bulunduğumuz aydan</b> başlar — düzenlemeyi ENGELLEMEZ, yalnızca "tedarik zincirine geç haber olabilir" uyarısıdır. İki durum farklı şeylerdir: yeşil "değiştirilemez", gri "değiştirilebilir ama geç kalınmış olabilir".</div>
       </div>
     </div>
 

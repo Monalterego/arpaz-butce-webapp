@@ -265,6 +265,16 @@ tfoot td{background:#eef3f8;font-weight:700;border-top:2px solid var(--navy)}
 /* Dondurma penceresi: SADECE görsel uyarı — input DISABLED DEĞİL, düzenlenebilir. */
 #sopTable td.sop-frozen{background:#eef1f5}
 .sop-kilit{display:block;font-size:9px;line-height:1;opacity:.55;margin-bottom:1px}
+/* GERÇEKLEŞEN ay (2026 Ocak-Ağustos): gerçek veri, salt-okunur — hiç input yok.
+   Dondurma penceresinin GRİsinden AYRI bir görsel dil (yeşil) olması KASITLI:
+   gri "değiştirilebilir ama geç", yeşil "değiştirilemez". Karıştırma. */
+#sopTable td.sop-gercek{background:var(--greenbg)}
+#sopTable th.sop-th-gercek{background:var(--green)}
+.sop-gercek-deger{font-weight:700;color:var(--green);font-variant-numeric:tabular-nums}
+.sop-gercek-etiket{display:block;font-size:9px;line-height:1;color:var(--green);opacity:.7;margin-top:2px}
+.sop-legend-gercek{display:inline-block;background:var(--greenbg);color:var(--green);
+  border:1px solid var(--green);border-radius:4px;padding:1px 6px;font-weight:700;font-size:10px}
+.sop-dagit-bilgi{margin-bottom:var(--s2)}
 .sop-in{width:100%;max-width:74px;padding:2px 4px;border:1px solid var(--line);border-radius:5px;
   text-align:right;font-size:11px;font-variant-numeric:tabular-nums;background:#fffdf6}
 .sop-sop{border-color:var(--amber);color:var(--amber);font-weight:700}
@@ -275,8 +285,8 @@ tfoot td{background:#eef3f8;font-weight:700;border-top:2px solid var(--navy)}
 .sop-lt input.sop-ltin{width:52px;padding:2px 4px;border:1px solid var(--accent);border-radius:5px;
   text-align:center;font-size:11px;font-weight:700;color:var(--accent);background:var(--accent-bg)}
 .sop-toplam{font-weight:700;color:var(--navy);font-variant-numeric:tabular-nums}
-.sop-kiyas{margin-top:2px}
-.sop-yok{color:var(--grey)}
+/* (.sop-kiyas / .sop-yok kaldırıldı — TOPLAM satırındaki Toptan Bütçe
+   karşılaştırma rozetiyle birlikte, bkz. app.js'teki gerekçe yorumu.) */
 .sop-legend-frozen{display:inline-block;background:#eef1f5;border:1px solid var(--line);
   border-radius:4px;padding:1px 6px}
 .sop-referans{margin-bottom:var(--s2);font-size:12px}

@@ -1524,7 +1524,7 @@ function updateAll() {
   // ==========================================================================
   const SOP_AY_ADI = ["Ocak", "Şubat", "Mart", "Nisan", "Mayıs", "Haziran",
     "Temmuz", "Ağustos", "Eylül", "Ekim", "Kasım", "Aralık"];
-  const SOP_SAPMA_ESIGI = 0.20; // TOPLAM ↔ Toptan Bütçe karşılaştırmasında ⚠ eşiği
+  const SOP_YIL = 2026; // Plan yılı — pencere SABİT: 2026 Ocak → 2026 Aralık
   const sopState = {
     sop: new Map(),        // "sku␟2026-09" → adet
     gerceklesen: new Map(),// "sku␟2026-09" → adet
@@ -1534,31 +1534,37 @@ function updateAll() {
   function sopVeri() {
     return (typeof SOP_SKU_DATA !== "undefined" && Array.isArray(SOP_SKU_DATA)) ? SOP_SKU_DATA : [];
   }
-  // tr-TR BÜYÜK harf normalizasyonu. SOP verisi "Aspiratör - Davlumbaz",
-  // HIERARCHY/kayıtlar "ASPİRATÖR - DAVLUMBAZ" yazıyor; ham karşılaştırma
-  // 339 ÜH4'ün yalnızca 3'ünü eşleştiriyor, bu normalizasyonla 339'unu da
-  // eşleştiriyor (ölçüldü). Kayıt eşlemesinde MUTLAKA kullan.
-  function sopNorm(s) { return String(s == null ? "" : s).toLocaleUpperCase("tr-TR").trim(); }
   function sopAnahtar(sku, ay) { return sku + "␟" + ay; }
 
-  // 12 aylık ilerleyen pencere: veri dosyasındaki EN SON aydan BİR SONRAKİ ay.
+  // TAKVİM YILI penceresi — SABİT 2026 Ocak → 2026 Aralık.
+  // (Eskiden "veri dosyasındaki son aydan sonraki 12 ay" şeklinde İLERLEYEN bir
+  // pencereydi; kullanıcı kararıyla takvim yılına sabitlendi. Plan yılı değişince
+  // SOP_YIL'i güncelle, başka yer DEĞİŞMEZ.)
   function sopPencere() {
-    const veri = sopVeri();
-    if (!veri.length) return [];
-    const tumAylar = new Set();
-    veri.forEach((r) => Object.keys(r.aylar || {}).forEach((a) => tumAylar.add(a)));
-    const sirali = Array.from(tumAylar).sort();
-    if (!sirali.length) return [];
-    const son = sirali[sirali.length - 1];
-    let [y, m] = son.split("-").map(Number);
     const out = [];
-    for (let i = 0; i < 12; i++) {
-      m += 1;
-      if (m > 12) { m = 1; y += 1; }
-      out.push({ key: y + "-" + String(m).padStart(2, "0"), yil: y, ayNo: m,
-        etiket: SOP_AY_ADI[m - 1], uzun: y + " " + SOP_AY_ADI[m - 1] });
+    for (let m = 1; m <= 12; m++) {
+      out.push({ key: SOP_YIL + "-" + String(m).padStart(2, "0"), yil: SOP_YIL, ayNo: m,
+        etiket: SOP_AY_ADI[m - 1], uzun: SOP_YIL + " " + SOP_AY_ADI[m - 1] });
     }
     return out;
+  }
+  // Veride GERÇEK rakamı bulunan EN SON ay (bu veri setinde "2026-08").
+  // Elle 8'e sabitlenmedi: veri dosyasına 9. ay eklenince tablo kendiliğinden
+  // o ayı da "Gerçekleşen" olarak salt-okunur gösterir.
+  function sopSonGercekAy() {
+    let son = "";
+    sopVeri().forEach((r) => Object.keys(r.aylar || {}).forEach((a) => { if (a > son) son = a; }));
+    return son;
+  }
+  // Dondurma penceresinin BAŞLANGICI: gerçek takvimde bulunduğumuz ay.
+  // Pencere dışındaysak (2026'dan önce/sonra) sırasıyla başa/sona kırpılır.
+  function sopBugunIndeks(aylar) {
+    const d = new Date();
+    const key = d.getFullYear() + "-" + String(d.getMonth() + 1).padStart(2, "0");
+    const i = aylar.findIndex((a) => a.key === key);
+    if (i >= 0) return i;
+    if (!aylar.length) return 0;
+    return key < aylar[0].key ? 0 : aylar.length;
   }
   function sopSecim() {
     const al = (id) => { const el = $(id); return el ? el.value : ""; };
@@ -1598,33 +1604,16 @@ function updateAll() {
     return v == null ? null : v;
   }
 
-  // Onaylanmış Toptan Bütçe kayıtlarından (arpaz_toptan_revize_setleri) aynı
-  // org + ÜH1-4 + Hedef Periyot için TÜM BÖLGELERİN toplamı. S&OP'ta bölge
-  // olmadığı için toplama zorunlu. Kayıt yoksa null → "—" (karşılaştırma uydurma).
-  function sopToptanKayit(ayUzunEtiket) {
-    const s = sopSecim();
-    let toplam = null;
-    loadToptanSets().forEach((set) => {
-      (set.rows || []).forEach((r) => {
-        if (sopNorm(r.targetperiod) !== sopNorm(ayUzunEtiket)) return;
-        if (sopNorm(r.org) !== sopNorm(s.org)) return;
-        if (sopNorm(r.uh1) !== sopNorm(s.uh1) || sopNorm(r.uh2) !== sopNorm(s.uh2)) return;
-        if (sopNorm(r.uh3) !== sopNorm(s.uh3) || sopNorm(r.uh4) !== sopNorm(s.uh4)) return;
-        toplam = (toplam || 0) + (Number(r.toptanButce) || 0);
-      });
-    });
-    return toplam;
-  }
-  function sopKarsilastirmaRozeti(sopToplam, kayit) {
-    if (kayit == null) return '<span class="sop-yok" title="Bu ay için onaylanmış Toptan Bütçe kaydı yok — karşılaştırma yapılmadı">—</span>';
-    if (kayit === 0) return '<span class="badge b-amber" title="Kayıtlı Toptan Bütçe 0">⚠ 0</span>';
-    const sapma = (sopToplam - kayit) / kayit;
-    const yuzde = (sapma >= 0 ? "+" : "") + fmtP(sapma);
-    const baslik = "Onaylanmış Toptan Bütçe: " + fmtN(kayit) + " adet · S&OP: " + fmtN(sopToplam) + " adet · sapma " + yuzde;
-    return Math.abs(sapma) <= SOP_SAPMA_ESIGI
-      ? '<span class="badge b-green" title="' + escapeAttribute(baslik) + '">✓ ' + yuzde + "</span>"
-      : '<span class="badge b-amber" title="' + escapeAttribute(baslik) + '">⚠ ' + yuzde + "</span>";
-  }
+  // KALDIRILDI (kapsam dışı) — TOPLAM satırındaki "Toptan Bütçe karşılaştırma
+  // rozeti". Burada bir `sopToptanKayit()` + `sopKarsilastirmaRozeti()` ikilisi
+  // vardı: onaylanmış Toptan Bütçe kayıtlarını (arpaz_toptan_revize_setleri) aynı
+  // org + ÜH1-4 + Hedef Periyot için toplayıp %20 sapma eşiğiyle ✓/⚠ basıyordu.
+  // Kayıtlardaki Hedef Periyot HER ZAMAN gelecek yılı (2027) gösteriyor; S&OP
+  // penceresi ise artık 2026 takvim yılına sabit — eşleşme hiçbir zaman olmaz,
+  // rozet kalıcı olarak "—" kalırdı. Gerçek 2026 toptan bütçesi eklendiğinde
+  // (aynı yılı hedefleyen kayıtlar) bu karşılaştırma geri getirilebilir; o zaman
+  // sopNorm() (tr-TR BÜYÜK harf normalizasyonu) da yeniden gerekecek — ham
+  // string karşılaştırması 339 ÜH4'ün yalnızca 3'ünü eşleştiriyordu.
 
   function renderSopReferans(satirlar) {
     const el = $("sopReferansIcerik");
@@ -1655,10 +1644,17 @@ function updateAll() {
     if (sayac) sayac.textContent = fmtN(satirlar.length) + " SKU · " + (aylar.length ? aylar[0].uzun + " → " + aylar[aylar.length - 1].uzun : "—");
     renderSopReferans(satirlar);
 
+    const sonGercek = sopSonGercekAy();
+    const gercekMi = (a) => !!sonGercek && a.key <= sonGercek;
+    const donmaBas = sopBugunIndeks(aylar);
+    const bilgi = $("sopDagitBilgi");
+    if (bilgi) bilgi.style.display = sopState.gerceklesenAcik ? "" : "none";
+
     const head = $("sopHeadRow");
     if (head) {
       head.innerHTML = "<th>SKU</th><th>Kaynak</th><th>Lead Time (Ay)</th>" +
-        aylar.map((a) => "<th>" + a.etiket + "<br><span class=\"sop-yil\">" + a.yil + "</span></th>").join("");
+        aylar.map((a) => '<th' + (gercekMi(a) ? ' class="sop-th-gercek" title="Gerçekleşen ay — gerçek veri, düzenlenemez"' : "") + ">" +
+          a.etiket + "<br><span class=\"sop-yil\">" + a.yil + "</span></th>").join("");
     }
     if (!satirlar.length) {
       tbody.innerHTML = '<tr><td colspan="' + (3 + aylar.length) + '" style="text-align:center;color:var(--grey);padding:18px">Bu seçim için SKU bulunamadı.</td></tr>';
@@ -1669,7 +1665,16 @@ function updateAll() {
     tbody.innerHTML = satirlar.map((r, i) => {
       const lt = sopLeadTime(r);
       const hucreler = aylar.map((a, ai) => {
-        const donmus = ai < lt; // dondurma penceresi: tablonun BAŞINDAN lead time kadar
+        // GERÇEKLEŞEN ay: veri dosyasındaki gerçek rakam, SALT-OKUNUR. Girdi
+        // (S&OP ve Gerçekleşen) hiç basılmaz — girilecek bir şey yok.
+        if (gercekMi(a)) {
+          const gercek = Number((r.aylar || {})[a.key]) || 0;
+          return '<td class="sop-ay sop-gercek" title="Gerçekleşen — ' + escapeAttribute(a.uzun) + ' gerçek toptan adedi (düzenlenemez)">' +
+            '<span class="sop-gercek-deger">' + fmtN(gercek) + "</span>" +
+            '<span class="sop-gercek-etiket">Gerçekleşen</span></td>';
+        }
+        // Dondurma penceresi: BUGÜNden (gerçek takvim ayı) lead time kadar ileri.
+        const donmus = ai >= donmaBas && ai < donmaBas + lt;
         const sopV = sopDeger(sopState.sop, r.sku, a.key);
         const gerV = sopDeger(sopState.gerceklesen, r.sku, a.key);
         const fark = (gerV != null && sopV != null) ? (gerV - sopV) : null;
@@ -1692,14 +1697,16 @@ function updateAll() {
         hucreler + "</tr>";
     }).join("");
 
-    // TOPLAM + karşılaştırma
+    // TOPLAM — gerçekleşen aylarda gerçek verinin, plan aylarında girilen
+    // S&OP adetlerinin toplamı. (Toptan Bütçe karşılaştırma rozeti KALDIRILDI,
+    // gerekçe yukarıdaki blok yorumunda.)
     const foot = $("sopFoot");
     if (foot) {
       foot.innerHTML = "<td>TOPLAM</td><td>—</td><td>—</td>" + aylar.map((a) => {
-        const toplam = satirlar.reduce((acc, r) => acc + (sopDeger(sopState.sop, r.sku, a.key) || 0), 0);
-        const kayit = sopToptanKayit(a.uzun);
-        return '<td class="sop-ay"><div class="sop-toplam">' + fmtN(toplam) + "</div>" +
-          '<div class="sop-kiyas">' + sopKarsilastirmaRozeti(toplam, kayit) + "</div></td>";
+        const g = gercekMi(a);
+        const toplam = satirlar.reduce((acc, r) => acc +
+          (g ? (Number((r.aylar || {})[a.key]) || 0) : (sopDeger(sopState.sop, r.sku, a.key) || 0)), 0);
+        return '<td class="sop-ay' + (g ? " sop-gercek" : "") + '"><div class="sop-toplam">' + fmtN(toplam) + "</div></td>";
       }).join("");
     }
     bindSopInputs();
@@ -1749,6 +1756,8 @@ function updateAll() {
     const satir = sopSatirlar().find((r) => r.sku === sku);
     if (!satir) return;
     const lt = sopLeadTime(satir);
+    const sonGercek = sopSonGercekAy();
+    const donmaBas = sopBugunIndeks(aylar);
     const idx = aylar.findIndex((a) => a.key === ay);
     if (idx < 0) return;
     const sopV = sopDeger(sopState.sop, sku, ay);
@@ -1757,7 +1766,10 @@ function updateAll() {
     const fark = gerV - sopV;
     if (!fark) return;
 
-    const hedefler = aylar.filter((a, i) => i > idx && i >= lt);
+    // Kalan ay = girilen aydan SONRAKİ · gerçekleşen OLMAYAN · dondurma
+    // penceresi DIŞINDA kalan ay.
+    const hedefler = aylar.filter((a, i) =>
+      i > idx && !(sonGercek && a.key <= sonGercek) && !(i >= donmaBas && i < donmaBas + lt));
     if (!hedefler.length) { alert("Dağıtılacak kalan ay yok — bu aydan sonraki tüm aylar dondurma penceresinde ya da pencere sonunda."); return; }
 
     const agirliklar = hedefler.map((a) => sopDeger(sopState.sop, sku, a.key) || 0);
