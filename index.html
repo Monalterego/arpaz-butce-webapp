@@ -204,7 +204,7 @@
             <col style="width:79px">   <!-- Perakende Ortalama Satış Fiyatı (LY) (başlık "Perakende" 52px→77px yeterliydi ama DATA taşması bağlayıcı oldu: 558 kombinasyon taramasında en uzun değer "138030,30" = 54,4px→79px) -->
             <col style="width:77px">   <!-- Gelecek Yıl Periyot Perakende Plan Stok % -->
             <col style="width:77px">   <!-- Gelecek Yıl Periyot Perakende Plan Stok Adet -->
-            <col style="width:76px">   <!-- Hedef Stock Cover (Hedef Stok Ay) -->
+            <col style="width:96px">   <!-- Hedef Stock Cover (Hedef Stok Ay) — 76→96: elle giriş kutusunun yanına geçmiş stok ay referansı için (i) butonu eklendi -->
             <col style="width:77px">   <!-- Perakende Satış Adet Bütçe -->
             <col style="width:83px">   <!-- Perakende Ortalama Satış Fiyatı (TY) (elle giriş, kalın font — DATA taşması bağlayıcı: "144931,82" = 58,5px→83px) -->
             <col style="width:103px">  <!-- Perakende Satış Bütçe Tutar (Ciro Bütçe) (DATA taşması bağlayıcı: uç parametrelerde "14.702.494.305" = 79px→103px) -->
@@ -816,6 +816,20 @@
   </div>
 </div>
 
+<!-- Hedef Cover referans popup'ı — Bütçe & Stok Karışım Tablosu'ndaki (i)
+     butonları açar. Tablo `overflow:auto` bir kutunun içinde olduğu için
+     popup position:fixed ve <body> sonunda durur; .tabpane/panel içine
+     TAŞIMA, kırpılır. Tamamen bilgilendirme — hiçbir hesaba dokunmaz. -->
+<div id="stokRefPop" class="stok-ref-pop" style="display:none">
+  <div class="stok-ref-bas">
+    <span id="stokRefBaslik">—</span>
+    <button type="button" id="stokRefKapat" class="stok-ref-kapat" aria-label="Kapat">×</button>
+  </div>
+  <div class="stok-ref-grafik"><canvas id="stokRefChart"></canvas></div>
+  <div id="stokRefBos" class="stok-ref-bos" style="display:none"></div>
+  <div class="note" id="stokRefNot"></div>
+</div>
+
 <script src="assets/hierarchy.js"></script>
 <script src="assets/realdata.js"></script>
 <script src="assets/data.js"></script>
@@ -823,6 +837,7 @@
 <script src="assets/ozelgunler.js"></script>
 <script src="assets/sop_sku_data.js"></script>
 <script src="assets/forecast_data.js"></script>
+<script src="assets/stok_ay_referans.js"></script>
 <!-- Chart.js — Tahmin sekmesinin grafikleri. Projedeki TEK dış bağımlılık
      (kullanıcı kararı; CLAUDE.md Bölüm 9'un "bağımlılık ekleme" kuralına
      bilinçli istisna). CDN olduğu için ÇEVRİMDIŞI yüklenmez; app.js bu

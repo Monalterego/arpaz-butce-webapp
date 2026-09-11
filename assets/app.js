@@ -360,7 +360,7 @@
         <td id="cov_${i}"></td><td id="tov_${i}"></td>
         <td class="num-cell" id="lyciro_${i}"></td><td id="lyfiyat_${i}"></td>
         <td class="planpctcell"><input type="number" class="planpctin" id="psp_${i}" min="0" max="100" step="0.1"></td><td class="num-cell" id="psa_${i}"></td>
-        <td class="covcell"><input type="number" class="covin" id="hcov_${i}" min="1" step="0.5" value="${state.covers[i]}"></td>
+        <td class="covcell"><input type="number" class="covin" id="hcov_${i}" min="1" step="0.5" value="${state.covers[i]}"><button type="button" class="cov-ref-btn" data-row="${i}" title="Geçmiş stok ay referansını göster" aria-label="Geçmiş stok ay referansı">i</button></td>
         <td class="num-cell" id="sb_${i}"></td>
         <td class="fiyatcell"><input type="number" class="fiyatin" id="tyfiyat_${i}" min="0" step="1"></td>
         <td id="ciro_${i}"></td>
@@ -388,6 +388,12 @@
         const v = parseFloat(e.target.value);
         state.planPctOverrides[i] = (isNaN(v) || v < 0 || v > 100) ? null : v / 100;
         updateAll();
+      });
+      // Hedef Cover hücresindeki (i) — o satırın ÜH4'ü için geçmiş stok ay grafiği.
+      const refBtn = document.querySelector('.cov-ref-btn[data-row="' + i + '"]');
+      if (refBtn) refBtn.addEventListener("click", (e) => {
+        e.stopPropagation();
+        stokRefAc(refBtn, d[0]);   // d[0] = satırın ÜH4 adı
       });
     });
   }
@@ -2629,6 +2635,189 @@ function updateAll() {
   }
 
   // ==========================================================================
+  // HEDEF COVER REFERANSI — geçmiş stok ay grafiği (satır içi popup)
+  // --------------------------------------------------------------------------
+  // Kaynak: assets/stok_ay_referans.js (STOK_AY_REFERANS, 330 ÜH4, 2021-01 →
+  // 2025-12). Hedef Cover hücresindeki (i) butonuna basılınca o satırın ÜH4'ü
+  // için geçmiş stok ay serisi çizilir. TAMAMEN BİLGİLENDİRME: Hedef Cover'a,
+  // state.covers'a veya herhangi bir bütçe hesabına DOKUNMAZ (CLAUDE.md
+  // Bölüm 5: Hedef Cover bütçe sahibinin uzman yargısıdır, otomatik bir
+  // değerle ASLA ezilmez).
+  //
+  // EŞLEŞTİRME — neden İ/I katlaması şart: referans dosyası "ÇAMAŞIR MAKINESI"
+  // (noktasız I), HIERARCHY ise "ÇAMAŞIR MAKİNESİ" yazıyor. Ölçüldü:
+  //   ham karşılaştırma           →  47/339 yaprak eşleşiyor (%13,9)
+  //   tr-TR BÜYÜK harf            →  47/339 (DEĞİŞMİYOR — İ ve I ayrı harfler)
+  //   BÜYÜK harf + İ/I katlaması  → 313/339 (%92,3)
+  // Kalan 26 yaprağın referans dosyasında gerçekten karşılığı yok (330 kayıt
+  // vs 339 yaprak); onlar "veri bulunamadı" mesajına düşer, uydurma yapılmaz.
+  // ==========================================================================
+  let stokRefChart = null;
+  let stokRefAnchor = null;   // popup'ı açan (i) butonu — yeniden konumlandırma için
+  function stokRefVeri() {
+    return (typeof STOK_AY_REFERANS !== "undefined" && Array.isArray(STOK_AY_REFERANS)) ? STOK_AY_REFERANS : [];
+  }
+  // tr-TR BÜYÜK harf + İ/I katlaması. Katlama OLMADAN eşleşme %13,9'da kalıyor
+  // (yukarıdaki ölçüm) — sadece toLocaleUpperCase YETMEZ.
+  function stokRefNorm(s) {
+    return String(s == null ? "" : s).toLocaleUpperCase("tr-TR")
+      .replace(/[İI]/g, "I").replace(/[ıi]/g, "I").trim();
+  }
+  function stokRefKayit(uh4) {
+    const sel = state.sel || {};
+    const n = stokRefNorm;
+    return stokRefVeri().find((r) =>
+      n(r.uh1) === n(sel.uh1) && n(r.uh2) === n(sel.uh2) &&
+      n(r.uh3) === n(sel.uh3) && n(r.uh4) === n(uh4)) || null;
+  }
+  // Baz Periyot seçicisinden ay NUMARASI. Değer "2026 Ocak" / "2026 Tam Yıl"
+  // biçiminde; "Tam Yıl"da vurgulanacak tek bir ay yoktur → null.
+  function stokRefBazAy() {
+    const el = $("h_baseperiod");
+    const v = el ? String(el.value) : "";
+    const i = SOP_AY_ADI.findIndex((ad) => v.indexOf(ad) >= 0);
+    return i >= 0 ? { no: i + 1, ad: SOP_AY_ADI[i] } : null;
+  }
+
+  function stokRefCiz(rec, bazAy) {
+    const cv = $("stokRefChart");
+    const bos = $("stokRefBos");
+    if (!cv || !bos) return;
+    if (stokRefChart) { stokRefChart.destroy(); stokRefChart = null; }
+
+    const seri = (rec && rec.seri) ? rec.seri : [];
+    const dolu = seri.filter((p) => p.stokAy != null).length;
+    if (!dolu || typeof Chart === "undefined") {
+      cv.style.display = "none";
+      bos.style.display = "";
+      bos.textContent = !dolu
+        ? "Bu ürün için geçmiş referans verisi bulunamadı."
+        : "Grafik kütüphanesi (Chart.js) yüklenemedi — çevrimdışı olabilirsiniz.";
+      return;
+    }
+    cv.style.display = "";
+    bos.style.display = "none";
+
+    const vurgu = bazAy ? bazAy.no : null;
+    const etiket = seri.map((p) => p.yil + " " + FC_AY_KISA[p.ay - 1]);
+    // stokAy null → nokta ATLANIR (spanGaps çizgiyi boşluk üstünden bağlar).
+    const deger = seri.map((p) => (p.stokAy == null ? null : Number(p.stokAy)));
+    // Baz Periyot'un ayına denk gelen TÜM yıllar vurgulanır (2021 Ocak,
+    // 2022 Ocak, …) — tek bir yıl değil; amaç o ayın yıllar içindeki
+    // seyrini göstermek.
+    const vurguMu = seri.map((p) => vurgu != null && p.ay === vurgu && p.stokAy != null);
+    const acc = fcRenk("--accent", "#0077b6");
+    const amb = fcRenk("--amber", "#b26a00");
+
+    stokRefChart = new Chart(cv.getContext("2d"), {
+      type: "line",
+      data: {
+        labels: etiket,
+        datasets: [{
+          label: "Stok Ay", data: deger, spanGaps: true,
+          borderColor: acc, backgroundColor: "rgba(0,119,182,.08)",
+          borderWidth: 2, tension: .25, fill: true,
+          pointRadius: vurguMu.map((v) => (v ? 5 : 0)),
+          pointHoverRadius: vurguMu.map((v) => (v ? 7 : 4)),
+          pointBackgroundColor: vurguMu.map((v) => (v ? amb : acc)),
+          pointBorderColor: vurguMu.map((v) => (v ? amb : acc)),
+        }],
+      },
+      options: {
+        responsive: true, maintainAspectRatio: false,
+        interaction: { mode: "index", intersect: false },
+        plugins: {
+          legend: { display: false },
+          tooltip: { callbacks: { label: (c) => "Stok Ay: " + fmtD(c.parsed.y) } },
+        },
+        scales: {
+          x: { grid: { display: false }, ticks: { maxRotation: 0, autoSkipPadding: 12, font: { size: 9 } } },
+          y: { beginAtZero: true, ticks: { callback: (v) => fmtD(v), font: { size: 9 } },
+               grid: { color: "rgba(11,37,69,.07)" } },
+        },
+      },
+    });
+  }
+
+  // Popup'ı butonun yanında konumlar. #gridFormatPanel ile AYNI desen ama
+  // popup `position:fixed` (tablo `overflow:auto` kutusunun içinde duruyor,
+  // absolute olsaydı kırpılırdı): butonun ekran koordinatına göre yerleşir,
+  // alta/sağa taşarsa yukarı/sola döner.
+  function stokRefKonumla(btn) {
+    const pop = $("stokRefPop");
+    if (!pop || !btn) return;
+    const b = btn.getBoundingClientRect();
+    const p = pop.getBoundingClientRect();
+    const bosluk = 8;
+    let top = b.bottom + bosluk;
+    if (top + p.height > window.innerHeight - bosluk) top = b.top - p.height - bosluk;
+    top = Math.max(bosluk, Math.min(top, window.innerHeight - p.height - bosluk));
+    let left = b.left + b.width / 2 - p.width / 2;
+    left = Math.max(bosluk, Math.min(left, window.innerWidth - p.width - bosluk));
+    pop.style.top = top + "px";
+    pop.style.left = left + "px";
+  }
+
+  function stokRefKapat() {
+    const pop = $("stokRefPop");
+    if (pop) pop.style.display = "none";
+    stokRefAnchor = null;
+    if (stokRefChart) { stokRefChart.destroy(); stokRefChart = null; }
+  }
+
+  // Pencere yeniden boyutlanınca / tablo kaydırılınca popup'ı KAPATMAK yerine
+  // butonun yeni yerine taşı; buton ekrandan çıktıysa (ya da satır yeniden
+  // kurulduysa) kapat. Kapatmak kullanıcıyı grafikten ediyordu.
+  function stokRefTazele() {
+    const pop = $("stokRefPop");
+    if (!pop || pop.style.display === "none" || !stokRefAnchor) return;
+    if (!stokRefAnchor.isConnected) { stokRefKapat(); return; }
+    const b = stokRefAnchor.getBoundingClientRect();
+    const gorunmez = b.bottom < 0 || b.top > window.innerHeight || b.right < 0 || b.left > window.innerWidth;
+    if (gorunmez) { stokRefKapat(); return; }
+    stokRefKonumla(stokRefAnchor);
+  }
+
+  function stokRefAc(btn, uh4) {
+    const pop = $("stokRefPop"), baslik = $("stokRefBaslik");
+    if (!pop) return;
+    stokRefAnchor = btn;
+    const rec = stokRefKayit(uh4);
+    const bazAy = stokRefBazAy();
+    if (baslik) {
+      const yillar = (rec && rec.seri && rec.seri.length)
+        ? rec.seri[0].yil + "–" + rec.seri[rec.seri.length - 1].yil : "—";
+      baslik.textContent = uh4 + " — Geçmiş Stok Ay" +
+        (bazAy ? " (" + bazAy.ad + " " + yillar + ")" : " (" + yillar + ")");
+    }
+    const not = $("stokRefNot");
+    if (not) {
+      not.innerHTML = bazAy
+        ? "Turuncu noktalar Baz Periyot ayınız olan <b>" + escapeHtml(bazAy.ad) +
+          "</b> aylarıdır — her yılın " + escapeHtml(bazAy.ad) + " değeri işaretli."
+        : "Baz Periyot <b>Tam Yıl</b> olduğu için vurgulanacak tek bir ay yok.";
+    }
+    pop.style.display = "block";
+    stokRefCiz(rec, bazAy);
+    stokRefKonumla(btn);
+  }
+
+  function initStokRef() {
+    const kapat = $("stokRefKapat");
+    if (kapat) kapat.addEventListener("click", stokRefKapat);
+    document.addEventListener("click", (e) => {
+      const pop = $("stokRefPop");
+      if (!pop || pop.style.display === "none") return;
+      if (!pop.contains(e.target) && !e.target.closest(".cov-ref-btn")) stokRefKapat();
+    });
+    document.addEventListener("keydown", (e) => { if (e.key === "Escape") stokRefKapat(); });
+    window.addEventListener("resize", stokRefTazele);
+    // capture:true ZORUNLU — tablo kendi `overflow:auto` kutusunda kayar ve
+    // iç scroll olayları window'a BALONLANMAZ; capture fazında yakalanır.
+    window.addEventListener("scroll", stokRefTazele, true);
+  }
+
+  // ==========================================================================
   // TAHMİN (FORECAST) — çoklu model, backtest ile seçilmiş
   // --------------------------------------------------------------------------
   // Kaynak: assets/forecast_data.js (FORECAST_DATA, 296 ÜH4). Her kayıtta 4
@@ -2991,7 +3180,7 @@ function updateAll() {
   // --- Sürüklenebilir sütun genişliği (SADECE #grid) + localStorage kalıcılık ---
   // Bu GERÇEK bir web uygulaması (GitHub Pages), Claude "artifact" ortamı DEĞİL — localStorage kullanılır.
   const GRID_COLS_KEY = "arpaz_grid_col_widths";
-  const COL_MIN_WIDTHS = { 0: 80, 12: 76, 14: 76, 19: 90, 20: 120 }; // ÜH4, Hedef Cover, TY Fiyat, Durum, Aksiyon
+  const COL_MIN_WIDTHS = { 0: 80, 12: 96, 14: 76, 19: 90, 20: 120 }; // ÜH4, Hedef Cover, TY Fiyat, Durum, Aksiyon
   const colMinWidth = (idx) => COL_MIN_WIDTHS[idx] || 36;
   let gridCols = [];
   let gridDefaultWidths = [];
@@ -3393,6 +3582,7 @@ function updateAll() {
     initSop();
     renderSop();
     initForecast();
+    initStokRef();
     renderCalendar();
   });
 })();
