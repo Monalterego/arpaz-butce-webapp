@@ -201,6 +201,10 @@ tfoot td{background:#eef3f8;font-weight:700;border-top:2px solid var(--navy)}
    her ÜH4 için backtest'le veride seçili geliyor.)
    Grafik kutusu: canvas'ın ÖLÇÜLEBİLİR bir yüksekliği olmalı — Chart.js
    maintainAspectRatio:false ile kapsayıcının yüksekliğini kullanır. */
+/* Kanal toggle'ı (Perakende/Toptan) — sidebar 240px, iki buton tam genişliği
+   paylaşsın; .segmented varsayılanı inline-flex ve içeriğe göre daralıyor. */
+.fc-tip-seg{display:flex;width:100%;margin-bottom:var(--s1)}
+.fc-tip-seg button{flex:1;min-width:0}
 .fc-grafik-kutu{position:relative;height:320px;margin-bottom:var(--s2)}
 .fc-grafik-kutu.fc-grafik-kucuk{height:220px}
 .fc-grafik-kutu canvas{width:100%!important;height:100%!important}

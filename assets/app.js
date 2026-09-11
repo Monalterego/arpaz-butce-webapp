@@ -2850,6 +2850,9 @@ function updateAll() {
   const FC_TREND_ESIK = 0.005;
 
   let fcAnaChart = null, fcMevsimChart = null;
+  // Seçili kanal. Veri dosyasında her kayıtta "tip" alanı var; aynı ÜH4 için
+  // iki ayrı kayıt bulunabilir (227 Perakende · 171 Toptan · 164'ünde ikisi de).
+  let fcTip = "Perakende";
 
   function fcVeri() {
     return (typeof FORECAST_DATA !== "undefined" && Array.isArray(FORECAST_DATA)) ? FORECAST_DATA : [];
@@ -2884,9 +2887,14 @@ function updateAll() {
       havuz = havuz.filter((r) => r[s.key] === gecerli);
     });
   }
-  function fcKayit() {
+  // Kayıt arama TİP-FARKINDA olmak ZORUNDA: aynı ÜH4 için hem Perakende hem
+  // Toptan kaydı olabilir (164 ÜH4'te ikisi de var) — tip filtresi olmadan
+  // hangisinin geleceği dizi sırasına kalırdı. (tip + ÜH1-4) anahtarı veride
+  // TEKRARSIZ olduğu için find() tek ve kesin sonuç verir (ölçüldü: 0 tekrar).
+  function fcKayit(tip) {
     const s = fcSecim();
-    return fcVeri().find((r) => r.uh1 === s.uh1 && r.uh2 === s.uh2 &&
+    const t = tip || fcTip;
+    return fcVeri().find((r) => r.tip === t && r.uh1 === s.uh1 && r.uh2 === s.uh2 &&
       r.uh3 === s.uh3 && r.uh4 === s.uh4) || null;
   }
 
@@ -3045,12 +3053,24 @@ function updateAll() {
       ozet = $("fcOzet"), trend = $("fcTrend");
 
     if (!rec) {
-      if (ad) ad.textContent = "Tahmin (Forecast)";
-      if (yontem) yontem.textContent = "—";
+      // Kaskad TÜM hiyerarşiyi (Perakende ∪ Toptan, 234 ÜH4) gösterir — kullanıcı
+      // bir ürünü kaskadda hiç göremediği için "neden yok?" demesin diye
+      // (kullanıcı kararı). Bedeli: seçilen ÜH4'te o KANALIN kaydı olmayabilir.
+      // Toptan kapsamı dar (171) ama tek yönlü DEĞİL: 63 ÜH4 sadece Perakende,
+      // 7 ÜH4 sadece Toptan — mesaj bu yüzden iki yönlü çalışır.
+      const digerTip = fcTip === "Perakende" ? "Toptan" : "Perakende";
+      const digerVar = !!fcKayit(digerTip);
+      const mesaj = "Bu ÜH4 için " + fcTip + " tahmini bulunmuyor " +
+        "(yetersiz geçmiş veri — en az 36 ay gerekli)." +
+        (digerVar ? " " + digerTip + " kanalına bakabilirsiniz." : "");
+      if (ad) ad.textContent = fcSecim().uh4 || "Tahmin (Forecast)";
+      if (yontem) yontem.textContent = fcTip;
       if (guven) guven.innerHTML = "";
-      if (ozet) ozet.textContent = "Bu seçim için tahmin kaydı bulunamadı.";
-      if (trend) trend.innerHTML = "";
-      tb.innerHTML = '<tr><td colspan="4" style="text-align:center;color:var(--grey);padding:18px">Veri yok.</td></tr>';
+      if (ozet) ozet.textContent = mesaj;
+      if (trend) trend.innerHTML = '<div class="fc-trend fc-trend-duz">' +
+        "<span>" + escapeHtml(mesaj) + "</span></div>";
+      tb.innerHTML = '<tr><td colspan="4" style="text-align:center;color:var(--grey);padding:18px">' +
+        escapeHtml(mesaj) + "</td></tr>";
       if (fcAnaChart) { fcAnaChart.destroy(); fcAnaChart = null; }
       if (fcMevsimChart) { fcMevsimChart.destroy(); fcMevsimChart = null; }
       return;
@@ -3061,7 +3081,10 @@ function updateAll() {
     if (guven) guven.innerHTML = fcGuvenRozeti(Number(rec.backtest_mape) || 0);
     if (trend) trend.innerHTML = fcTrendHtml(rec);
     if (ozet) {
-      ozet.innerHTML = "Yöntem <b>" + escapeHtml(rec.secilen_yontem) + "</b>, dört aday model " +
+      // Kanal ADI burada da yazılır: sidebar toggle'ı uzun tabloda görüş
+      // alanından çıkabiliyor, hangi kanala baktığı ekranda kalsın.
+      ozet.innerHTML = "<b>" + escapeHtml(rec.tip) + "</b> kanalı · " +
+        "Yöntem <b>" + escapeHtml(rec.secilen_yontem) + "</b>, dört aday model " +
         "(Mevsimsel Naif · SES · Holt-Winters · Doğrusal Regresyon) arasından <b>backtest</b> ile seçildi. " +
         "Geçmiş seri <b>" + fmtN(rec.n_ay) + " ay</b>." +
         (fcChartVar() ? "" : ' <b style="color:var(--red)">Grafik kütüphanesi (Chart.js) yüklenemedi — ' +
@@ -3076,6 +3099,15 @@ function updateAll() {
     ["f_uh1", "f_uh2", "f_uh3", "f_uh4"].forEach((id) => {
       const el = $(id);
       if (el) el.addEventListener("change", renderForecast);
+    });
+    // Kanal toggle'ı. Kaskadı DARALTMAZ (bkz. renderForecast'teki boş-durum
+    // yorumu) — yalnızca hangi tipteki kaydın okunacağını belirler.
+    document.querySelectorAll("#fcTipSeg [data-tip]").forEach((btn) => {
+      btn.addEventListener("click", () => {
+        fcTip = btn.dataset.tip;
+        document.querySelectorAll("#fcTipSeg [data-tip]").forEach((b) => b.classList.toggle("is-on", b === btn));
+        renderForecast();
+      });
     });
   }
 
