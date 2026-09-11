@@ -74,6 +74,22 @@
       <select id="s_uh4"></select>
       <div class="note" id="sopSelInfo">Bölge kırılımı YOKTUR — S&amp;OP ulusal seviyede planlanır.</div>
     </div>
+
+    <!-- TAHMİN (FORECAST) kaskadı — KENDİ verisinden (FORECAST_DATA) kurulur.
+         Satış Teşkilatı seçici YOK: tahmin verisi ulusaldır, org kırılımı
+         içermez. S&OP bloğuyla aynı desen, ayrı id'ler (f_*). -->
+    <div id="forecastSideBlock" style="display:none">
+      <h3>Ürün Hiyerarşisi</h3>
+      <label>ÜH1</label>
+      <select id="f_uh1"></select>
+      <label>ÜH2</label>
+      <select id="f_uh2"></select>
+      <label>ÜH3</label>
+      <select id="f_uh3"></select>
+      <label>ÜH4</label>
+      <select id="f_uh4"></select>
+      <div class="note">Tahmin verisi <b>ulusaldır</b> — teşkilat/bölge kırılımı yoktur.</div>
+    </div>
   </aside>
 
   <main class="main">
@@ -633,22 +649,47 @@
     </div>
 
     <!-- ========== TAB: FORECAST ========== -->
+    <!-- ========== TAB: TAHMİN (FORECAST) ==========
+         Kaynak: assets/forecast_data.js (FORECAST_DATA, 296 ÜH4, ULUSAL —
+         org/bölge kırılımı YOK, bu yüzden kaskadında Satış Teşkilatı da yok).
+         Ekran SALT OKUNUR: hiçbir bütçe state'ini/parametresini BESLEMEZ.
+         Grafikler Chart.js ile çizilir; kütüphane yüklenemezse rozetler ve
+         tablo çalışmaya devam eder, grafik yerine bilgi notu çıkar. -->
     <div class="tabpane" data-pane="forecast" style="display:none">
       <div class="panel">
-        <h2>Tahmin (Forecast) <span class="pill">Yöntem Seçimi</span></h2>
-        <div class="fc-controls">
-          <label>Yöntem</label>
-          <select id="fcMethod">
-            <option value="lfl">LFL Trend (büyüme oranı)</option>
-            <option value="seasonal">Mevsimsel (özel gün ağırlıklı)</option>
-            <option value="avg">3-Aylık Hareketli Ort.</option>
-          </select>
-          <span class="note" style="margin:0">Toplam Satış Bütçesini aylara dağıtır.</span>
+        <h2>
+          <span id="fcUh4Ad">—</span>
+          <span class="pill" id="fcYontem">—</span>
+          <span id="fcGuven"></span>
+        </h2>
+        <div class="note" id="fcOzet" style="margin-bottom:var(--s2)"></div>
+        <div class="fc-grafik-kutu"><canvas id="fcAnaChart"></canvas></div>
+        <div class="legend">
+          <span class="fc-legend-gercek"></span> Gerçekleşen (2022 – 2025)
+          <span class="fc-legend-tahmin"></span> Tahmin (6 ay)
         </div>
-        <table id="fcTable"><thead><tr>
-          <th>Ay</th><th>LY Satış</th><th>Mevsim Endeksi</th><th>TY Tahmin</th><th>Plan Stok (Cover)</th>
-        </tr></thead><tbody id="fcRows"></tbody></table>
-        <div class="note">Prototip mevsim endeksleri örnek değerlerdir. Gerçek veri gelince ay-bazlı geçmişten otomatik türetilir.</div>
+      </div>
+
+      <div class="fc-alt-grid">
+        <div class="panel">
+          <h2>Mevsimsellik <span class="pill">Aylık indeks</span></h2>
+          <div class="fc-grafik-kutu fc-grafik-kucuk"><canvas id="fcMevsimChart"></canvas></div>
+          <div class="note"><b>1,00 = yıl ortalaması.</b> 1,00'ın üstü o ayın ortalamadan güçlü,
+            altı zayıf geçtiğini gösterir. Kesikli çizgi referanstır.</div>
+        </div>
+
+        <div class="panel">
+          <h2>Trend &amp; 6 Aylık Tahmin</h2>
+          <div id="fcTrend"></div>
+          <table id="fcTable" class="fc-table">
+            <thead><tr>
+              <th>Ay</th><th>Tahmin</th><th>Geçen Yıl Aynı Ay</th><th>Fark %</th>
+            </tr></thead>
+            <tbody id="fcRows"></tbody>
+          </table>
+          <div class="note">"Geçen Yıl Aynı Ay" geçmiş seriden okunur; o ay veride yoksa "—"
+            gösterilir, karşılaştırma uydurulmaz.</div>
+        </div>
       </div>
     </div>
 
@@ -781,6 +822,12 @@
 <script src="assets/donusum.js"></script>
 <script src="assets/ozelgunler.js"></script>
 <script src="assets/sop_sku_data.js"></script>
+<script src="assets/forecast_data.js"></script>
+<!-- Chart.js — Tahmin sekmesinin grafikleri. Projedeki TEK dış bağımlılık
+     (kullanıcı kararı; CLAUDE.md Bölüm 9'un "bağımlılık ekleme" kuralına
+     bilinçli istisna). CDN olduğu için ÇEVRİMDIŞI yüklenmez; app.js bu
+     durumu kontrol eder ve grafik yerine bilgi notu gösterir. -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.0/chart.umd.min.js"></script>
 <script src="assets/app.js"></script>
 </body>
 </html>

@@ -460,7 +460,9 @@ function updateAll() {
     <td></td><td></td>`;
 
   renderKpis(m);
-  renderForecast(m);
+  // NOT: renderForecast(m) BURADAN KALDIRILDI — Tahmin sekmesi artık canlı
+  // modelden (computeModel) DEĞİL, kendi kaskadından + FORECAST_DATA'dan
+  // besleniyor. Miks parametrelerini oynatmak tahmini DEĞİŞTİRMEZ.
   // NOT: renderToptan(m) BURADAN KALDIRILDI — Toptan Bütçe artık canlı sidebar/parametre
   // değişikliklerine değil, Kayıtlar'a bağlı (bkz. renderToptanFromSaved, saveCurrentMixSet).
 }
@@ -1402,6 +1404,10 @@ function updateAll() {
     }
     if (t === "revize") renderRevizeSets();
     if (t === "sop") renderSop();
+    // Tahmin SADECE sekme açılınca render edilir: Chart.js gizli (display:none)
+    // bir kapsayıcıda canvas'ı 0x0 ölçer ve grafik boş çıkar. Aynı tuzağın
+    // tablo başlığı sürümü için bkz. syncToptanHeaderOffset.
+    if (t === "forecast") renderForecast();
     if (t === "toptan") {
       renderToptanFromSaved(); // sekme her açıldığında Kayıtlar'ın GÜNCEL halini yansıt
       renderToptanRollup();
@@ -1448,14 +1454,18 @@ function updateAll() {
 
   // Sidebar iki sekmede görünür: "miks" (bütçe kaskadı) ve "sop" (S&OP kaskadı).
   // Tek .side kabuğu, içinde iki blok — ikinci bir <aside> layout'u bozardı.
+  // Sidebar ÜÇ sekmede görünür ve her birinin KENDİ bloğu vardır:
+  // "miks" (bütçe kaskadı) · "sop" (S&OP kaskadı) · "forecast" (tahmin kaskadı).
+  // Bloklar birbirini dışlar — aynı anda yalnızca biri açıktır.
   function syncSidebarVisibility(tab) {
     const wrap = document.querySelector(".wrap");
-    const sidebarliSekme = tab === "miks" || tab === "sop";
+    const bloklar = { miks: "miksSideBlock", sop: "sopSideBlock", forecast: "forecastSideBlock" };
+    const sidebarliSekme = Object.prototype.hasOwnProperty.call(bloklar, tab);
     if (wrap) wrap.classList.toggle("side-hidden", !sidebarliSekme);
-    const miksBlok = $("miksSideBlock");
-    const sopBlok = $("sopSideBlock");
-    if (miksBlok) miksBlok.style.display = tab === "sop" ? "none" : "";
-    if (sopBlok) sopBlok.style.display = tab === "sop" ? "" : "none";
+    Object.keys(bloklar).forEach((k) => {
+      const el = $(bloklar[k]);
+      if (el) el.style.display = (k === tab) ? "" : "none";
+    });
   }
 
   // --- Senaryo yönetimi ---
@@ -2618,26 +2628,266 @@ function updateAll() {
     });
   }
 
-  function renderForecast(model) {
-    const m = model || computeModel(readParams(), state.covers, state.tyFiyat);
-    const method = $("fcMethod").value;
-    const covSum = state.covers.reduce((a, b) => a + b, 0);
-    const avgCover = (state.covers.length && covSum) ? covSum / state.covers.length : 0;
-    const months = DataService.months();
-    const seasonal = DataService.seasonal();
-    let idx;
-    if (method === "seasonal") idx = seasonal;
-    else if (method === "avg")
-      idx = seasonal.map((_, i) => (seasonal[i] + seasonal[(i + 11) % 12] + seasonal[(i + 10) % 12]) / 3);
-    else idx = seasonal.map(() => 1);
-    const base = m.T.sales / 12;
-    const sumIdx = idx.reduce((a, b) => a + b, 0);
-    $("fcRows").innerHTML = months.map((mo, i) => {
-      const ly = base * seasonal[i];
-      const ty = m.T.salesBudget * (idx[i] / sumIdx);
-      return `<tr><td>${mo}</td><td>${fmtN(ly)}</td><td>${fmtD2(idx[i])}</td>
-        <td class="num-cell">${fmtN(ty)}</td><td>${fmtN(ty * avgCover)}</td></tr>`;
+  // ==========================================================================
+  // TAHMİN (FORECAST) — çoklu model, backtest ile seçilmiş
+  // --------------------------------------------------------------------------
+  // Kaynak: assets/forecast_data.js (FORECAST_DATA, 296 ÜH4). Her kayıtta 4
+  // yöntemden (Mevsimsel Naif · SES · Holt-Winters · Doğrusal Regresyon)
+  // backtest'le seçilmiş model, 6 aylık ileri tahmin, trend eğimi, 12 aylık
+  // mevsimsel indeks ve ham geçmiş seri (2022-01 → 2025-12) bulunur.
+  //
+  // ULUSAL veri — org/bölge kırılımı YOKTUR; bu yüzden sekmenin kaskadında
+  // Satış Teşkilatı seçici de yoktur.
+  //
+  // Kaskad KENDİ VERİSİNDEN kurulur, HIERARCHY'den DEĞİL: FORECAST_DATA
+  // "ASPIRATÖR" (noktasız I) yazarken hiyerarşi "ASPİRATÖR" yazıyor —
+  // CLAUDE.md Bölüm 4'teki İ/I tuzağının aynısı, ham eşleşme tutmaz. Kendi
+  // verisinden kurunca bu tuzak yapısal olarak imkânsız.
+  //
+  // Ekran SALT OKUNUR: hiçbir bütçe state'ini/parametresini beslemez, kullanıcı
+  // girdisi almaz. (Eski placeholder — fcMethod dropdown'ı + computeModel'den
+  // türetilen basit tablo — tamamen KALDIRILDI.)
+  // ==========================================================================
+  const FC_AY_KISA = ["Oca", "Şub", "Mar", "Nis", "May", "Haz",
+    "Tem", "Ağu", "Eyl", "Eki", "Kas", "Ara"];
+  // mevsimsel_indeks anahtarları tam Türkçe ay adları — SOP_AY_ADI ile aynı
+  // liste, tekrar tanımlamak yerine onu kullanıyoruz.
+  const FC_GUVEN_ESIK = { yuksek: 0.30, orta: 0.60 };
+  // Trend eşiği: |aylık eğim| ÷ aylık ortalama < %0,5 ise "Stabil".
+  // MUTLAK eşik (ör. "±5 adet") OLMAZ — aylık ortalama 0 ile 41.390 arasında
+  // değişiyor (ölçüldü), tek bir adet eşiği ya her şeyi stabil sayar ya
+  // hiçbir şeyi. %0,5/ay ≈ %6/yıl; bu eşikte 296 kaydın 81'i "Stabil"
+  // (bunların 52'sinin eğimi zaten tam 0).
+  const FC_TREND_ESIK = 0.005;
+
+  let fcAnaChart = null, fcMevsimChart = null;
+
+  function fcVeri() {
+    return (typeof FORECAST_DATA !== "undefined" && Array.isArray(FORECAST_DATA)) ? FORECAST_DATA : [];
+  }
+  function fcChartVar() { return typeof Chart !== "undefined"; }
+  function fcEtiket(yil, ay) { return yil + " " + FC_AY_KISA[ay - 1]; }
+  // CSS token'larını Chart.js'e taşır — grafik renkleri :root'takiyle aynı
+  // kalsın, ham hex ikinci bir yerde tekrar etmesin (CLAUDE.md Bölüm 9).
+  function fcRenk(token, yedek) {
+    const v = getComputedStyle(document.documentElement).getPropertyValue(token).trim();
+    return v || yedek;
+  }
+  function fcSecim() {
+    const al = (id) => { const el = $(id); return el ? el.value : ""; };
+    return { uh1: al("f_uh1"), uh2: al("f_uh2"), uh3: al("f_uh3"), uh4: al("f_uh4") };
+  }
+  // Kaskad: her seviye kendinden ÖNCEKİ seçimlerle daraltılmış kümeden üretilir.
+  // "Tümü" seçeneği YOK — proje kuralı (CLAUDE.md Bölüm 4).
+  function fcKaskadDoldur() {
+    const veri = fcVeri();
+    if (!veri.length) return;
+    let havuz = veri;
+    [{ id: "f_uh1", key: "uh1" }, { id: "f_uh2", key: "uh2" },
+     { id: "f_uh3", key: "uh3" }, { id: "f_uh4", key: "uh4" }].forEach((s) => {
+      const el = $(s.id);
+      if (!el) return;
+      const degerler = Array.from(new Set(havuz.map((r) => r[s.key])))
+        .filter(Boolean).sort((a, b) => String(a).localeCompare(String(b), "tr"));
+      const gecerli = degerler.includes(el.value) ? el.value : (degerler[0] || "");
+      el.innerHTML = degerler.map((v) => '<option value="' + escapeAttribute(v) + '">' + escapeHtml(v) + "</option>").join("");
+      el.value = gecerli;
+      havuz = havuz.filter((r) => r[s.key] === gecerli);
+    });
+  }
+  function fcKayit() {
+    const s = fcSecim();
+    return fcVeri().find((r) => r.uh1 === s.uh1 && r.uh2 === s.uh2 &&
+      r.uh3 === s.uh3 && r.uh4 === s.uh4) || null;
+  }
+
+  // Güven rozeti — backtest MAPE'ye göre. Eşikler: <%30 yüksek, %30-60 orta,
+  // >%60 düşük. Bu veri setinde dağılım 118 / 97 / 81 (ölçüldü).
+  function fcGuvenRozeti(mape) {
+    const yuzde = "%" + (mape * 100).toLocaleString("tr-TR", { maximumFractionDigits: 1 });
+    const baslik = escapeAttribute("Backtest hata oranı: " + yuzde);
+    if (mape < FC_GUVEN_ESIK.yuksek)
+      return '<span class="badge b-green" title="' + baslik + '">Yüksek Güven</span>';
+    if (mape <= FC_GUVEN_ESIK.orta)
+      return '<span class="badge b-amber" title="' + baslik + '">Orta Güven</span>';
+    return '<span class="badge b-red" title="' + baslik + '">Düşük Güven (düşük hacim/yüksek dalgalanma)</span>';
+  }
+
+  function fcTrendHtml(rec) {
+    const seri = rec.gecmis_seri || [];
+    const ort = seri.length ? seri.reduce((a, b) => a + (Number(b.deger) || 0), 0) / seri.length : 0;
+    const egim = Number(rec.trend_egim_aylik) || 0;
+    const rel = ort > 0 ? Math.abs(egim) / ort : 0;
+    const adet = Math.abs(egim).toLocaleString("tr-TR", { maximumFractionDigits: 1 });
+    if (rel < FC_TREND_ESIK)
+      return '<div class="fc-trend fc-trend-duz"><span class="fc-trend-ok">→</span>' +
+        "<span><b>Stabil</b> — belirgin bir artış/azalış eğilimi yok.</span></div>";
+    if (egim > 0)
+      return '<div class="fc-trend fc-trend-artan"><span class="fc-trend-ok">↗</span>' +
+        "<span><b>Artan eğilim</b> — aylık ortalama <b>+" + adet + "</b> adet.</span></div>";
+    return '<div class="fc-trend fc-trend-azalan"><span class="fc-trend-ok">↘</span>' +
+      "<span><b>Azalan eğilim</b> — aylık ortalama <b>−" + adet + "</b> adet.</span></div>";
+  }
+
+  // Ana grafik: geçmiş + tahmin TEK eksende. Tahmin dizisi son gerçek noktadan
+  // BAŞLATILIR (o indekse gerçek değer yazılır) ki iki çizgi görsel olarak
+  // bağlansın — yoksa aralarında kopukluk görünür.
+  function fcAnaGrafikCiz(rec) {
+    const cv = $("fcAnaChart");
+    if (!cv || !fcChartVar()) return;
+    const gecmis = rec.gecmis_seri || [];
+    const ileri = rec.ileri_tahmin || [];
+    const etiketler = gecmis.concat(ileri).map((p) => fcEtiket(p.yil, p.ay));
+    const gercekSeri = gecmis.map((p) => Number(p.deger) || 0).concat(ileri.map(() => null));
+    const tahminSeri = gecmis.map((p, i) => (i === gecmis.length - 1 ? (Number(p.deger) || 0) : null))
+      .concat(ileri.map((p) => Number(p.deger) || 0));
+
+    if (fcAnaChart) fcAnaChart.destroy();
+    fcAnaChart = new Chart(cv.getContext("2d"), {
+      type: "line",
+      data: {
+        labels: etiketler,
+        datasets: [
+          { label: "Gerçekleşen", data: gercekSeri, borderColor: fcRenk("--accent", "#0077b6"),
+            backgroundColor: "rgba(0,119,182,.10)", borderWidth: 2, pointRadius: 0,
+            pointHoverRadius: 4, tension: .25, fill: true },
+          { label: "Tahmin", data: tahminSeri, borderColor: fcRenk("--amber", "#b26a00"),
+            backgroundColor: "transparent", borderWidth: 2, borderDash: [6, 4],
+            pointRadius: 3, pointHoverRadius: 5, tension: .25, fill: false },
+        ],
+      },
+      options: {
+        responsive: true, maintainAspectRatio: false,
+        interaction: { mode: "index", intersect: false },
+        plugins: {
+          legend: { display: false },
+          tooltip: {
+            callbacks: {
+              label: (c) => c.parsed.y == null ? null : c.dataset.label + ": " + fmtN(c.parsed.y) + " adet",
+            },
+          },
+        },
+        scales: {
+          x: { grid: { display: false }, ticks: { maxRotation: 0, autoSkipPadding: 14, font: { size: 10 } } },
+          y: { beginAtZero: true, ticks: { callback: (v) => fmtN(v), font: { size: 10 } },
+               grid: { color: "rgba(11,37,69,.07)" } },
+        },
+      },
+    });
+  }
+
+  // Mevsimsellik: 12 bar + Y=1,00'da kesikli referans çizgisi. Referans çizgisi
+  // için AYRI bir eklenti (chartjs-plugin-annotation) YÜKLENMEZ — tek grafiğe
+  // özel, birkaç satırlık yerel eklenti yeterli.
+  const fcRefCizgiEklenti = {
+    id: "fcRefCizgi",
+    afterDatasetsDraw(chart) {
+      const y = chart.scales.y;
+      if (!y) return;
+      const py = y.getPixelForValue(1);
+      if (!isFinite(py)) return;
+      const { ctx, chartArea } = chart;
+      ctx.save();
+      ctx.strokeStyle = "rgba(11,37,69,.45)";
+      ctx.lineWidth = 1;
+      ctx.setLineDash([5, 4]);
+      ctx.beginPath();
+      ctx.moveTo(chartArea.left, py);
+      ctx.lineTo(chartArea.right, py);
+      ctx.stroke();
+      ctx.restore();
+    },
+  };
+
+  function fcMevsimGrafikCiz(rec) {
+    const cv = $("fcMevsimChart");
+    if (!cv || !fcChartVar()) return;
+    const idx = rec.mevsimsel_indeks || {};
+    const degerler = SOP_AY_ADI.map((ad) => Number(idx[ad]) || 0);
+    if (fcMevsimChart) fcMevsimChart.destroy();
+    fcMevsimChart = new Chart(cv.getContext("2d"), {
+      type: "bar",
+      data: {
+        labels: FC_AY_KISA,
+        datasets: [{ label: "Mevsimsel indeks", data: degerler,
+          backgroundColor: fcRenk("--accent", "#0077b6"), borderRadius: 3, maxBarThickness: 34 }],
+      },
+      options: {
+        responsive: true, maintainAspectRatio: false,
+        plugins: {
+          legend: { display: false },
+          tooltip: { callbacks: { label: (c) => fmtD2(c.parsed.y) + "x (1,00 = yıl ortalaması)" } },
+        },
+        scales: {
+          x: { grid: { display: false }, ticks: { font: { size: 10 } } },
+          y: { beginAtZero: true, ticks: { callback: (v) => fmtD(v), font: { size: 10 } },
+               grid: { color: "rgba(11,37,69,.07)" } },
+        },
+      },
+      plugins: [fcRefCizgiEklenti],
+    });
+  }
+
+  // 6 aylık tablo. "Geçen Yıl Aynı Ay" geçmiş seriden (yıl−1, aynı ay) okunur;
+  // o ay veride yoksa ya da 0 ise fark hesaplanmaz — "—" yazılır, uydurulmaz.
+  function fcTabloCiz(rec) {
+    const tb = $("fcRows");
+    if (!tb) return;
+    const gecmisHarita = new Map();
+    (rec.gecmis_seri || []).forEach((p) => gecmisHarita.set(p.yil + "-" + p.ay, Number(p.deger) || 0));
+    tb.innerHTML = (rec.ileri_tahmin || []).map((p) => {
+      const tahmin = Number(p.deger) || 0;
+      const gy = gecmisHarita.has((p.yil - 1) + "-" + p.ay) ? gecmisHarita.get((p.yil - 1) + "-" + p.ay) : null;
+      const fark = (gy != null && gy !== 0) ? (tahmin - gy) / gy : null;
+      return "<tr><td>" + escapeHtml(p.yil + " " + SOP_AY_ADI[p.ay - 1]) + "</td>" +
+        '<td class="num-cell toptan-highlight">' + fmtN(tahmin) + "</td>" +
+        '<td class="num-cell">' + (gy == null ? "—" : fmtN(gy)) + "</td>" +
+        '<td class="num-cell ' + (fark == null ? "" : (fark >= 0 ? "up" : "down")) + '">' +
+          (fark == null ? "—" : (fark >= 0 ? "+" : "") + fmtP0(fark)) + "</td></tr>";
     }).join("");
+  }
+
+  function renderForecast() {
+    const tb = $("fcRows");
+    if (!tb) return;
+    fcKaskadDoldur();
+    const rec = fcKayit();
+    const ad = $("fcUh4Ad"), yontem = $("fcYontem"), guven = $("fcGuven"),
+      ozet = $("fcOzet"), trend = $("fcTrend");
+
+    if (!rec) {
+      if (ad) ad.textContent = "Tahmin (Forecast)";
+      if (yontem) yontem.textContent = "—";
+      if (guven) guven.innerHTML = "";
+      if (ozet) ozet.textContent = "Bu seçim için tahmin kaydı bulunamadı.";
+      if (trend) trend.innerHTML = "";
+      tb.innerHTML = '<tr><td colspan="4" style="text-align:center;color:var(--grey);padding:18px">Veri yok.</td></tr>';
+      if (fcAnaChart) { fcAnaChart.destroy(); fcAnaChart = null; }
+      if (fcMevsimChart) { fcMevsimChart.destroy(); fcMevsimChart = null; }
+      return;
+    }
+
+    if (ad) ad.textContent = rec.uh4;
+    if (yontem) yontem.textContent = "Seçilen Yöntem: " + rec.secilen_yontem;
+    if (guven) guven.innerHTML = fcGuvenRozeti(Number(rec.backtest_mape) || 0);
+    if (trend) trend.innerHTML = fcTrendHtml(rec);
+    if (ozet) {
+      ozet.innerHTML = "Yöntem <b>" + escapeHtml(rec.secilen_yontem) + "</b>, dört aday model " +
+        "(Mevsimsel Naif · SES · Holt-Winters · Doğrusal Regresyon) arasından <b>backtest</b> ile seçildi. " +
+        "Geçmiş seri <b>" + fmtN(rec.n_ay) + " ay</b>." +
+        (fcChartVar() ? "" : ' <b style="color:var(--red)">Grafik kütüphanesi (Chart.js) yüklenemedi — ' +
+          "çevrimdışı olabilirsiniz. Rozetler ve tablo etkilenmedi.</b>");
+    }
+    fcTabloCiz(rec);
+    fcAnaGrafikCiz(rec);
+    fcMevsimGrafikCiz(rec);
+  }
+
+  function initForecast() {
+    ["f_uh1", "f_uh2", "f_uh3", "f_uh4"].forEach((id) => {
+      const el = $(id);
+      if (el) el.addEventListener("change", renderForecast);
+    });
   }
 
   // --- Olaylar ---
@@ -2671,7 +2921,8 @@ function updateAll() {
         }
         updateAll();
       }));
-    $("fcMethod").addEventListener("change", () => renderForecast());
+    // (fcMethod dinleyicisi KALDIRILDI — Tahmin sekmesinin yöntem dropdown'ı
+    //  yok, yöntem her ÜH4 için backtest'le veride seçili geliyor.)
     // Baz/Hedef Periyot artık Toptan'ı CANLI etkilemiyor (bkz. renderToptanFromSaved) —
     // ama "Kaydet"/"Revize Et" eşleşme anahtarının bir parçası, değişince buton güncellensin.
     const basePeriodEl = $("h_baseperiod");
@@ -3141,6 +3392,7 @@ function updateAll() {
     initTakvim();
     initSop();
     renderSop();
+    initForecast();
     renderCalendar();
   });
 })();

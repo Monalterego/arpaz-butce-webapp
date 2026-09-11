@@ -196,8 +196,32 @@ tfoot td{background:#eef3f8;font-weight:700;border-top:2px solid var(--navy)}
    birbirinin yerine geçirir. */
 .sc-empty{margin-top:var(--s2);padding:var(--s2);border:1px dashed var(--line);border-radius:var(--radius-md);color:var(--ink-soft);background:#f8fafc;font-size:12px}
 .sc-table-wrap{overflow:auto;margin-top:var(--s2)}
-.fc-controls{display:flex;gap:10px;align-items:center;margin-bottom:12px}
-.fc-controls select{padding:6px;border:1px solid var(--line);border-radius:6px}
+/* ===== Tahmin (Forecast) =====
+   (.fc-controls KALDIRILDI — eski yöntem dropdown'ıyla birlikte; yöntem artık
+   her ÜH4 için backtest'le veride seçili geliyor.)
+   Grafik kutusu: canvas'ın ÖLÇÜLEBİLİR bir yüksekliği olmalı — Chart.js
+   maintainAspectRatio:false ile kapsayıcının yüksekliğini kullanır. */
+.fc-grafik-kutu{position:relative;height:320px;margin-bottom:var(--s2)}
+.fc-grafik-kutu.fc-grafik-kucuk{height:220px}
+.fc-grafik-kutu canvas{width:100%!important;height:100%!important}
+/* Mevsimsellik + Trend/Tablo yan yana; dar ekranda alt alta. */
+.fc-alt-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:var(--s3);align-items:start}
+@media (max-width:1100px){.fc-alt-grid{grid-template-columns:1fr}}
+/* Legend örnekleri — ana grafikteki iki çizginin görsel karşılığı. */
+.fc-legend-gercek,.fc-legend-tahmin{display:inline-block;width:22px;height:0;vertical-align:middle;
+  border-top:3px solid var(--accent);margin-right:4px}
+.fc-legend-tahmin{border-top-style:dashed;border-top-color:var(--amber)}
+/* Trend göstergesi */
+.fc-trend{display:flex;align-items:center;gap:var(--s1);padding:10px 12px;margin-bottom:var(--s2);
+  border-radius:var(--radius-md);border:1px solid var(--line);font-size:13px;background:#f8fafc}
+.fc-trend-ok{font-size:20px;line-height:1;font-weight:700}
+.fc-trend-artan{border-color:var(--green);background:var(--greenbg);color:var(--green)}
+.fc-trend-azalan{border-color:var(--red);background:var(--redbg);color:var(--red)}
+.fc-trend-duz{color:var(--grey)}
+.fc-table{width:100%;border-collapse:collapse;font-size:12px}
+.fc-table th,.fc-table td{border:1px solid var(--line);padding:6px 8px;text-align:right}
+.fc-table th{background:var(--navy);color:#fff;font-weight:600;font-size:11px}
+.fc-table th:first-child,.fc-table td:first-child{text-align:left;white-space:nowrap}
 #scTable td,#scTable th{text-align:center}
 #scTable td:first-child{text-align:left;font-weight:600}
 #calRows td:nth-child(2){text-align:left}
