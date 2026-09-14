@@ -794,6 +794,7 @@ function updateAll() {
 
   // --- Toptan Bütçe Özet / Rollup Paneli ---
   const toptanRollupState = { level: "uh2" };
+  const revizeRollupState = { level: "uh2" };   // Revize sekmesinin kendi kırılımı
 
   // Rollup KENDİ hesabını YAPMAZ — Toptan tablosunun satır bazlı toptanButce
   // değerlerini toplar. TEK doğruluk kaynağı satır seviyesidir; burada bağımsız
@@ -809,8 +810,14 @@ function updateAll() {
   //
   // Çarpan da hesaplanmaz, TÜRETİLİR: toptan toplamı ÷ perakende toplamı. Böylece
   // birden fazla ay seçiliyse ağırlıklı ortalama kendiliğinden doğru çıkar.
-  function computeToptanRollup(level) {
-    const satirlar = computeToptanFromSaved().rows;
+  // Toptan rollup toplayıcısı — İKİ ekran ortak kullanır:
+  //   · Toptan Bütçe  → CANLI çalışma satırları (computeToptanFromSaved)
+  //   · Revize Toptan → ONAYLANMIŞ dondurulmuş satırlar (loadToptanSets)
+  // Tek fark kaynak satırlar ve perakende alanının adı: çalışma satırında
+  // `salesBudget`, kaydedilmiş satırda `perakendeBudget` (bkz. onayla&kaydet
+  // eşlemesi). Bu yüzden alan okuyucu DIŞARIDAN geçilir — iki ayrı toplama
+  // yazma, ikisi ayrışır.
+  function toptanRollupTopla(satirlar, level, perakendeAl) {
     const groups = new Map();
     const totalAcc = { perakendeBudget: 0, toptanBudget: 0, adFark: 0 };
 
@@ -819,7 +826,7 @@ function updateAll() {
       if (!groupKey) return;
       if (!groups.has(groupKey)) groups.set(groupKey, { name: groupKey, perakendeBudget: 0, toptanBudget: 0, adFark: 0 });
       const g = groups.get(groupKey);
-      const perakendeBudget = Number(r.salesBudget) || 0;
+      const perakendeBudget = Number(perakendeAl(r)) || 0;
       const toptanBudget = Number(r.toptanButce) || 0;
       g.perakendeBudget += perakendeBudget;
       g.toptanBudget += toptanBudget;
@@ -847,8 +854,19 @@ function updateAll() {
     return { rows, total };
   }
 
-  function renderToptanRollupKpis(t) {
-    const el = $("toptanRollupKpis");
+  function computeToptanRollup(level) {
+    return toptanRollupTopla(computeToptanFromSaved().rows, level, (r) => r.salesBudget);
+  }
+  // Revize sekmesi: ONAYLANMIŞ tüm setlerin satırları birlikte toplanır
+  // (ekrandaki tablo da hepsini tek listede gösteriyor).
+  function computeRevizeRollup(level) {
+    const satirlar = loadToptanSets().reduce((a, s) => a.concat(s.rows || []), []);
+    return toptanRollupTopla(satirlar, level, (r) => r.perakendeBudget);
+  }
+
+  // Render'lar da ortak — hedef element id'leri dışarıdan geçilir.
+  function renderToptanRollupKpis(elId, t) {
+    const el = $(elId);
     if (!el) return;
     const kpis = [
       ["Perakende Bütçe", fmtN(t.perakendeBudget), "kaynak bütçe", "up"],
@@ -858,24 +876,24 @@ function updateAll() {
       <div class="val">${k[1]}</div><div class="sub ${k[3]}">${k[2]}</div></div>`).join("");
   }
 
-  function renderToptanRollupTable(data) {
-    const tbody = $("toptanRollupRows");
+  function renderToptanRollupTable(rowsId, footId, data, bosMesaj) {
+    const tbody = $(rowsId);
     if (!tbody) return;
     if (!data.rows.length) {
-      tbody.innerHTML = `<tr><td colspan="5" style="text-align:center;color:var(--grey);padding:18px">Henüz kayıt yok — "Bütçe &amp; Stok Karışımı" ekranında <b>Kaydet</b>'e bastığında çalışma burada özetlenir.</td></tr>`;
-      $("toptanRollupFoot").innerHTML = "";
+      tbody.innerHTML = `<tr><td colspan="5" style="text-align:center;color:var(--grey);padding:18px">${bosMesaj}</td></tr>`;
+      if ($(footId)) $(footId).innerHTML = "";
       return;
     }
     tbody.innerHTML = data.rows.map((r) => `
       <tr>
-        <td>${r.name}</td>
+        <td>${escapeHtml(r.name)}</td>
         <td class="num-cell">${fmtN(r.perakendeBudget)}</td>
         <td class="num-cell">${fmtN(r.toptanBudget)}</td>
         <td class="num-cell">${fmtD3(r.carpan)}</td>
         <td class="num-cell ${r.adFark >= 0 ? "up" : "down"}">${fmtN(r.adFark)}</td>
       </tr>`).join("");
     const t = data.total;
-    $("toptanRollupFoot").innerHTML = `
+    if ($(footId)) $(footId).innerHTML = `
       <td>TOPLAM</td>
       <td class="num-cell">${fmtN(t.perakendeBudget)}</td>
       <td class="num-cell">${fmtN(t.toptanBudget)}</td>
@@ -886,8 +904,20 @@ function updateAll() {
   function renderToptanRollup() {
     if (!$("toptanRollupKpis") || !state.sel) return;
     const data = computeToptanRollup(toptanRollupState.level);
-    renderToptanRollupKpis(data.total);
-    renderToptanRollupTable(data);
+    renderToptanRollupKpis("toptanRollupKpis", data.total);
+    renderToptanRollupTable("toptanRollupRows", "toptanRollupFoot", data,
+      'Henüz kayıt yok — "Bütçe &amp; Stok Karışımı" ekranında <b>Kaydet</b>\'e bastığında çalışma burada özetlenir.');
+  }
+
+  // Revize Toptan Bütçe sekmesinin Özet/Rollup'ı. Toptan sekmesindekiyle AYNI
+  // kolonlar, AYNI hesap; kaynağı ONAYLANMIŞ (dondurulmuş) satırlar olduğu için
+  // parametre oynatmak bunu DEĞİŞTİRMEZ — yeniden onaylamak gerekir.
+  function renderRevizeRollup() {
+    if (!$("revizeRollupKpis")) return;
+    const data = computeRevizeRollup(revizeRollupState.level);
+    renderToptanRollupKpis("revizeRollupKpis", data.total);
+    renderToptanRollupTable("revizeRollupRows", "revizeRollupFoot", data,
+      'Henüz onaylanmış revizyon yok — Toptan Bütçe ekranında <b>Onayla &amp; Kaydet</b>\'e bastığında özet burada görünür.');
   }
 
   // --- Kayıtlı ÜH3 / ÜH4 miks kayıtları ---
@@ -2729,6 +2759,10 @@ function updateAll() {
   function renderRevizeSets() {
     const el = $("revizeSetList");
     if (!el) return;
+    // Özet/Rollup BURADA tazelenir (fonksiyonun EN BAŞINDA, aşağıdaki
+    // "kayıt yok" erken return'ünden ÖNCE): listeyi yenileyen her yol — onay,
+    // silme, sekme açılışı, ilk yükleme — özeti de yenilemiş olur.
+    renderRevizeRollup();
     const sets = loadToptanSets();
     if (!sets.length) {
       el.innerHTML = '<div class="saved-mix-empty">Henüz onaylanmış revizyon yok. Toptan Bütçe ekranında kapsamı filtreleyip revize ettikten sonra "Onayla &amp; Kaydet" ile buraya gönderin.</div>';
@@ -3312,6 +3346,13 @@ function updateAll() {
         toptanRollupState.level = btn.dataset.level;
         document.querySelectorAll("#toptanRollupLevelSeg [data-level]").forEach((b) => b.classList.toggle("is-on", b === btn));
         renderToptanRollup();
+      });
+    });
+    document.querySelectorAll("#revizeRollupLevelSeg [data-level]").forEach((btn) => {
+      btn.addEventListener("click", () => {
+        revizeRollupState.level = btn.dataset.level;
+        document.querySelectorAll("#revizeRollupLevelSeg [data-level]").forEach((b) => b.classList.toggle("is-on", b === btn));
+        renderRevizeRollup();
       });
     });
     const rollupBaseEl = $("rollup_baseperiod");

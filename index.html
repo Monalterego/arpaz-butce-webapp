@@ -448,6 +448,36 @@
          Buraya yalnızca Toptan Bütçe ekranında "Onayla & Kaydet" ile
          dondurulan setler akar. Burada düzenleme/parametre YOKTUR. -->
     <div class="tabpane" data-pane="revize" style="display:none">
+      <!-- Özet / Rollup — Toptan Bütçe sekmesindekinin AYNISI (aynı kolonlar,
+           aynı hesap: app.js toptanRollupTopla). Tek fark KAYNAK: burada
+           ONAYLANMIŞ (dondurulmuş) satırlar toplanır, canlı çalışma değil. -->
+      <div class="panel">
+        <h2>Özet / Rollup <span class="pill">Onaylanmış toptan bütçenin alt-toplamı</span></h2>
+        <div class="rollup-controls">
+          <div class="segmented" id="revizeRollupLevelSeg">
+            <button type="button" class="mini" data-level="uh1">ÜH1</button>
+            <button type="button" class="mini is-on" data-level="uh2">ÜH2</button>
+            <button type="button" class="mini" data-level="uh3">ÜH3</button>
+          </div>
+        </div>
+        <div class="kpis rollup-kpis" id="revizeRollupKpis"></div>
+        <div style="overflow:auto">
+          <table id="revizeRollupTable">
+            <thead>
+              <tr>
+                <th>Grup</th>
+                <th title="Perakende bütçe (kaynak satış platformu)">Perakende Bütçe</th>
+                <th title="Toptan bütçe (sell-in)">Toptan Bütçe</th>
+                <th title="Toplam toptan / toplam perakende oranı">Dönüşüm Çarpanı</th>
+                <th title="Toptan bütçe farkı (adet)">Fark (Adet)</th>
+              </tr>
+            </thead>
+            <tbody id="revizeRollupRows"></tbody>
+            <tfoot><tr id="revizeRollupFoot"></tr></tfoot>
+          </table>
+        </div>
+      </div>
+
       <div class="panel">
         <h2>Revize Toptan Bütçe <span class="pill">Onaylanmış Kayıtlar</span></h2>
         <div class="note" style="margin-bottom:var(--s2)">Her satır, Toptan Bütçe ekranında onaylandığı andaki <b>dondurulmuş</b> değerdir — sonradan parametre oynatmak bu kayıtları DEĞİŞTİRMEZ. Güncellemek için Toptan Bütçe ekranına dönüp yeniden onaylayın. "Sil", o onayın TÜM satırlarını kaldırır.</div>
