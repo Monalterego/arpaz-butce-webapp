@@ -659,6 +659,33 @@ tfoot td{background:#eef3f8;font-weight:700;border-top:2px solid var(--navy)}
   .rollup-kpis{grid-template-columns:1fr 1fr}
 }
 
+/* ===== Özel Gün / Takvim Etkisi şeridi =====
+   Bütçe & Stok Karışımı ve Toptan Bütçe ekranlarında, seçili periyotların
+   takvim bağlamı. Panel görünümünde ama DAHA İNCE: uyarı değil bağlam, ana
+   içeriği aşağı itmemeli. Varsayılan kapalı (details), tek satır yer kaplar. */
+.ozelgun-serit{background:var(--surface);border:1px solid var(--line);
+  border-radius:var(--radius);box-shadow:var(--shadow-sm);
+  padding:var(--s2) var(--s3);margin-bottom:var(--s3)}
+.og-baslik{display:flex;align-items:baseline;gap:var(--s2);flex-wrap:wrap;
+  font-size:var(--f-label);text-transform:uppercase;letter-spacing:.5px;
+  color:var(--ink-soft);font-weight:700;margin-bottom:var(--s1)}
+.og-not{text-transform:none;letter-spacing:0;font-weight:400;color:var(--grey);font-size:11px}
+.og-bloklar{display:grid;grid-template-columns:repeat(auto-fit,minmax(320px,1fr));gap:var(--s2)}
+.og-blok{border-left:3px solid var(--accent);padding-left:var(--s2);min-width:0}
+.og-bas{display:flex;align-items:baseline;gap:6px;flex-wrap:wrap;font-size:13px;color:var(--ink)}
+.og-rol{font-size:var(--f-label);text-transform:uppercase;letter-spacing:.4px;color:var(--grey);font-weight:600}
+.og-ozet{display:flex;align-items:center;gap:6px;flex-wrap:wrap;margin-top:5px}
+.og-say{font-size:11px;color:var(--grey)}
+.og-detay{margin-top:6px;font-size:12px}
+.og-detay summary{cursor:pointer;color:var(--accent);font-weight:600;font-size:11px}
+.og-liste{margin:6px 0 0;padding-left:18px;color:var(--ink)}
+.og-liste li{margin-bottom:3px;line-height:1.45}
+.og-kat{color:var(--grey);font-size:10px}
+.og-tatil{color:var(--red);font-size:10px;font-weight:600}
+/* Dinî gün verisi eksik olan yıl (Hicri takvim) — sessizce "gün yok" sanılmasın. */
+.og-eksik{margin-top:6px;padding:6px 8px;border-radius:var(--radius-sm);
+  background:var(--amberbg);color:var(--amber);font-size:11px;line-height:1.45}
+
 /* ===== Bilgi (i) ikonu + ortalı bilgi modal'ı =====
    "Bütçe Kurgusu — Nasıl Hesaplanıyor?" paneli kaldırıldı; içeriği artık tablo
    başlığındaki (i) ikonuyla açılan modal'da. SADECE bilgilendirme — hesap yok. */

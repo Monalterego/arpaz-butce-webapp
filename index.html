@@ -104,6 +104,11 @@
       <!-- KPI ŞERİDİ — ana tablonun ÜSTÜNDE (bilinçli: özet önce, detay sonra) -->
       <div class="kpis" id="kpis"></div>
 
+      <!-- ÖZEL GÜN / TAKVİM ETKİSİ — seçili Baz ve Hedef Periyot için.
+           Okuma sırası: KPI (özet) → takvim bağlamı → tablo (detay).
+           SALT BİLGİ: hiçbir çarpanı/parametreyi beslemez (app.js renderMiksOzelGun). -->
+      <div class="ozelgun-serit" id="miksOzelGun" style="display:none"></div>
+
       <!-- ANA MIKS TABLOSU -->
       <div class="panel">
         <h2 style="display:flex;align-items:center;gap:8px;">Bütçe &amp; Stok Karışım Tablosu <span class="pill">Hedef Cover elle girilir</span>
@@ -336,6 +341,11 @@
           </table>
         </div>
       </div>
+      <!-- ÖZEL GÜN / TAKVİM ETKİSİ — burada periyot SEÇİLMEZ, kapsamdaki
+           kayıtlı satırların Baz/Hedef Periyot'larından türetilir
+           (app.js renderToptanOzelGun). SALT BİLGİ. -->
+      <div class="ozelgun-serit" id="toptanOzelGun" style="display:none"></div>
+
       <div class="panel">
         <h2>Revize Kapsamı <span class="pill">Filtre</span></h2>
         <div class="note" style="margin-bottom:var(--s2)">Önce neyi revize edeceğinizi seçin — <b>onay yalnızca aşağıda görünen satırlara uygulanır.</b> Boş bıraktığınız alan "hepsi" demektir; ÜH2/ÜH3/ÜH4 bir üst seviyedeki seçime göre daralır.</div>

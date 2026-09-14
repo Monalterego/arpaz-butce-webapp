@@ -182,6 +182,7 @@
     buildTable();
     updateAll();
     siraBasliklariGuncelle();
+    renderMiksOzelGun();   // Baz Periyot değişmiş olabilir
     updateSelInfo();
     // başlık kolon adı
     $("grpColHead").textContent = "ÜH4";
@@ -2489,6 +2490,8 @@ function updateAll() {
     if (!tbody) return;
     const data = computeToptanFromSaved();
 
+    // Kapsamdaki satırların periyotlarına göre takvim bağlamı (salt bilgi).
+    renderToptanOzelGun(data.rows);
     toptanFiltreleriDoldur(data.tum);
     const sayac = $("toptanSayac");
     const sec = toptanSecim();
@@ -2815,6 +2818,129 @@ function updateAll() {
         renderRevizeSets();
       });
     });
+  }
+
+  // ==========================================================================
+  // ÖZEL GÜN UYARI ŞERİDİ — seçili periyotların takvim bağlamı
+  // --------------------------------------------------------------------------
+  // Kaynak: assets/ozelgunler.js (OZEL_GUNLER, 278 kayıt, 2021-2027).
+  // İKİ ekranda kullanılır: Bütçe & Stok Karışımı (Baz/Hedef Periyot sidebar'dan
+  // seçilir) ve Toptan Bütçe (periyot seçilmez — kayıtlı satırlardan TÜRETİLİR).
+  //
+  // SALT BİLGİ: hiçbir çarpanı, parametreyi veya formülü BESLEMEZ. Kampanya
+  // Çarpanları kartına (m_event / r_m_event) otomatik değer YAZMA — bu ekranın
+  // takvimle arasındaki sınır bilinçlidir (CLAUDE.md Bölüm 8, Takvim notu).
+  // Kullanıcı sayıyı görür, çarpanı KENDİSİ takdir eder.
+  //
+  // Neden sadece "kaç özel gün var" demiyoruz: planlamayı etkileyen iki ayrı
+  // şey var ve ters yönde çalışıyorlar —
+  //   · resmî tatil  → sevk/çalışma günü AZALIR (tatilGunEsdeger toplamı)
+  //   · ticari gün   → talep ARTAR (kampanya penceresi)
+  // Bu yüzden ikisi ayrı rozet olarak gösterilir, tek sayıya karıştırılmaz.
+  const OG_TICARI_RE = /Ticari/;
+  const OG_DINI_RE = /Din[iî]/;   // "Dini Özel Gün" ve "Resmî Tatil - Dini"
+
+  function ozelGunVeri() {
+    return (typeof OZEL_GUNLER !== "undefined" && Array.isArray(OZEL_GUNLER)) ? OZEL_GUNLER : [];
+  }
+  // "2026 Ağustos" → {yil:2026, ayNo:8, ay:"Ağustos"} · "2027 Tam Yıl" → {tamYil:true}
+  function ozelGunPeriyotCoz(etiket) {
+    const s = String(etiket || "");
+    const y = s.match(/(\d{4})/);
+    if (!y) return null;
+    const yil = Number(y[1]);
+    const i = SOP_AY_ADI.findIndex((ad) => s.indexOf(ad) >= 0);
+    if (i < 0) return { yil, tamYil: true, etiket: s };
+    return { yil, ayNo: i + 1, ay: SOP_AY_ADI[i], tamYil: false, etiket: s };
+  }
+  function ozelGunlerBul(p) {
+    if (!p) return [];
+    return ozelGunVeri()
+      .filter((r) => r.yil === p.yil && (p.tamYil || r.ayNo === p.ayNo))
+      .sort((a, b) => String(a.tarih).localeCompare(String(b.tarih)));
+  }
+  // Dinî gün verisi VERİDEN sorulur, "2027" diye sabitlenmez: 2027 kayıtları
+  // Hicri takvime bağlı günleri içermiyor (Diyanet takvimi yayımlanmadan
+  // hesaplanamaz — ozelgunler.js başlığı). Veri tamamlanınca uyarı KENDİLİĞİNDEN
+  // kalkar, burada bir şey değiştirmek gerekmez.
+  function ozelGunDiniVeriVarMi(yil) {
+    return ozelGunVeri().some((r) => r.yil === yil && OG_DINI_RE.test(r.kategori));
+  }
+
+  function ozelGunBlokHtml(rol, etiket) {
+    const p = ozelGunPeriyotCoz(etiket);
+    const gunler = ozelGunlerBul(p);
+    const tatilGun = gunler.reduce((a, r) => a + (Number(r.tatilGunEsdeger) || 0), 0);
+    const ticari = gunler.filter((r) => OG_TICARI_RE.test(r.kategori)).length;
+    const diniEksik = p && !ozelGunDiniVeriVarMi(p.yil);
+
+    const rozetler = [];
+    if (tatilGun > 0) rozetler.push('<span class="badge b-red" title="Resmî tatil gün eşdeğeri — sevk/çalışma günü azalır">' +
+      fmtD(tatilGun) + " gün resmî tatil</span>");
+    if (ticari > 0) rozetler.push('<span class="badge b-amber" title="Ticari / kampanya günü — talep hareketlenir">' +
+      fmtN(ticari) + " ticari gün</span>");
+    if (!rozetler.length && gunler.length) rozetler.push('<span class="badge b-blue">' + fmtN(gunler.length) + " özel gün</span>");
+
+    const liste = gunler.length
+      ? "<ul class=\"og-liste\">" + gunler.map((r) =>
+          "<li><b>" + escapeHtml(ozelGunTarihTr(r.tarih)) + "</b> " + escapeHtml(r.isim) +
+          ' <span class="og-kat">' + escapeHtml(r.kategori) + "</span>" +
+          (Number(r.tatilGunEsdeger) > 0 ? ' <span class="og-tatil">' + escapeHtml(r.resmiTatilStatu) + "</span>" : "") +
+          (r.tahmini2027 ? ' <span class="og-kat">tahmini</span>' : "") +
+          "</li>").join("") + "</ul>"
+      : "";
+
+    return '<div class="og-blok">' +
+      '<div class="og-bas"><span class="og-rol">' + escapeHtml(rol) + "</span>" +
+        "<b>" + escapeHtml(etiket || "—") + "</b></div>" +
+      '<div class="og-ozet">' + (gunler.length
+        ? rozetler.join("") + '<span class="og-say">toplam ' + fmtN(gunler.length) + " gün</span>"
+        : '<span class="og-say">Bu periyotta kayıtlı özel gün yok.</span>') + "</div>" +
+      (liste ? '<details class="og-detay"><summary>Günleri göster</summary>' + liste + "</details>" : "") +
+      (diniEksik ? '<div class="og-eksik"><b>Dikkat:</b> ' + p.yil +
+        " için dinî günler (Ramazan, Kurban Bayramı, kandiller) bu listede <b>YOK</b> — " +
+        "Hicri takvime bağlı oldukları için Diyanet'in resmi takvimi yayımlanmadan hesaplanamıyor. " +
+        "Bu periyodu &quot;dinî gün yok&quot; diye okumayın.</div>" : "") +
+      "</div>";
+  }
+  // "2026-08-30" → "30.08.2026". Date nesnesi KULLANMA (saat dilimi kayması),
+  // veri zaten düz metin — takvim ekranındaki trTarih ile aynı gerekçe.
+  function ozelGunTarihTr(iso) {
+    const s = String(iso || "");
+    const m = s.match(/^(\d{4})-(\d{2})-(\d{2})$/);
+    return m ? m[3] + "." + m[2] + "." + m[1] : s;
+  }
+
+  // periyotlar: [{rol, etiket}, ...] — boş/çözülemeyen etiketler atlanır.
+  function renderOzelGunSerit(kapsayiciId, periyotlar) {
+    const el = $(kapsayiciId);
+    if (!el) return;
+    const gecerli = (periyotlar || []).filter((x) => x && x.etiket);
+    if (!gecerli.length) { el.innerHTML = ""; el.style.display = "none"; return; }
+    el.style.display = "";
+    el.innerHTML = '<div class="og-baslik">Özel Gün / Takvim Etkisi' +
+      '<span class="og-not">Bilgi amaçlıdır — kampanya çarpanlarını otomatik değiştirmez.</span></div>' +
+      '<div class="og-bloklar">' + gecerli.map((x) => ozelGunBlokHtml(x.rol, x.etiket)).join("") + "</div>";
+  }
+
+  // Bütçe & Stok Karışımı — periyotlar sidebar'dan okunur.
+  function renderMiksOzelGun() {
+    const baz = $("h_baseperiod"), hedef = $("h_targetperiod");
+    renderOzelGunSerit("miksOzelGun", [
+      { rol: "Baz Periyot (LY)", etiket: baz ? baz.value : "" },
+      { rol: "Hedef Periyot (TY)", etiket: hedef ? hedef.value : "" },
+    ]);
+  }
+
+  // Toptan Bütçe — bu ekranda periyot SEÇİLMEZ; kapsamdaki kayıtlı satırlardan
+  // türetilir. Birden fazla farklı periyot varsa HEPSİ gösterilir (tek bir
+  // tanesini seçip diğerlerini gizlemek yanıltıcı olurdu).
+  function renderToptanOzelGun(rows) {
+    const tekil = (alan) => Array.from(new Set((rows || []).map((r) => r[alan]).filter(Boolean)));
+    const bloklar = [];
+    tekil("baseperiod").forEach((e) => bloklar.push({ rol: "Baz Periyot (LY)", etiket: e }));
+    tekil("targetperiod").forEach((e) => bloklar.push({ rol: "Hedef Periyot (TY)", etiket: e }));
+    renderOzelGunSerit("toptanOzelGun", bloklar);
   }
 
   // ==========================================================================
@@ -3332,7 +3458,10 @@ function updateAll() {
     const basePeriodEl = $("h_baseperiod");
     if (basePeriodEl) basePeriodEl.addEventListener("change", updateSaveButtonState);
     const targetPeriodEl = $("h_targetperiod");
-    if (targetPeriodEl) targetPeriodEl.addEventListener("change", updateSaveButtonState);
+    if (targetPeriodEl) targetPeriodEl.addEventListener("change", () => {
+      updateSaveButtonState();
+      renderMiksOzelGun();   // Hedef Periyot rebuild() TETİKLEMEZ, ayrıca bağlanmalı
+    });
     // Özet/Rollup paneli — kırılım seçici (ÜH1/ÜH2/ÜH3) + kendi (bağımsız) periyot seçicileri
     document.querySelectorAll("#rollupLevelSeg [data-level]").forEach((btn) => {
       btn.addEventListener("click", () => {
@@ -3812,6 +3941,7 @@ function updateAll() {
     renderSop();
     initForecast();
     initStokRef();
+    renderMiksOzelGun();
     renderCalendar();
   });
 })();
