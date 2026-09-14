@@ -13,6 +13,13 @@
   --green:#2e7d32;--greenbg:#e6f4ea;--red:#c62828;--redbg:#fdecea;
   --amber:#b26a00;--amberbg:#fff4e0;--blue:#1565c0;--bluebg:#e7f0fb;
   --good:#2e7d32;--warn:#b26a00;--bad:#c62828;--info:#1565c0;
+  /* #grid grup banner'ları (GERÇEKLEŞEN / GELECEK YIL PLANI). İkisi de MAVİ
+     ailesindendir — ayrım HUE değil TON: geçmiş sakin/soluk slate, gelecek
+     doygun accent mavisi. Kasıtlı: banner'a ayrı bir hue vermek (eski TY
+     yeşili #0b6e4f) tablonun hemen altındaki DURUM yeşiliyle ("Hızlı & Kârlı"
+     rozeti) karışıyordu. Yeşil artık yalnızca durum anlamı taşır.
+     Beyaz metinle kontrast: 8,7:1 ve 7,4:1 (WCAG AA fazlasıyla sağlanır). */
+  --grp-real:#334e68;--grp-plan:#0a5c8a;
   /* Nötr skala */
   --grey:#5b6b7c;--ink-soft:#5b6b7c;
   --line:#e6eaf0;--bg:#f5f7fa;--surface:#ffffff;--ink:#1b2733;
@@ -393,8 +400,8 @@ tfoot td{background:#eef3f8;font-weight:700;border-top:2px solid var(--navy)}
 #toptanGrid tbody td:nth-child(7),
 #toptanGrid tbody td:nth-child(8){color:var(--grey)}
 /* gruplu başlık */
-#grid th.grp-real{background:#13315c;text-align:center}
-#grid th.grp-plan{background:#0b6e4f;text-align:center}
+#grid th.grp-real{background:var(--grp-real);text-align:center}
+#grid th.grp-plan{background:var(--grp-plan);text-align:center}
 /* table-layout:auto ile max-width/min-width sütun genişliğini öngörülemez şekilde
    hesaplıyordu (asıl darboğaz dar sayı hücreleriydi, header genişliği hiç etkilemiyordu).
    Kökten çözüm: table-layout:fixed + <colgroup> ile her sütuna açık piksel genişliği.
