@@ -99,6 +99,25 @@
     // süzer (bkz. data.js _periodMetrics). Hedef Periyot hâlâ SADECE BİR ETİKETtir —
     // gerçek gelecek verisi yoktur; kayıt anahtarına ve Toptan'ın ay katsayısına
     // (donusum.js ayNo()) girdiği için seçenekleri baz listeden +1 yıl kaydırılır.
+    // Hedef Periyot'u Baz Periyot'un AYNI AYINA (bir sonraki yıl) çeker.
+    // İNDEKS eşlemesi güvenlidir çünkü iki liste de AYNI `periods` dizisinden
+    // üretilir, sadece yıl +1 kaydırılır; son eleman ikisinde de "Tam Yıl"dır.
+    // Yani 2026 Ocak(0) → 2027 Ocak(0), 2026 Tam Yıl(son) → 2027 Tam Yıl(son).
+    // Metinden ay adı ayrıştırmaya GEREK YOK — liste yapısı değişirse bu eşleme
+    // de birlikte değişmiş olur.
+    //
+    // Hedef seçici KİLİTLENMEZ: kullanıcı bilerek çapraz ay çalışmak isterse
+    // (2026 Ocak → 2027 Şubat) hâlâ seçebilir. Amaç SEHVEN uyumsuz çift
+    // bırakmayı engellemek; Baz her değiştiğinde Hedef yeniden hizalanır.
+    function hedefPeriyodunuBazaEsle() {
+      const baz = $("h_baseperiod"), hedef = $("h_targetperiod");
+      if (!baz || !hedef || !hedef.options.length) return;
+      const i = baz.selectedIndex;
+      if (i < 0 || i >= hedef.options.length) return;
+      hedef.selectedIndex = i;
+      autoFitSelectFont(hedef);
+    }
+
     const AY_ADI = { "01": "Ocak", "02": "Şubat", "03": "Mart", "04": "Nisan", "05": "Mayıs", "06": "Haziran",
       "07": "Temmuz", "08": "Ağustos", "09": "Eylül", "10": "Ekim", "11": "Kasım", "12": "Aralık" };
     const periods = DataService.availablePeriods(); // ["2026-01",...,"2026-08"]
@@ -116,6 +135,9 @@
         const idx = labels.indexOf($("h_baseperiod").value);
         DataService.setPeriod(idx === periods.length ? "TUM_YIL" : periods[idx]);
         autoFitSelectFont($("h_baseperiod"));
+        hedefPeriyodunuBazaEsle();   // rebuild()'den ÖNCE: rebuild zaten Hedef'e
+                                     // bağlı işleri (özel gün şeridi, Kaydet
+                                     // butonu eşleşmesi) yeniden çalıştırır
         rebuild();
       });
     }
@@ -124,9 +146,12 @@
       // saveCurrentMixSet()/Kayıtlar/Toptan aynı şekilde metin olarak okumaya devam eder.
       const tLabels = periods.map((p) => etiket(p, 1)).concat([`${sonYil + 1} Tam Yıl`]);
       fillSelect($("h_targetperiod"), tLabels);
-      $("h_targetperiod").value = tLabels[0]; // varsayılan: ilk seçenek
       autoFitSelectFont($("h_targetperiod"));
       $("h_targetperiod").addEventListener("change", () => autoFitSelectFont($("h_targetperiod")));
+      // AÇILIŞTA da eşleştir: Baz varsayılanı SON ay (ör. 2026 Ağustos) ama
+      // Hedef varsayılanı tLabels[0] (2027 Ocak) idi — ekran daha ilk açılışta
+      // uyumsuz bir ay çiftiyle geliyordu.
+      hedefPeriyodunuBazaEsle();
     }
 
     const uh1s = Object.keys(HIERARCHY);
