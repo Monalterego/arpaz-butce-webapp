@@ -176,8 +176,12 @@
     // DataService güncel seçimi kullansın
     DataService._cur = { sel: state.sel, level: state.level };
     state.covers = null;             // yeni satırlara göre Hedef Cover'ı sıfırla
+    // Seçim/periyot değişti: eski sıralama artık BAŞKA bir satır kümesine aitti,
+    // saklamak state dizilerini kaydırırdı (bkz. sirala()'daki KRİTİK notu).
+    siralamayiSifirla();
     buildTable();
     updateAll();
+    siraBasliklariGuncelle();
     updateSelInfo();
     // başlık kolon adı
     $("grpColHead").textContent = "ÜH4";
@@ -324,15 +328,160 @@
     return { rows, T, campF, pazarF };
   }
 
-  // computeModel: mevcut görünümdeki DataService.loadMix() için wrapper
+  // ==========================================================================
+  // KOLON SIRALAMA (#grid) — Excel tarzı başlığa tıklayarak
+  // --------------------------------------------------------------------------
+  // Yön döngüsü: artan → azalan → SIFIRLA (DataService'in doğal sırası).
+  //
+  // KRİTİK — elle girilen değerler satırla BİRLİKTE taşınır. state.covers,
+  // state.tyFiyat ve state.planPctOverrides satır İNDEKSİNE bağlı paralel
+  // dizilerdir; veriyi sıralayıp bunları sıralamamak, kullanıcının bir ürüne
+  // girdiği Hedef Cover'ı BAŞKA ürüne kaydırırdı. Bu yüzden sıralama bir
+  // permütasyon üretir ve dört diziye de AYNI permütasyonu uygular.
+  //
+  // Sıralama anahtarları HESAPLANMIŞ satırdan (computeFromData çıktısı) okunur,
+  // ham veriden değil — Plan Stok %, Satış Bütçe, LFL, R-LFL, Durum gibi
+  // kolonların ham veride karşılığı yoktur.
+  const SIRA_KOLONLARI = {
+    0:  { al: (r) => r.name,                 tip: "metin" },
+    1:  { al: (r) => r.stock,                tip: "sayi" },
+    2:  { al: (r) => r.stockShare,           tip: "sayi" },
+    3:  { al: (r) => r.sales,                tip: "sayi" },
+    4:  { al: (r) => r.salesShare,           tip: "sayi" },
+    5:  { al: (r) => r.profit,               tip: "sayi" },
+    6:  { al: (r) => r.profitShare,          tip: "sayi" },
+    7:  { al: (r) => r.lyCover,              tip: "sayi" },
+    8:  { al: (r) => r.turnover,             tip: "sayi" },
+    9:  { al: (r) => r.sales * r.lyFiyat,    tip: "sayi" },  // Ciro (LY) — türetilmiş, alan yok
+    10: { al: (r) => r.lyFiyat,              tip: "sayi" },
+    11: { al: (r) => r.planPct,              tip: "sayi" },
+    12: { al: (r) => r.planStock,            tip: "sayi" },
+    13: { al: (r) => r.hedefCover,           tip: "sayi" },
+    14: { al: (r) => r.salesBudget,          tip: "sayi" },
+    15: { al: (r) => r.tyFiyat,              tip: "sayi" },
+    16: { al: (r) => r.tyRevenue,            tip: "sayi" },
+    17: { al: (r) => r.lfl,                  tip: "sayi" },
+    18: { al: (r) => r.rlfl,                 tip: "sayi" },
+    19: { al: (r) => r.stockGrowth,          tip: "sayi" },
+    20: { al: (r) => (r.tag && r.tag.etiket) || "",  tip: "metin" },
+    21: { al: (r) => (r.tag && r.tag.aksiyon) || "", tip: "metin" },
+  };
+  let siraDurum = { kolon: null, yon: null };   // yon: "asc" | "desc" | null
+  let siraliVeri = null;                        // loadMix() çıktısının sıralanmış KOPYASI
+
+  // Ekranda GÖRÜNEN satır sırası. Sıralama yoksa DataService'in doğal sırası.
+  // #grid'i besleyen TEK kapı budur — buildTable ve computeModel bunu kullanır,
+  // doğrudan loadMix() ÇAĞIRMA (sıralama atlanır, state dizileri kayar).
+  function gorunenVeri() {
+    const ham = DataService.loadMix();
+    if (!siraliVeri || siraliVeri.length !== ham.length) return ham;
+    return siraliVeri;
+  }
+  function siralamayiSifirla() {
+    siraDurum = { kolon: null, yon: null };
+    siraliVeri = null;
+  }
+
+  function sirala(kolon) {
+    const tanim = SIRA_KOLONLARI[kolon];
+    if (!tanim) return;
+    if (siraDurum.kolon === kolon) {
+      siraDurum.yon = siraDurum.yon === "asc" ? "desc" : null;   // 3. tık: sıfırla
+      if (!siraDurum.yon) siraDurum.kolon = null;
+    } else {
+      siraDurum = { kolon, yon: "asc" };
+    }
+
+    // Elle girilen değerleri satırıyla taşıyan tek yardımcı — sıralarken de
+    // doğal sıraya dönerken de AYNI permütasyon üçüne birden uygulanır.
+    const tasi = (sira) => {
+      const uygula = (arr) => (Array.isArray(arr) ? sira.map((j) => arr[j]) : arr);
+      state.covers = uygula(state.covers);
+      state.tyFiyat = uygula(state.tyFiyat);
+      state.planPctOverrides = uygula(state.planPctOverrides);
+    };
+
+    if (!siraDurum.yon) {
+      // SIFIRLA: doğal sıraya dön. state dizilerini TEMİZLEME — kullanıcının
+      // girdiği Hedef Cover/TY Fiyat silinirdi; onun yerine sıralı düzenden
+      // doğal düzene GERİ permütasyon uygula (satır adı seçim içinde tekildir).
+      const ham = DataService.loadMix();
+      const mevcut = gorunenVeri();
+      const yer = new Map(mevcut.map((d, i) => [d[0], i]));
+      const geri = ham.map((d) => (yer.has(d[0]) ? yer.get(d[0]) : -1));
+      if (geri.every((j) => j >= 0)) tasi(geri);
+      else { state.covers = null; state.tyFiyat = null; state.planPctOverrides = null; }
+      siraliVeri = null;
+    } else {
+      const veri = gorunenVeri();
+      const m = computeFromData(veri, readParams(), state.covers, state.tyFiyat);
+      const yon = siraDurum.yon === "asc" ? 1 : -1;
+      const sira = veri.map((_, i) => i);
+      sira.sort((a, b) => {
+        const va = tanim.al(m.rows[a]), vb = tanim.al(m.rows[b]);
+        if (tanim.tip === "metin") return String(va).localeCompare(String(vb), "tr") * yon;
+        const na = Number(va), nb = Number(vb);
+        // Sayısal olmayan (NaN / Infinity — ör. satışı 0 olan satırın cover'ı)
+        // değerler yönden BAĞIMSIZ olarak en sona düşer; yoksa azalan sıralamada
+        // tabloyu boş/bozuk satırlar açardı.
+        const ga = isFinite(na), gb = isFinite(nb);
+        if (!ga && !gb) return 0;
+        if (!ga) return 1;
+        if (!gb) return -1;
+        return (na - nb) * yon;
+      });
+      // AYNI permütasyon veriye ve üç state dizisine birden — KRİTİK notu.
+      siraliVeri = sira.map((j) => veri[j]);
+      tasi(sira);
+    }
+
+    buildTable();
+    updateAll();
+    siraBasliklariGuncelle();
+  }
+
+  // Ok göstergesi CSS ::after ile basılır, DOM çocuğu EKLENMEZ: başlığın içine
+  // <span> koymak hem resize tutamacıyla, hem rebuild()'deki
+  // grpColHead.textContent atamasıyla (çocukları siler) çakışırdı.
+  function siraBasliklariGuncelle() {
+    document.querySelectorAll("#grid thead th.siralanabilir").forEach((th) => {
+      const k = Number(th.dataset.sirakol);
+      th.classList.toggle("sira-asc", siraDurum.kolon === k && siraDurum.yon === "asc");
+      th.classList.toggle("sira-desc", siraDurum.kolon === k && siraDurum.yon === "desc");
+    });
+  }
+
+  function initSiralama() {
+    const satirlar = document.querySelectorAll("#grid thead tr");
+    if (satirlar.length < 2) return;
+    const r1 = satirlar[0].querySelectorAll("th");   // [ÜH4, GERÇEKLEŞEN, GELECEK YIL, Durum, Aksiyon]
+    const r2 = satirlar[1].querySelectorAll("th");   // 19 metrik başlık → kolon 1..19
+    // Grup başlıkları (GERÇEKLEŞEN / GELECEK YIL PLANI) sıralanabilir DEĞİL —
+    // tek bir kolona karşılık gelmiyorlar.
+    const hedefler = [[r1[0], 0], [r1[3], 20], [r1[4], 21]];
+    r2.forEach((th, i) => hedefler.push([th, i + 1]));
+    hedefler.forEach(([th, kol]) => {
+      if (!th) return;
+      th.classList.add("siralanabilir");
+      th.dataset.sirakol = String(kol);
+      th.addEventListener("click", (e) => {
+        // Sütun genişliği sürüklenirken tıklama sıralama SAYILMAZ: tutamak th'nin
+        // çocuğu olduğu için click olayı th'ye balonlanıyor.
+        if (e.target.closest(".col-resize-handle")) return;
+        sirala(kol);
+      });
+    });
+  }
+
+  // computeModel: mevcut görünümdeki (sıralanmış) satırlar için wrapper
   function computeModel(p, covers, tyFiyat) {
-    const data = DataService.loadMix();
+    const data = gorunenVeri();
     return computeFromData(data, p, covers, tyFiyat);
   }
 
   // --- Tabloyu bir kez kur (input'lar korunsun diye) ---
   function buildTable() {
-    const data = DataService.loadMix();
+    const data = gorunenVeri();
     if (!data.length) {
       $("rows").innerHTML = `<tr><td colspan="22" style="text-align:center;color:var(--grey);padding:18px">Bu seçim için veri bulunamadı.</td></tr>`;
       state.covers = [];
@@ -3212,7 +3361,12 @@ function updateAll() {
   // --- Sürüklenebilir sütun genişliği (SADECE #grid) + localStorage kalıcılık ---
   // Bu GERÇEK bir web uygulaması (GitHub Pages), Claude "artifact" ortamı DEĞİL — localStorage kullanılır.
   const GRID_COLS_KEY = "arpaz_grid_col_widths";
-  const COL_MIN_WIDTHS = { 0: 80, 12: 96, 14: 76, 19: 90, 20: 120 }; // ÜH4, Hedef Cover, TY Fiyat, Durum, Aksiyon
+  const COL_MIN_WIDTHS = { 0: 80, 13: 96, 15: 76, 20: 90, 21: 120 }; // ÜH4, Hedef Cover, TY Fiyat, Durum, Aksiyon
+  // DİKKAT: bunlar 0-tabanlı KOLON indeksleridir (22 kolon: 0=ÜH4 … 20=Durum,
+  // 21=Aksiyon). Ciro (idx 9) kolonu eklenirken bu harita ve aşağıdaki
+  // makeResizeHandle çağrıları güncellenmemişti — indeksler 9dan sonra birer
+  // kaymıştı (Hedef Cover 12 yazıyordu, doğrusu 13). Kolon ekler/çıkarırsan
+  // CLAUDE.md Bölüm 9daki listeyle birlikte BURAYI da güncelle.
   const colMinWidth = (idx) => COL_MIN_WIDTHS[idx] || 36;
   let gridCols = [];
   let gridDefaultWidths = [];
@@ -3284,8 +3438,8 @@ function updateAll() {
     const row1Ths = document.querySelectorAll("#grid thead tr")[0].querySelectorAll("th"); // [ÜH4, GERÇEKLEŞEN, GELECEK YIL, Durum, Aksiyon]
     const row2Ths = document.querySelectorAll("#grid thead tr")[1].querySelectorAll("th"); // 18 metrik başlık
     attachUh4ResizeHandle();
-    row1Ths[3].appendChild(makeResizeHandle(19)); // Durum
-    row1Ths[4].appendChild(makeResizeHandle(20)); // Aksiyon
+    row1Ths[3].appendChild(makeResizeHandle(20)); // Durum (20, 19 DEĞİL — bkz. COL_MIN_WIDTHS notu)
+    row1Ths[4].appendChild(makeResizeHandle(21)); // Aksiyon
     row2Ths.forEach((th, i) => th.appendChild(makeResizeHandle(i + 1)));
 
     const resetBtn = $("gridColReset");
@@ -3599,6 +3753,8 @@ function updateAll() {
     initNumFields();
     initSidebarToggle();
     initColResize();
+    initSiralama();   // initColResize'dan SONRA: tutamaklar takılı olsun ki
+                      // tıklama filtresi (.col-resize-handle) anlamlı olsun
     initGridFormat();
     renderSavedMixTable();
     updateAll();

@@ -402,7 +402,9 @@ tfoot td{background:#eef3f8;font-weight:700;border-top:2px solid var(--navy)}
    eşleştirmiyordu (tarayıcı hâlâ kendi payını hesaplıyordu). width'i colgroup
    toplamına eşit sabit bir piksele çekince her sütun tam istenen genişliğe oturdu.
    1849 = colgroup'taki 21 <col> genişliğinin toplamı (150+77+77+77+77+90+77+60+69+79+
-   77+77+96+77+83+103+65+65+73+110+210; Hedef Cover 76→96: satır içi (i) referans butonu eklendi). LY Fiyat/TY Fiyat/Ciro Bütçe eklenirken
+   77+77+96+77+83+103+65+65+73+110+210). ÖLÇÜLDÜ: 22 <col> toplamı 1972. Bu sayı bir
+   dönem 1849te kalmıştı — Ciro (103px) kolonu eklenirken güncellenmemiş, tablo
+   colgroup toplamından dar kaldığı için tarayıcı TÜM sütunları orantılı sıkıştırıyordu.. LY Fiyat/TY Fiyat/Ciro Bütçe eklenirken
    (21. kolon turu) AYNI iki katmanlı yöntem tekrarlandı: (1) Canvas 2D measureText()
    ile th'in gerçek fontuyla (600 11px "Segoe UI") her başlıktaki EN UZUN KELİME
    ölçüldü — üçünde de "Perakende" (52px) çıktı, tek başına 77px yeterliydi; (2) 558
@@ -414,7 +416,7 @@ tfoot td{background:#eef3f8;font-weight:700;border-top:2px solid var(--navy)}
    Kalan 18 kolon önceki turda AYNI yöntemle ölçülmüştü (Brüt Kâr %/Cover/Stok
    Büyümesi DATA bağlayıcıydı, "Perakende" (52px) HEADER bağlayıcıydı). index.html'deki
    colgroup değiştirilirse bu sayı da BİRLİKTE güncellenmeli. */
-#grid{table-layout:fixed;width:1869px}
+#grid{table-layout:fixed;width:1972px}
 /* Sütunlar arası dikey ayırıcı — önceden sadece border-bottom (satır ayırıcı) vardı,
    sütunlar arasında hiç çizgi yoktu. İlk sütun (donmuş ÜH4) HARİÇ: o zaten kendi
    box-shadow ayırıcısını taşıyor (bkz. Freeze pane bloğu aşağıda) — ikisi üst üste
@@ -447,6 +449,17 @@ tfoot td{background:#eef3f8;font-weight:700;border-top:2px solid var(--navy)}
 /* Sürüklenebilir sütun genişliği tutamacı — sadece #grid başlık hücrelerine JS ile eklenir */
 .col-resize-handle{position:absolute;top:0;right:-3px;bottom:0;width:6px;cursor:col-resize;z-index:6}
 .col-resize-handle:hover,.col-resize-handle.dragging{background:rgba(255,255,255,.3)}
+/* Kolon sıralama — başlığa tıklama. Ok DOM çocuğu değil ::after ile basılır:
+   başlığın içine <span> koymak hem resize tutamacıyla hem rebuild()'deki
+   grpColHead.textContent atamasıyla çakışıyordu (bkz. app.js siraBasliklariGuncelle).
+   Tutamak sağ kenarda (right:-3px) durduğu için ok SOLA, metinden hemen sonraya
+   konur — üst üste binmezler. */
+#grid thead th.siralanabilir{cursor:pointer;user-select:none}
+#grid thead th.siralanabilir:hover{background:var(--navy2)}
+#grid thead th.sira-asc::after,#grid thead th.sira-desc::after{
+  margin-left:4px;font-size:9px;opacity:.95;vertical-align:middle}
+#grid thead th.sira-asc::after{content:"▲"}
+#grid thead th.sira-desc::after{content:"▼"}
 /* Görünüm araç çubuğu: satır yüksekliği + başlık/hücre yazı boyutu-kalınlık — SADECE #grid.
    Yatay padding (8px) sabit kalır, sadece dikey padding değişkenle kontrol edilir. */
 #grid tbody td,#grid tbody th{padding-top:var(--grid-row-pad,7px);padding-bottom:var(--grid-row-pad,7px)}
