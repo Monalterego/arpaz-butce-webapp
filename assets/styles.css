@@ -36,7 +36,11 @@
 *{box-sizing:border-box}
 body{margin:0;font-family:'Segoe UI',system-ui,Arial,sans-serif;background:var(--bg);color:var(--ink);font-size:var(--f-body);display:flex;flex-direction:column;min-height:100vh}
 header{background:linear-gradient(90deg,var(--navy),var(--navy2));color:#fff;padding:10px 22px;display:flex;align-items:center;flex-wrap:wrap;gap:16px;row-gap:8px;box-shadow:0 2px 8px rgba(0,0,0,.15)}
-header h1{font-size:17px;margin:0;font-weight:600;letter-spacing:.2px}
+header h1{font-size:17px;margin:0;font-weight:600;letter-spacing:.2px;display:flex;align-items:center}
+/* Wordmark: yükseklikten sürülür, genişlik oranla gelir. display:block ŞART —
+   inline <img> baseline'a oturup altında birkaç piksel boşluk bırakıyor ve
+   header'daki .tag rozetiyle hizası kayıyordu. */
+header h1 img{display:block;height:30px;width:auto}
 header .tag{background:rgba(255,255,255,.15);padding:3px 10px;border-radius:var(--radius-pill);font-size:11px}
 header .right{margin-left:auto;display:flex;gap:10px;align-items:center;font-size:12px}
 header select{background:#fff;border:none;border-radius:6px;padding:5px 8px;font-size:12px;color:var(--ink)}

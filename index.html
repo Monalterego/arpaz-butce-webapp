@@ -3,12 +3,24 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Arpaz | Bütçe &amp; Stok Miks Çalışma Ekranı</title>
+<title>planAR · Bütçe &amp; Stok Planlama</title>
+<!-- Marka ikonları: assets/brand/ (bkz. assets/brand/OKU.md). Yollar GÖRELİ olmalı —
+     index.html'e çift tıklayarak (file://) açıldığında mutlak "/..." yolu kırılır.
+     PNG kademeleri henüz klasörde YOK; dosyalar gelince aşağıdaki satırları aç. -->
+<link rel="icon" href="assets/brand/planar-favicon.svg" type="image/svg+xml">
+<link rel="icon" href="assets/brand/planar-favicon-16.svg" type="image/svg+xml" sizes="16x16">
+<!-- <link rel="icon" href="assets/brand/planar-icon-32.png" sizes="32x32"> -->
+<!-- <link rel="apple-touch-icon" href="assets/brand/planar-icon-192.png"> -->
+<meta name="theme-color" content="#0b2545">
 <link rel="stylesheet" href="assets/styles.css">
 </head>
 <body>
 <header>
-  <h1>Arpaz — Bütçe &amp; Stok Karışımı Planlama</h1>
+  <!-- Marka kilidi: header lacivert olduğu için KOYU ZEMİN varyantı kullanılır
+       (açık varyant planar-wordmark.svg bu zeminde okunmaz). Ekran adı alt
+       metninde durur — h1 boş kalmasın. Bkz. assets/brand/OKU.md. -->
+  <h1><img src="assets/brand/planar-wordmark-dark.svg"
+           alt="planAR — Bütçe &amp; Stok Karışımı Planlama"></h1>
   <span class="tag">Web App · Prototip v0.3</span>
   <nav class="tabs">
     <button class="active" data-tab="miks">Bütçe &amp; Stok Karışımı</button>

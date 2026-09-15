@@ -1,0 +1,5 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16" width="16" height="16">
+  <rect width="16" height="16" fill="#0b2545"/>
+  <text x="2" y="10" font-family="Archivo, Helvetica, Arial, sans-serif" font-weight="800" font-size="8.5" letter-spacing="-0.5" fill="#ffffff">AR</text>
+  <rect x="2" y="12" width="12" height="2" fill="#ff4a30"/>
+</svg>
