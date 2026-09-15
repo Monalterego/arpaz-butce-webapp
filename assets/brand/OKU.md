@@ -1,43 +1,49 @@
 # planAR — marka dosyaları
 
 Bu klasör uygulamanın logo/ikon varlıklarını tutar. `index.html` buradaki
-dosyalara **göreli** yolla bağlanır (`assets/brand/...`) — mutlak `/...` yolu
-KULLANMA, index.html'e çift tıklayarak (`file://`) açıldığında kırılır.
+dosyalara **göreli** yolla bağlanır (`assets/brand/...`) — Claude Design'ın
+verdiği mutlak `/planar-favicon.svg` yolunu KULLANMA: index.html'e çift
+tıklayarak (`file://`) açıldığında kırılır, Live Server'da çalışıp masaüstünde
+çalışmayan bir ekran çıkar.
 
-## Klasördeki dosyalar
-| Dosya | Nerede kullanılıyor |
+## Ekranda KULLANILAN dosyalar
+| Dosya | Nerede |
 |---|---|
-| `planar-favicon.svg` | index.html head — `rel="icon"` (32 px tabanlı) |
-| `planar-favicon-16.svg` | index.html head — `rel="icon" sizes="16x16"` |
-| `planar-wordmark-dark.svg` | **header `<h1>`** — koyu zemin varyantı |
-| `planar-wordmark.svg` | açık zemin kilidi; ekranda KULLANILMIYOR (doküman/sunum için) |
+| `planar-favicon.svg` | head — `rel="icon"` (ana favicon, 32 px tabanlı) |
+| `planar-favicon-16.svg` | head — `rel="icon" sizes="16x16"` |
+| `planar-icon-16/32/64.png` | head — SVG desteklemeyen tarayıcılar için raster yedek |
+| `planar-icon-192.png` | head — `apple-touch-icon` |
+| `planar-wordmark-dark.svg` | **header `<h1>`** (`styles.css` satır 39-43) |
 
-**Header neden koyu varyant:** `header` lacivert gradyan (`--navy` → `--navy2`).
-Açık varyantın `plan` yazısı `#13315c`, yani bu zeminde neredeyse görünmez.
-Yeni bir yere logo koyarken zemine göre varyant seç.
+**Header neden KOYU varyant:** `header` lacivert gradyan (`--navy` → `--navy2`).
+Açık varyantın `plan` yazısı `#13315c`, bu zeminde neredeyse görünmez. Yeni bir
+yere logo koyarken zemine göre varyant seç.
 
-## Henüz EKLENMEDİ (gelince bu klasöre koy + head'deki satırı aç)
-- `planar-icon-16 / 32 / 64 / 192 / 512 .png` — raster kademeler (192 ve 512 PWA
-  manifest için). `index.html` head'inde `<link>` satırları YORUMDA hazır bekliyor.
-- `planar-wordmark-mono.svg` — tek renk (#201e1d), alt çizgisiz
-- `planar-wordmark.png` — 1488x460, açık zemin
+## Ekranda kullanılmayan (doküman/sunum için duruyor)
+- `planar-wordmark.svg` — açık zemin kilidi (beyaz sayfa, Word/PowerPoint)
+- `planar-wordmark-mono.svg` — tek renk `#201e1d`, alt çizgisiz (faks/damga/tek renk baskı)
+- `planar-wordmark.png` — 1488x460 raster, açık zemin
+- `planar-icon-512.png` — PWA manifest kademesi. **Manifest dosyası HENÜZ YOK**;
+  uygulama "ana ekrana ekle" ile kurulabilir yapılacaksa `manifest.webmanifest`
+  yazılıp 192+512 oraya bağlanmalı.
 
 ## Notlar
-- **`planar-wordmark-dark.svg` TÜRETİLMİŞTİR.** Asıl dosya elime geçmediği için
-  açık varyantın renk takasıyla üretildi (lacivert → beyaz, `#cc1526` → `#ff4a30`);
-  geometri birebir aynı. Claude Design'daki ASIL dosya gelince ÜZERİNE YAZ.
-- **C2PA metadata'sı çıkarıldı.** Orijinal SVG'lerde ~21 KB'lık base64 bir
-  `<metadata><c2pa:manifest>` bloğu vardı; favicon her sayfa yüklemesinde
-  istendiği için temizlendi. Çizim birebir aynı, görsel fark yok.
-- **Wordmark'ın viewBox'ında boşluk var:** ink y≈20–90 arasında, viewBox 115
-  yüksekliğinde — yani kutunun yalnızca ~%61'i dolu. Bu yüzden header'da
-  `height:30px` veriliyor ama harfler ~18px görünür (eski 17px başlık metniyle
-  denk). Logoyu büyütmek istersen bu boşluğu hesaba kat.
-- SVG'lerde yazı `<text>` olarak duruyor; Archivo yüklü değilse sistem
-  sans-serif'e düşer (harf genişlikleri değişir, alt çizgi barları metinle
-  tam hizalanmayabilir). Kurumsal fontla kesinleştirilecekse yazıyı outline'a
-  çevir (Illustrator: Type > Create Outlines).
-- Renkler: lacivert #0b2545 / #13315c, veri mavisi #0077b6, Arçelik kırmızısı
-  #cc1526 (koyu zeminde #ff4a30). Lacivert ve #0077b6 zaten `styles.css`
-  içindeki `--navy` / `--accent` token'larıyla aynı — yeni renk token'ı EKLEME
-  (bkz. CLAUDE.md Bölüm 9).
+- **C2PA metadata'sı çıkarıldı.** Her SVG'nin içinde ~8 KB'lık base64 bir
+  `<metadata><c2pa:manifest>` bloğu vardı (dosyaların %95'i); favicon her sayfa
+  yüklemesinde istendiği için temizlendi, 8 KB → ~0,4 KB. Çizim birebir aynı.
+  **Dosyaları Claude Design'dan yeniden indirirsen metadata geri gelir** — aynı
+  temizliği tekrarla.
+- **Wordmark'ın viewBox'ında boşluk var:** çizim y≈20–90 arasında ama viewBox
+  115 yüksekliğinde, yani kutunun ~%61'i dolu (`planar-wordmark-mono.svg` bunun
+  istisnası: viewBox 90, alt çizgisi de yok). Bu yüzden header'da `height:30px`
+  veriliyor ama harfler ~18px görünüyor. Logoyu büyütmek istersen bu boşluğu
+  hesaba kat.
+- SVG'lerde yazı `<text>` olarak duruyor; **Archivo yüklü değilse** sistem
+  sans-serif'e düşer — harf genişlikleri değişir ve alt çizgi barları (x=0-167
+  lacivert / 167-260 kırmızı) metnin `plan|AR` sınırıyla tam hizalanmayabilir.
+  Kurumsal fontla kesinleştirilecekse yazıyı outline'a çevir (Illustrator:
+  Type > Create Outlines).
+- Renkler: lacivert `#0b2545` / `#13315c`, veri mavisi `#0077b6`, Arçelik
+  kırmızısı `#cc1526` (koyu zeminde `#ff4a30`), koyu zemin `plan` tonu `#9fc3e0`.
+  Lacivert ve `#0077b6` zaten `styles.css`'teki `--navy` / `--accent`
+  token'larıyla aynı — yeni renk token'ı EKLEME (bkz. CLAUDE.md Bölüm 9).

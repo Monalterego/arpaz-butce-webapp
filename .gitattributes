@@ -10,3 +10,7 @@
 
 # Türetilmiş/büyük veri dosyası — diff'te gürültü yapmasın.
 assets/realdata.js linguist-generated=true
+
+# Ikili marka varliklari — satir sonu donusumune ASLA girmemeli.
+# (`* text=auto` PNG-i zaten ikili sayar ama bu acik garanti.)
+assets/brand/*.png binary
