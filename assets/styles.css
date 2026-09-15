@@ -666,6 +666,13 @@ tfoot td{background:#eef3f8;font-weight:700;border-top:2px solid var(--navy)}
 .rollup-lfl-fill.pos{background:var(--green)}
 .rollup-lfl-fill.neg{background:var(--red)}
 #rollupTable td:first-child{font-weight:600}
+/* Toptan/Revize rollup başlıklarındaki ikinci satır ("Geçen Sene" /
+   "Gelecek Sene"). Metrik adı ile dönem etiketini AYNI hücrede ama farklı
+   ağırlıkta gösterir — dört kolon ikişerli okunsun diye. */
+#toptanRollupTable .th-sub,
+#revizeRollupTable .th-sub{display:block;font-weight:400;opacity:.75;font-size:10px;letter-spacing:.2px}
+#toptanRollupTable td:first-child,
+#revizeRollupTable td:first-child{font-weight:600}
 @media (max-width:900px){
   .rollup-kpis{grid-template-columns:1fr 1fr}
 }

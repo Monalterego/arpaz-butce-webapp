@@ -55,32 +55,113 @@ const DataService = {
   setRegion(region) { this._region = region || ""; },
   setPeriod(p)      { this._period = p || ""; },
 
-  // Bir kaydı aktif periyoda göre düz metriklere indirger.
+  // Türkçe locale'e duyarlı normalize — hiyerarşi adları ile veri adlarını
+  // eşleştiren TEK yer. tr-TR küçültme ŞART: noktalı "İ" ile noktasız "I"
+  // aksi halde asla eşleşmez (bkz. CLAUDE.md Bölüm 4 DERS notu).
+  _norm(value) {
+    return String(value || "")
+      .toLocaleLowerCase("tr-TR")
+      .normalize("NFD")
+      .replace(/[\u0300-\u036f]/g, "")
+      .replace(/\s+/g, " ")
+      .trim();
+  },
+
+  // Bir kaydı bir periyoda göre düz metriklere indirger.
   //  - TUM_YIL (ve varsayılan ""): stok = EN SON ayın stoğu (ortalama DEĞİL),
-  //    satış adet/tutar = mevcut ayların TOPLAMI ÷ o kaydın KENDİ mevcut ay sayısı.
+  //    satış adet/tutar/toptan = mevcut ayların TOPLAMI ÷ o kaydın KENDİ mevcut
+  //    ay sayısı (akış metriklerinin AYLIK ORTALAMASI).
   //  - Belirli ay: o ayın değerleri; kayıtta o ay YOKSA hepsi 0 (hata fırlatılmaz).
-  _periodMetrics(d) {
+  // `period` verilmezse aktif seçim (this._period) kullanılır — mevcut çağrılar
+  // (loadMixFor) bu yüzden DEĞİŞMEDİ. lyMetricsFor ise satırın KENDİ baz
+  // periyodunu dışarıdan geçer, aktif sidebar seçimini kullanmaz.
+  _periodMetrics(d, period) {
+    const p = (period === undefined || period === null) ? this._period : period;
     const aylar = d.aylar || {};
     const keys = Object.keys(aylar).sort();
-    if (!keys.length) return { stok: 0, satis: 0, tutar: 0 };
+    if (!keys.length) return { stok: 0, satis: 0, tutar: 0, toptan: 0 };
 
-    if (!this._period || this._period === "TUM_YIL") {
+    if (!p || p === "TUM_YIL") {
       const son = aylar[keys[keys.length - 1]] || {};
-      let sa = 0, st = 0;
+      let sa = 0, st = 0, ta = 0;
       keys.forEach((k) => {
         sa += (aylar[k].satis_adet || 0);
         st += (aylar[k].satis_tutar || 0);
+        ta += (aylar[k].toptan_adet || 0);
       });
-      return { stok: (son.stok_adet || 0), satis: sa / keys.length, tutar: st / keys.length };
+      return { stok: (son.stok_adet || 0), satis: sa / keys.length, tutar: st / keys.length, toptan: ta / keys.length };
     }
 
-    const ay = aylar[this._period];
-    if (!ay) return { stok: 0, satis: 0, tutar: 0 };
+    const ay = aylar[p];
+    if (!ay) return { stok: 0, satis: 0, tutar: 0, toptan: 0 };
     return {
-      stok:  (ay.stok_adet   || 0),
-      satis: (ay.satis_adet  || 0),
-      tutar: (ay.satis_tutar || 0),
+      stok:   (ay.stok_adet    || 0),
+      satis:  (ay.satis_adet   || 0),
+      tutar:  (ay.satis_tutar  || 0),
+      toptan: (ay.toptan_adet  || 0),
     };
+  },
+
+  // --- LY (GERÇEKLEŞEN) ARAMA — Toptan/Revize rollup'ının "Geçen Sene" tarafı ---
+  // Rollup satırları KAYITTAN gelir ve içlerinde LY toptan adedi YOKTUR; bu veri
+  // yalnızca REAL_DATA'da (aylar[].toptan_adet) durur. app.js REAL_DATA'ya
+  // doğrudan erişmez (CLAUDE.md Bölüm 3), o yüzden kapı burasıdır.
+  //
+  // Neden loadMixFor yetmiyor: o, aktif sidebar seçimine + aktif periyoda göre
+  // TÜM bir seviyeyi döndürür ve toptan_adet'i şemasında taşımaz. Rollup ise
+  // satır satır, her satırın KENDİ boyutlarıyla (kaydedildiği org/bölge/ÜH/baz
+  // periyot) sorar. Şema değişmesin diye ayrı API.
+  _lyIndex: null,   // ÜH4(norm) -> kayıt listesi. REAL_DATA sabit, bir kez kurulur.
+  _lyCache: null,   // aynı boyut tekrar sorulursa (her render) yeniden taranmasın
+
+  _ensureLyIndex() {
+    if (this._lyIndex) return this._lyIndex;
+    const src = (typeof REAL_DATA !== "undefined" ? REAL_DATA : []);
+    const idx = new Map();
+    src.forEach((d) => {
+      const k = this._norm(d.uh4);
+      if (!idx.has(k)) idx.set(k, []);
+      idx.get(k).push(d);
+    });
+    this._lyIndex = idx;
+    this._lyCache = new Map();
+    return idx;
+  },
+
+  // dim: { org, region, uh1, uh2, uh3, uh4, period }
+  //   · org/region/uh1/uh2/uh3 boşsa ("", "—", "Tümü") o boyutta FİLTRE YOK.
+  //   · uh4 ZORUNLU (satırın kimliği). Eşleşme yoksa {0,0} döner — çağıran
+  //     tarafta "veri yok" olarak gösterilir, hata fırlatılmaz.
+  //   · period: "YYYY-MM" | "TUM_YIL" | "" (TUM_YIL gibi davranır).
+  // Dönüş: { perakendeAdet, toptanAdet } — ikisi de GERÇEK gözlem (sentetik değil).
+  lyMetricsFor(dim) {
+    const d = dim || {};
+    if (!d.uh4) return { perakendeAdet: 0, toptanAdet: 0 };
+    const idx = this._ensureLyIndex();
+
+    const serbest = (v) => {
+      const n = this._norm(v);
+      return !n || n === "—" || n === "-" || n === "tumu" || n === "tümü";
+    };
+    const key = [d.org, d.region, d.uh1, d.uh2, d.uh3, d.uh4, d.period].map((v) => this._norm(v)).join("|");
+    if (this._lyCache.has(key)) return this._lyCache.get(key);
+
+    const kovada = idx.get(this._norm(d.uh4)) || [];
+    let perakendeAdet = 0, toptanAdet = 0;
+    kovada.forEach((rec) => {
+      if (!serbest(d.org)    && this._norm(rec.org)    !== this._norm(d.org))    return;
+      if (!serbest(d.region) && this._norm(rec.region) !== this._norm(d.region)) return;
+      if (!serbest(d.uh1)    && this._norm(rec.uh1)    !== this._norm(d.uh1))    return;
+      if (!serbest(d.uh2)    && this._norm(rec.uh2)    !== this._norm(d.uh2))    return;
+      if (!serbest(d.uh3)    && this._norm(rec.uh3)    !== this._norm(d.uh3))    return;
+      const m = this._periodMetrics(rec, d.period || "TUM_YIL");
+      perakendeAdet += m.satis;
+      toptanAdet    += m.toptan;
+    });
+
+    const out = { perakendeAdet, toptanAdet };
+    this._lyCache.set(key, out);
+    return out;
   },
 
   loadMix()      { return this.loadMixFor(this.firstSelection(), "uh4"); },
@@ -88,12 +169,7 @@ const DataService = {
   // Teşkilat + periyot + ürün seçimine göre süz, satır şemasına indir.
   loadMixFor(sel, level) {
     const src = (typeof REAL_DATA !== "undefined" ? REAL_DATA : []);
-    const norm = (value) => String(value || "")
-      .toLocaleLowerCase("tr-TR")
-      .normalize("NFD")
-      .replace(/[\u0300-\u036f]/g, "")
-      .replace(/\s+/g, " ")
-      .trim();
+    const norm = (value) => this._norm(value);   // TEK normalize kural\u0131, bkz. _norm
     const inSel = src.filter((d) =>
       (!this._org || norm(d.org) === norm(this._org)) &&
       (!this._region || norm(d.region) === norm(this._region)) &&

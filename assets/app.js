@@ -843,41 +843,69 @@ function updateAll() {
   // `salesBudget`, kaydedilmiş satırda `perakendeBudget` (bkz. onayla&kaydet
   // eşlemesi). Bu yüzden alan okuyucu DIŞARIDAN geçilir — iki ayrı toplama
   // yazma, ikisi ayrışır.
+  // Rollup'ın GEÇEN SENE (LY) tarafı. Kayıtlı satırlar LY toptan adedini
+  // TAŞIMAZ — o veri yalnızca REAL_DATA'da durur (aylar[].toptan_adet), oraya da
+  // DataService üzerinden erişilir (CLAUDE.md Bölüm 3). Satırın KENDİ boyutları
+  // ve KENDİ baz periyodu sorulur; aktif sidebar seçimi kullanılmaz — rollup
+  // dondurulmuş kayıtları özetler, canlı seçimi değil.
+  //
+  // İki ekranın satır şekli farklı: çalışma satırında ÜH4 adı `name`, onaylanmış
+  // satırda `uh4`. Boyut adları (org/region/uh1..uh3/baseperiod) aynı.
+  function rowLyMetrics(r) {
+    if (!DataService || typeof DataService.lyMetricsFor !== "function") {
+      return { perakendeAdet: 0, toptanAdet: 0 };
+    }
+    return DataService.lyMetricsFor({
+      org: r.org, region: r.region, uh1: r.uh1, uh2: r.uh2, uh3: r.uh3,
+      uh4: r.uh4 || r.name,
+      period: periyotAnahtari(r.baseperiod),
+    });
+  }
+  // "2026 Ağustos" → "2026-08" · "2026 Tam Yıl" / "—" / boş → "TUM_YIL".
+  // REAL_DATA'nın ay anahtarı biçimi budur; kayıtlarda periyot ETİKET olarak
+  // saklanır (h_baseperiod'un görünen değeri), anahtar olarak değil.
+  function periyotAnahtari(etiket) {
+    const p = ozelGunPeriyotCoz(etiket);
+    if (!p || p.tamYil) return "TUM_YIL";
+    return p.yil + "-" + String(p.ayNo).padStart(2, "0");
+  }
+  // Değişim oranı. LY 0 ise oran TANIMSIZdır (sıfıra bölme) — 0 veya %100 yazmak
+  // yanıltıcı olurdu, null döner ve hücrede "—" görünür.
+  function lyDegisim(ty, ly) {
+    return ly > 0 ? ty / ly - 1 : null;
+  }
+
   function toptanRollupTopla(satirlar, level, perakendeAl) {
     const groups = new Map();
-    const totalAcc = { perakendeBudget: 0, toptanBudget: 0, adFark: 0 };
+    const bosAcc = (name) => ({ name, lyPerakende: 0, lyToptan: 0, perakendeBudget: 0, toptanBudget: 0 });
+    const totalAcc = bosAcc("TOPLAM");
 
     satirlar.forEach((r) => {
       const groupKey = level === "uh1" ? r.uh1 : level === "uh2" ? r.uh2 : r.uh3;
       if (!groupKey) return;
-      if (!groups.has(groupKey)) groups.set(groupKey, { name: groupKey, perakendeBudget: 0, toptanBudget: 0, adFark: 0 });
+      if (!groups.has(groupKey)) groups.set(groupKey, bosAcc(groupKey));
       const g = groups.get(groupKey);
+      const ly = rowLyMetrics(r);
       const perakendeBudget = Number(perakendeAl(r)) || 0;
       const toptanBudget = Number(r.toptanButce) || 0;
-      g.perakendeBudget += perakendeBudget;
-      g.toptanBudget += toptanBudget;
-      g.adFark += toptanBudget - perakendeBudget;
-      totalAcc.perakendeBudget += perakendeBudget;
-      totalAcc.toptanBudget += toptanBudget;
-      totalAcc.adFark += toptanBudget - perakendeBudget;
+      [g, totalAcc].forEach((acc) => {
+        acc.lyPerakende += ly.perakendeAdet;
+        acc.lyToptan += ly.toptanAdet;
+        acc.perakendeBudget += perakendeBudget;
+        acc.toptanBudget += toptanBudget;
+      });
     });
 
-    const turetilmisCarpan = (toptan, perakende) => (perakende ? toptan / perakende : 0);
-    const rows = Array.from(groups.values()).map((g) => ({
+    const bitir = (g) => ({
       name: g.name,
+      lyPerakende: g.lyPerakende,
+      lyToptan: g.lyToptan,
       perakendeBudget: g.perakendeBudget,
       toptanBudget: g.toptanBudget,
-      carpan: turetilmisCarpan(g.toptanBudget, g.perakendeBudget),
-      adFark: g.adFark,
-    }));
-    const total = {
-      name: "TOPLAM",
-      perakendeBudget: totalAcc.perakendeBudget,
-      toptanBudget: totalAcc.toptanBudget,
-      carpan: turetilmisCarpan(totalAcc.toptanBudget, totalAcc.perakendeBudget),
-      adFark: totalAcc.adFark,
-    };
-    return { rows, total };
+      perakendeD: lyDegisim(g.perakendeBudget, g.lyPerakende),
+      toptanD: lyDegisim(g.toptanBudget, g.lyToptan),
+    });
+    return { rows: Array.from(groups.values()).map(bitir), total: bitir(totalAcc) };
   }
 
   function computeToptanRollup(level) {
@@ -891,12 +919,22 @@ function updateAll() {
   }
 
   // Render'lar da ortak — hedef element id'leri dışarıdan geçilir.
+  // Değişim hücresi: LY yoksa oran tanımsız → "—" (0% yazmak yanıltıcı olurdu).
+  function rollupDegisimHucre(v) {
+    if (v == null) return `<td class="num-cell" title="Geçen sene verisi yok — oran hesaplanamaz">—</td>`;
+    return `<td class="num-cell">${rollupDeltaSpan(v)}</td>`;   // renk span'de
+  }
   function renderToptanRollupKpis(elId, t) {
     const el = $(elId);
     if (!el) return;
+    const altNot = (ly, d) => (ly > 0
+      ? `LY ${fmtN(ly)} adet · ${d >= 0 ? "▲" : "▼"} ${fmtP0(d)}`
+      : "geçen sene verisi yok");
     const kpis = [
-      ["Perakende Bütçe", fmtN(t.perakendeBudget), "kaynak bütçe", "up"],
-      ["Toptan Bütçe", fmtN(t.toptanBudget), `Dönüşüm ${fmtD3(t.carpan)}x`, "up"],
+      ["Perakende Bütçe (TY)", fmtN(t.perakendeBudget), altNot(t.lyPerakende, t.perakendeD),
+        t.perakendeD == null ? "" : t.perakendeD >= 0 ? "up" : "down"],
+      ["Toptan Bütçe (TY)", fmtN(t.toptanBudget), altNot(t.lyToptan, t.toptanD),
+        t.toptanD == null ? "" : t.toptanD >= 0 ? "up" : "down"],
     ];
     el.innerHTML = kpis.map((k) => `<div class="kpi"><div class="lbl">${k[0]}</div>
       <div class="val">${k[1]}</div><div class="sub ${k[3]}">${k[2]}</div></div>`).join("");
@@ -906,25 +944,22 @@ function updateAll() {
     const tbody = $(rowsId);
     if (!tbody) return;
     if (!data.rows.length) {
-      tbody.innerHTML = `<tr><td colspan="5" style="text-align:center;color:var(--grey);padding:18px">${bosMesaj}</td></tr>`;
+      tbody.innerHTML = `<tr><td colspan="7" style="text-align:center;color:var(--grey);padding:18px">${bosMesaj}</td></tr>`;
       if ($(footId)) $(footId).innerHTML = "";
       return;
     }
+    const satirHucreleri = (r) => `
+      <td class="num-cell">${fmtN(r.lyPerakende)}</td>
+      <td class="num-cell">${fmtN(r.perakendeBudget)}</td>
+      ${rollupDegisimHucre(r.perakendeD)}
+      <td class="num-cell">${fmtN(r.lyToptan)}</td>
+      <td class="num-cell">${fmtN(r.toptanBudget)}</td>
+      ${rollupDegisimHucre(r.toptanD)}`;
     tbody.innerHTML = data.rows.map((r) => `
       <tr>
-        <td>${escapeHtml(r.name)}</td>
-        <td class="num-cell">${fmtN(r.perakendeBudget)}</td>
-        <td class="num-cell">${fmtN(r.toptanBudget)}</td>
-        <td class="num-cell">${fmtD3(r.carpan)}</td>
-        <td class="num-cell ${r.adFark >= 0 ? "up" : "down"}">${fmtN(r.adFark)}</td>
+        <td>${escapeHtml(r.name)}</td>${satirHucreleri(r)}
       </tr>`).join("");
-    const t = data.total;
-    if ($(footId)) $(footId).innerHTML = `
-      <td>TOPLAM</td>
-      <td class="num-cell">${fmtN(t.perakendeBudget)}</td>
-      <td class="num-cell">${fmtN(t.toptanBudget)}</td>
-      <td class="num-cell">${fmtD3(t.carpan)}</td>
-      <td class="num-cell ${t.adFark >= 0 ? "up" : "down"}">${fmtN(t.adFark)}</td>`;
+    if ($(footId)) $(footId).innerHTML = `<td>TOPLAM</td>${satirHucreleri(data.total)}`;
   }
 
   function renderToptanRollup() {
