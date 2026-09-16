@@ -2235,13 +2235,33 @@ function updateAll() {
   }
 
   // --- Kampanya / Özel Gün Takvimi — SALT BİLGİ ---
-  // Kaynak: assets/ozelgunler.js (OZEL_GUNLER, 278 kayıt, 2021-2027).
+  // Kaynak: assets/ozelgunler.js (OZEL_GUNLER, 278 kayıt, 2021-2027; kandiller
+  // elenir → ekranda 247, bkz. OG_HARIC_RE).
   // Hiçbir çarpanı/formülü/state'i BESLEMEZ. Kampanya Çarpanları kartlarına
   // (Miks m_*, Toptan t_m_*) bağlanmasın — bilinçli bir sınırdır.
   // Eski DataService.loadCalendar() prototip verisi kullanımdan kalktı.
   const TAKVIM_2027_UYARI =
-    "Dinî bayramlar ve kandiller (Ramazan, Kurban Bayramı vb.) Hicri takvime bağlıdır ve " +
+    "Dinî bayramlar (Ramazan, Kurban Bayramı vb.) Hicri takvime bağlıdır ve " +
     "Diyanet'in resmi 2027 takvimi yayımlanmadan hesaplanamaz. Bu listede yer almazlar.";
+
+  // --- KANDİL GECELERİ LİSTELERDEN ÇIKARILIR ---
+  // Regaib · Miraç · Berat · Kadir Gecesi · Mevlid (6 yılda 31 kayıt).
+  // Gerekçe (üçü birden geçerli): resmî tatil DEĞİLLER (hepsinde
+  // resmiTatilStatu "Tatil Değil", tatilGunEsdeger 0 → sevk/çalışma gününü
+  // etkilemezler), ticari/kampanya günü DEĞİLLER, ve beyaz eşya talebine
+  // bağlanabilir bir etkileri yok. Planlama sinyali taşımadan listeyi
+  // uzatıyorlardı.
+  //
+  // VERİ DOSYASINA DOKUNULMADI: ozelgunler.js kaynak Excel'e sadık kalır
+  // (silseydik veri bir daha dışa aktarıldığında kandiller sessizce geri
+  // gelirdi). Eleme burada, tek kapıda yapılır — hem Takvim sekmesi hem
+  // özel gün şeridi bu fonksiyondan okur.
+  // Geri istenirse: OG_HARIC_RE'yi kaldırmak yeter, veri yerinde duruyor.
+  const OG_HARIC_RE = /kandil|kadir gecesi/i;
+  function ozelGunKaynak() {
+    const src = (typeof OZEL_GUNLER !== "undefined" && Array.isArray(OZEL_GUNLER)) ? OZEL_GUNLER : [];
+    return src.filter((g) => !OG_HARIC_RE.test(String(g && g.isim)));
+  }
   // "2021-01-01" → "01.01.2021". Date nesnesi KULLANMA: saat dilimi kayması
   // tarihi bir gün geriye/ileriye atabilir, veri zaten düz metin.
   function trTarih(iso) {
@@ -2249,7 +2269,7 @@ function updateAll() {
     return p.length === 3 ? p[2] + "." + p[1] + "." + p[0] : String(iso);
   }
   function takvimVerisi() {
-    return (typeof OZEL_GUNLER !== "undefined" && Array.isArray(OZEL_GUNLER)) ? OZEL_GUNLER : [];
+    return ozelGunKaynak();   // kandiller elenmis — bkz. OG_HARIC_RE
   }
   function initTakvim() {
     const sel = $("cal_yil");
@@ -2938,7 +2958,8 @@ function updateAll() {
   // ==========================================================================
   // ÖZEL GÜN UYARI ŞERİDİ — seçili periyotların takvim bağlamı
   // --------------------------------------------------------------------------
-  // Kaynak: assets/ozelgunler.js (OZEL_GUNLER, 278 kayıt, 2021-2027).
+  // Kaynak: assets/ozelgunler.js (OZEL_GUNLER, 278 kayıt, 2021-2027; kandiller
+  // elenir → ekranda 247, bkz. OG_HARIC_RE).
   // İKİ ekranda kullanılır: Bütçe & Stok Karışımı (Baz/Hedef Periyot sidebar'dan
   // seçilir) ve Toptan Bütçe (periyot seçilmez — kayıtlı satırlardan TÜRETİLİR).
   //
@@ -2956,7 +2977,7 @@ function updateAll() {
   const OG_DINI_RE = /Din[iî]/;   // "Dini Özel Gün" ve "Resmî Tatil - Dini"
 
   function ozelGunVeri() {
-    return (typeof OZEL_GUNLER !== "undefined" && Array.isArray(OZEL_GUNLER)) ? OZEL_GUNLER : [];
+    return ozelGunKaynak();   // kandiller elenmis — bkz. OG_HARIC_RE
   }
   // "2026 Ağustos" → {yil:2026, ayNo:8, ay:"Ağustos"} · "2027 Tam Yıl" → {tamYil:true}
   function ozelGunPeriyotCoz(etiket) {
@@ -3013,7 +3034,7 @@ function updateAll() {
         : '<span class="og-say">Bu periyotta kayıtlı özel gün yok.</span>') + "</div>" +
       (liste ? '<details class="og-detay"><summary>Günleri göster</summary>' + liste + "</details>" : "") +
       (diniEksik ? '<div class="og-eksik"><b>Dikkat:</b> ' + p.yil +
-        " için dinî günler (Ramazan, Kurban Bayramı, kandiller) bu listede <b>YOK</b> — " +
+        " için dinî günler (Ramazan, Kurban Bayramı) bu listede <b>YOK</b> — " +
         "Hicri takvime bağlı oldukları için Diyanet'in resmi takvimi yayımlanmadan hesaplanamıyor. " +
         "Bu periyodu &quot;dinî gün yok&quot; diye okumayın.</div>" : "") +
       "</div>";
