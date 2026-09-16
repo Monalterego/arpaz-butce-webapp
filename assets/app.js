@@ -3074,6 +3074,35 @@ function updateAll() {
     return m ? m[3] + "." + m[2] + "." + m[1] : s;
   }
 
+  // --- Kartın aç/kapa durumu — KALICI ---
+  // Şerit her rebuild'de innerHTML ile SIFIRDAN kurulur; bu yüzden durum DOM'da
+  // tutulamaz, her render'dan sonra yeniden uygulanır. Sidebar'ın
+  // SIDE_COLLAPSE_KEY deseniyle aynı felsefe: kullanıcı bir kez kapattıysa her
+  // açılışta tekrar kapatmak zorunda kalmasın.
+  // İki ekran AYRI saklanır (tek objede, kapsayıcı id'si anahtar): Miks
+  // ekranında periyot sürekli değiştirildiği için şerit açık, Toptan'da kapalı
+  // istenebilir — birini kapatmak diğerini kapatmamalı.
+  const OG_KAPALI_KEY = "arpaz_ozelgun_kapali";
+  function ozelGunKapaliHepsi() {
+    try {
+      const ham = JSON.parse(localStorage.getItem(OG_KAPALI_KEY) || "{}");
+      return (ham && typeof ham === "object" && !Array.isArray(ham)) ? ham : {};
+    } catch (e) { return {}; }
+  }
+  function ozelGunKapaliYaz(id, kapali) {
+    const hepsi = ozelGunKapaliHepsi();
+    hepsi[id] = !!kapali;
+    try { localStorage.setItem(OG_KAPALI_KEY, JSON.stringify(hepsi)); } catch (e) { /* geç */ }
+  }
+  function ozelGunKapaliUygula(el, kapali) {
+    el.classList.toggle("og-kapali", kapali);
+    const btn = el.querySelector(".og-toggle");
+    if (!btn) return;
+    btn.textContent = kapali ? "▸" : "▾";
+    btn.setAttribute("aria-expanded", kapali ? "false" : "true");
+    btn.title = kapali ? "Özel gün kartını aç" : "Özel gün kartını kapat";
+  }
+
   // periyotlar: [{rol, etiket}, ...] — boş/çözülemeyen etiketler atlanır.
   function renderOzelGunSerit(kapsayiciId, periyotlar) {
     const el = $(kapsayiciId);
@@ -3081,9 +3110,24 @@ function updateAll() {
     const gecerli = (periyotlar || []).filter((x) => x && x.etiket);
     if (!gecerli.length) { el.innerHTML = ""; el.style.display = "none"; return; }
     el.style.display = "";
-    el.innerHTML = '<div class="og-baslik">Özel Gün / Takvim Etkisi' +
+    const govdeId = kapsayiciId + "Govde";
+    el.innerHTML = '<div class="og-baslik">' +
+      '<button type="button" class="og-toggle" aria-controls="' + govdeId + '" aria-expanded="true">▾</button>' +
+      '<span class="og-baslik-metin">Özel Gün / Takvim Etkisi</span>' +
       '<span class="og-not">Bilgi amaçlıdır — kampanya çarpanlarını otomatik değiştirmez.</span></div>' +
-      '<div class="og-bloklar">' + gecerli.map((x) => ozelGunBlokHtml(x.rol, x.etiket)).join("") + "</div>";
+      '<div class="og-bloklar" id="' + govdeId + '">' +
+      gecerli.map((x) => ozelGunBlokHtml(x.rol, x.etiket)).join("") + "</div>";
+
+    ozelGunKapaliUygula(el, !!ozelGunKapaliHepsi()[kapsayiciId]);
+    // Başlık şeridinin TAMAMI tıklanabilir (buton yalnızca görsel ipucu +
+    // klavye erişimi). İçerideki "Günleri göster" details'i etkilemez — o
+    // .og-bloklar'ın içinde, bu dinleyici sadece başlıkta.
+    const baslik = el.querySelector(".og-baslik");
+    if (baslik) baslik.addEventListener("click", () => {
+      const yeniKapali = !el.classList.contains("og-kapali");
+      ozelGunKapaliUygula(el, yeniKapali);
+      ozelGunKapaliYaz(kapsayiciId, yeniKapali);
+    });
   }
 
   // Bütçe & Stok Karışımı — periyotlar sidebar'dan okunur.

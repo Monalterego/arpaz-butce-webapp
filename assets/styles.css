@@ -732,8 +732,20 @@ tfoot td{background:#eef3f8;font-weight:700;border-top:2px solid var(--navy)}
   padding:var(--s2) var(--s3);margin-bottom:var(--s3)}
 .og-baslik{display:flex;align-items:baseline;gap:var(--s2);flex-wrap:wrap;
   font-size:var(--f-label);text-transform:uppercase;letter-spacing:.5px;
-  color:var(--ink-soft);font-weight:700;margin-bottom:var(--s1)}
+  color:var(--ink-soft);font-weight:700;margin-bottom:var(--s1);
+  cursor:pointer;user-select:none}
 .og-not{text-transform:none;letter-spacing:0;font-weight:400;color:var(--grey);font-size:11px}
+/* Aç/kapa — başlık şeridinin tamamı tıklanabilir, buton görsel ipucu + klavye
+   erişimi. Kapalıyken gövde gizlenir ve kart tek satıra iner (alt boşluk da
+   kalkar, yoksa boş kartın altında ölü boşluk kalıyor). */
+.og-toggle{align-self:center;flex:0 0 auto;width:18px;height:18px;padding:0;margin-right:calc(-1 * var(--s1));
+  border:none;background:transparent;color:var(--accent);font-size:11px;line-height:1;
+  cursor:pointer;border-radius:var(--radius-sm)}
+.og-toggle:hover{background:var(--accent-bg)}
+.og-toggle:focus-visible{outline:2px solid var(--accent);outline-offset:1px}
+.og-baslik-metin{flex:0 0 auto}
+.ozelgun-serit.og-kapali .og-bloklar{display:none}
+.ozelgun-serit.og-kapali .og-baslik{margin-bottom:0}
 .og-bloklar{display:grid;grid-template-columns:repeat(auto-fit,minmax(320px,1fr));gap:var(--s2)}
 .og-blok{border-left:3px solid var(--accent);padding-left:var(--s2);min-width:0}
 .og-bas{display:flex;align-items:baseline;gap:6px;flex-wrap:wrap;font-size:13px;color:var(--ink)}
