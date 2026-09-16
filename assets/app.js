@@ -378,7 +378,7 @@
     6:  { al: (r) => r.profitShare,          tip: "sayi" },
     7:  { al: (r) => r.lyCover,              tip: "sayi" },
     8:  { al: (r) => r.turnover,             tip: "sayi" },
-    9:  { al: (r) => r.sales * r.lyFiyat,    tip: "sayi" },  // Ciro (LY) — türetilmiş, alan yok
+    9:  { al: (r) => r.sales * r.lyFiyat,    tip: "sayi" },  // Ciro (Geçen Sene) — türetilmiş, alan yok
     10: { al: (r) => r.lyFiyat,              tip: "sayi" },
     11: { al: (r) => r.planPct,              tip: "sayi" },
     12: { al: (r) => r.planStock,            tip: "sayi" },
@@ -660,7 +660,7 @@ function updateAll() {
 
   // KPI şeridi: ana tablonun ÜSTÜNDE, 6 kart. Dördü "LY → TY" kıyası (büyük
   // değerde çift, alt satırda birim + yüzdesel değişim), ikisi saf büyüme oranı.
-  // NOT: "Toplam Satış Bütçe (TY)" kartı KALDIRILDI — TY satış zaten SATIŞ
+  // NOT: "Toplam Satış Bütçe (Gelecek Sene)" kartı KALDIRILDI — TY satış zaten SATIŞ
   // kartının sağ tarafı; iki yerde göstermek tekrar oluyordu.
   function renderKpis(m) {
     const has = m.rows.length > 0;
@@ -675,14 +675,14 @@ function updateAll() {
         `adet · ${fmtP0(m.T.lfl)}`, dir(m.T.lfl)],
       ["BRÜT KÂR", pair(fmtN(m.T.profit), fmtN(m.T.tyProfit)),
         `₺ · ${fmtP0(m.T.profitGrowth)}`, dir(m.T.profitGrowth)],
-      ["BAYİ STOK AY (COVER)", pair(fmtD(m.T.cover), fmtD(m.T.tyCover)),
+      ["BAYİ STOK AY", pair(fmtD(m.T.cover), fmtD(m.T.tyCover)),
         `ay · ${fmtP0(coverD)}`, coverD <= 0 ? "up" : "down"],
-      ["LFL BÜYÜME", fmtP0(m.T.lfl), "TY bütçe / LY satış", dir(m.T.lfl)],
-      ["R-LFL BÜYÜME", fmtP0(m.T.rlfl), "stoktan arındırılmış", dir(m.T.rlfl)],
+      ["SATIŞ BÜYÜMESİ", fmtP0(m.T.lfl), "gelecek sene bütçe / geçen sene satış", dir(m.T.lfl)],
+      ["STOKTAN ARINDIRILMIŞ BÜYÜME", fmtP0(m.T.rlfl), "stoktan arındırılmış", dir(m.T.rlfl)],
     ] : [
       ["STOK", "—", "adet", ""], ["SATIŞ", "—", "adet", ""],
-      ["BRÜT KÂR", "—", "₺", ""], ["BAYİ STOK AY (COVER)", "—", "ay", ""],
-      ["LFL BÜYÜME", "—", "", ""], ["R-LFL BÜYÜME", "—", "", ""],
+      ["BRÜT KÂR", "—", "₺", ""], ["BAYİ STOK AY", "—", "ay", ""],
+      ["SATIŞ BÜYÜMESİ", "—", "", ""], ["STOKTAN ARINDIRILMIŞ BÜYÜME", "—", "", ""],
     ];
     $("kpis").innerHTML = kpis.map((k) => {
       const sc = k[3] === "up" || k[3] === "down" ? k[3] : "";
@@ -767,10 +767,10 @@ function updateAll() {
     const el = $("rollupKpis");
     if (!el) return;
     const kpis = [
-      ["Satış Bütçe (TY)", fmtN(t.tyBudget), "adet · LFL " + fmtP0(t.lfl), t.lfl >= 0 ? "up" : "down"],
-      ["R-LFL", fmtP0(t.rlfl), "stoktan arındırılmış büyüme", t.rlfl >= 0 ? "up" : "down"],
-      ["Stok Büyümesi", fmtP0(t.stokD), "TY Plan Stok / LY Stok − 1", t.stokD >= 0 ? "up" : "down"],
-      ["Bayi Stok Ay (Cover)", `${fmtD(t.lyCover)} → ${fmtD(t.tyCover)}`, "LY → TY ay", ""],
+      ["Satış Bütçe (Gelecek Sene)", fmtN(t.tyBudget), "adet · Satış Büyümesi " + fmtP0(t.lfl), t.lfl >= 0 ? "up" : "down"],
+      ["Stoktan Arındırılmış Büyüme", fmtP0(t.rlfl), "stoktan arındırılmış büyüme", t.rlfl >= 0 ? "up" : "down"],
+      ["Stok Büyümesi", fmtP0(t.stokD), "Gelecek Sene Plan Stok / Geçen Sene Stok − 1", t.stokD >= 0 ? "up" : "down"],
+      ["Bayi Stok Ay", `${fmtD(t.lyCover)} → ${fmtD(t.tyCover)}`, "geçen sene → gelecek sene (ay)", ""],
       ["Ort. Fiyat Değişimi", fmtP0(t.fiyatD), "ağırlıklı ortalama fiyat", t.fiyatD >= 0 ? "up" : "down"],
     ];
     el.innerHTML = kpis.map((k) => `<div class="kpi"><div class="lbl">${k[0]}</div>
@@ -843,7 +843,7 @@ function updateAll() {
   // `salesBudget`, kaydedilmiş satırda `perakendeBudget` (bkz. onayla&kaydet
   // eşlemesi). Bu yüzden alan okuyucu DIŞARIDAN geçilir — iki ayrı toplama
   // yazma, ikisi ayrışır.
-  // Rollup'ın GEÇEN SENE (LY) tarafı. Kayıtlı satırlar LY toptan adedini
+  // Rollup'ın GEÇEN SENE (Geçen Sene) tarafı. Kayıtlı satırlar LY toptan adedini
   // TAŞIMAZ — o veri yalnızca REAL_DATA'da durur (aylar[].toptan_adet), oraya da
   // DataService üzerinden erişilir (CLAUDE.md Bölüm 3). Satırın KENDİ boyutları
   // ve KENDİ baz periyodu sorulur; aktif sidebar seçimi kullanılmaz — rollup
@@ -939,12 +939,12 @@ function updateAll() {
     const el = $(elId);
     if (!el) return;
     const altNot = (ly, d) => (ly > 0
-      ? `LY ${fmtN(ly)} adet · ${d >= 0 ? "▲" : "▼"} ${fmtP0(d)}`
+      ? `Geçen sene ${fmtN(ly)} adet · ${d >= 0 ? "▲" : "▼"} ${fmtP0(d)}`
       : "geçen sene verisi yok");
     const kpis = [
-      ["Perakende Bütçe (TY)", fmtN(t.perakendeBudget), altNot(t.lyPerakende, t.perakendeD),
+      ["Perakende Bütçe (Gelecek Sene)", fmtN(t.perakendeBudget), altNot(t.lyPerakende, t.perakendeD),
         t.perakendeD == null ? "" : t.perakendeD >= 0 ? "up" : "down"],
-      ["Toptan Bütçe (TY)", fmtN(t.toptanBudget), altNot(t.lyToptan, t.toptanD),
+      ["Toptan Bütçe (Gelecek Sene)", fmtN(t.toptanBudget), altNot(t.lyToptan, t.toptanD),
         t.toptanD == null ? "" : t.toptanD >= 0 ? "up" : "down"],
     ];
     el.innerHTML = kpis.map((k) => `<div class="kpi"><div class="lbl">${k[0]}</div>
@@ -1209,26 +1209,26 @@ function updateAll() {
     { key: "uh2", label: "ÜH2", width: 240 },
     { key: "uh3", label: "ÜH3", width: 262 },
     { key: "name", label: "ÜH4", width: 260 },
-    { key: "baseperiod", label: "Baz Periyot (LY)", width: 85 },
-    { key: "targetperiod", label: "Hedef Periyot (TY)", width: 85 },
+    { key: "baseperiod", label: "Baz Periyot (Geçen Sene)", width: 85 },
+    { key: "targetperiod", label: "Hedef Periyot (Gelecek Sene)", width: 85 },
     { key: "stock", label: "Perakende Stok Adet", width: 77 },
     { key: "stockShare", label: "Perakende Stok Adet %", width: 77 },
     { key: "sales", label: "Perakende Satış Adet", width: 77 },
     { key: "salesShare", label: "Perakende Satış Adet %", width: 77 },
     { key: "profit", label: "Perakende Brüt Kar", width: 90 },
     { key: "profitShare", label: "Perakende Brüt Kar %", width: 77 },
-    { key: "lyCover", label: "Stock Cover (Stok Ay)", width: 60 },
-    { key: "turnover", label: "Turnover (Devir Hızı)", width: 69 },
+    { key: "lyCover", label: "Stok Ay", width: 60 },
+    { key: "turnover", label: "Devir Hızı", width: 69 },
     { key: "lyRevenue", label: "Perakende Satış Tutar (Ciro)", width: 103 },
-    { key: "lyFiyat", label: "Perakende Ortalama Satış Fiyatı (LY)", width: 79 },
+    { key: "lyFiyat", label: "Perakende Ortalama Satış Fiyatı (Geçen Sene)", width: 79 },
     { key: "planPct", label: "Gelecek Yıl Periyot Perakende Plan Stok %", width: 77 },
     { key: "planStock", label: "Gelecek Yıl Periyot Perakende Plan Stok Adet", width: 77 },
-    { key: "hedefCover", label: "Hedef Stock Cover (Hedef Stok Ay)", width: 76 },
+    { key: "hedefCover", label: "Hedef Stok Ay", width: 76 },
     { key: "salesBudget", label: "Perakende Satış Adet Bütçe", width: 77 },
-    { key: "tyFiyat", label: "Perakende Ortalama Satış Fiyatı (TY)", width: 83 },
+    { key: "tyFiyat", label: "Perakende Ortalama Satış Fiyatı (Gelecek Sene)", width: 83 },
     { key: "tyRevenue", label: "Perakende Satış Bütçe Tutar (Ciro Bütçe)", width: 103 },
-    { key: "lfl", label: "LFL(Like for like) Büyüme %", width: 65 },
-    { key: "rlfl", label: "R-LFL Büyüme %", width: 65 },
+    { key: "lfl", label: "Satış Büyümesi %", width: 86 },
+    { key: "rlfl", label: "Stoktan Arındırılmış Büyüme %", width: 86 },
     { key: "stockGrowth", label: "Stok Büyümesi", width: 73 },
     { key: "tag", label: "Durum", width: 110 },
     { key: "action", label: "Aksiyon", width: 210 },
@@ -2423,7 +2423,7 @@ function updateAll() {
   // durumu. Filtre değişse de oturum boyunca korunur (anahtar dims'tir),
   // sayfa yenilenince sıfırlanır. Kalıcılık yalnızca onayla gelir.
   const toptanManuel = new Map();
-  // Toptan Ortalama Satış Fiyatı (TY) — aynı felsefe, ama ZORUNLU alan:
+  // Toptan Ortalama Satış Fiyatı (Gelecek Sene) — aynı felsefe, ama ZORUNLU alan:
   // fiyatı girilmemiş satır varken "Onayla & Kaydet" pasiftir. Otomatik
   // doldurulmaz; kayıttaki perakende TY fiyatı bayiye kesilen fiyat DEĞİLDİR,
   // onu varsayılan yapmak sessizce yanlış bir tutar üretirdi.
@@ -2656,7 +2656,7 @@ function updateAll() {
       '<td class="toptancell' + (r.fiyat == null ? " toptancell-eksik" : "") + '">' +
         '<input type="text" inputmode="decimal" class="toptanin toptanfiyatin" id="tfiy_' + i + '" ' +
         'data-anahtar="' + escapeAttribute(r.anahtar) + '" value="' + (r.fiyat != null ? fmtD2(r.fiyat) : "") + '" ' +
-        'placeholder="zorunlu" title="Toptan Ortalama Satış Fiyatı (TY) — bayiye kesilecek ortalama birim fiyat. Girilmeden onay yapılamaz.">' +
+        'placeholder="zorunlu" title="Toptan Ortalama Satış Fiyatı (Gelecek Sene) — bayiye kesilecek ortalama birim fiyat. Girilmeden onay yapılamaz.">' +
       "</td>" +
       '<td class="num-cell toptan-highlight">' + (r.tutar != null ? fmtN(r.tutar) : "—") + "</td>" +
       "</tr>").join("");
@@ -2727,7 +2727,7 @@ function updateAll() {
     });
   }
 
-  // Fiyat ZORUNLU: kapsamdaki her satırın Toptan Ortalama Satış Fiyatı (TY)
+  // Fiyat ZORUNLU: kapsamdaki her satırın Toptan Ortalama Satış Fiyatı (Gelecek Sene)
   // girilmiş olmalı, aksi halde onay pasif. Adet var ama fiyat yoksa tutar
   // hesaplanamaz; eksik tutarla kayıt donmasın diye kapıyı burada tutuyoruz.
   function guncelleToptanOnayNote(n, fiyatsiz) {
@@ -2864,7 +2864,7 @@ function updateAll() {
     { label: "Perakende Bütçe", width: 82 },
     { label: "Dönüşüm Çarpanı", width: 78 },
     { label: "Toptan Bütçe", width: 84 },
-    { label: "Toptan Ort. Satış Fiyatı (TY)", width: 96 },
+    { label: "Toptan Ort. Satış Fiyatı (Gelecek Sene)", width: 96 },
     { label: "Toptan Satış Tutar Bütçe", width: 110 },
     { label: "Taban", width: 62 },
     { label: "Paro", width: 58 },
@@ -3042,8 +3042,8 @@ function updateAll() {
   function renderMiksOzelGun() {
     const baz = $("h_baseperiod"), hedef = $("h_targetperiod");
     renderOzelGunSerit("miksOzelGun", [
-      { rol: "Baz Periyot (LY)", etiket: baz ? baz.value : "" },
-      { rol: "Hedef Periyot (TY)", etiket: hedef ? hedef.value : "" },
+      { rol: "Baz Periyot (Geçen Sene)", etiket: baz ? baz.value : "" },
+      { rol: "Hedef Periyot (Gelecek Sene)", etiket: hedef ? hedef.value : "" },
     ]);
   }
 
@@ -3053,8 +3053,8 @@ function updateAll() {
   function renderToptanOzelGun(rows) {
     const tekil = (alan) => Array.from(new Set((rows || []).map((r) => r[alan]).filter(Boolean)));
     const bloklar = [];
-    tekil("baseperiod").forEach((e) => bloklar.push({ rol: "Baz Periyot (LY)", etiket: e }));
-    tekil("targetperiod").forEach((e) => bloklar.push({ rol: "Hedef Periyot (TY)", etiket: e }));
+    tekil("baseperiod").forEach((e) => bloklar.push({ rol: "Baz Periyot (Geçen Sene)", etiket: e }));
+    tekil("targetperiod").forEach((e) => bloklar.push({ rol: "Hedef Periyot (Gelecek Sene)", etiket: e }));
     renderOzelGunSerit("toptanOzelGun", bloklar);
   }
 

@@ -427,7 +427,7 @@ tfoot td{background:#eef3f8;font-weight:700;border-top:2px solid var(--navy)}
    Kalan 18 kolon önceki turda AYNI yöntemle ölçülmüştü (Brüt Kâr %/Cover/Stok
    Büyümesi DATA bağlayıcıydı, "Perakende" (52px) HEADER bağlayıcıydı). index.html'deki
    colgroup değiştirilirse bu sayı da BİRLİKTE güncellenmeli. */
-#grid{table-layout:fixed;width:1972px}
+#grid{table-layout:fixed;width:2014px}
 /* Sütunlar arası dikey ayırıcı — önceden sadece border-bottom (satır ayırıcı) vardı,
    sütunlar arasında hiç çizgi yoktu. İlk sütun (donmuş ÜH4) HARİÇ: o zaten kendi
    box-shadow ayırıcısını taşıyor (bkz. Freeze pane bloğu aşağıda) — ikisi üst üste

@@ -60,10 +60,10 @@
     <label>ÜH3</label>
     <select id="h_uh3"></select>
 
-    <h3>Periyot (Like-for-Like)</h3>
-    <label>Baz Periyot (LY)</label>
+    <h3>Periyot</h3>
+    <label>Baz Periyot (Geçen Sene)</label>
     <select id="h_baseperiod"><option>2026 Ağustos</option></select>
-    <label>Hedef Periyot (TY)</label>
+    <label>Hedef Periyot (Gelecek Sene)</label>
     <select id="h_targetperiod"><option>2027 Ocak</option></select>
     <div class="note" id="selInfo">Not: Ekran ÜH4'ten çalışır. Gerçek hiyerarşi bağlı; metrikler prototip (deterministik) değerlerdir.</div>
     </div>
@@ -126,7 +126,7 @@
 
       <!-- ANA MIKS TABLOSU -->
       <div class="panel">
-        <h2 style="display:flex;align-items:center;gap:8px;">Bütçe &amp; Stok Karışım Tablosu <span class="pill">Hedef Cover elle girilir</span>
+        <h2 style="display:flex;align-items:center;gap:8px;">Bütçe &amp; Stok Karışım Tablosu <span class="pill">Hedef Stok Ay elle girilir</span>
           <button type="button" class="info-ico" id="formulaInfoBtn" title="Bütçe kurgusu nasıl hesaplanıyor?" aria-label="Bütçe kurgusu nasıl hesaplanıyor?">i</button>
           <div class="panel-actions">
             <span class="note" id="saveMixSetNote"></span>
@@ -224,18 +224,18 @@
             <col style="width:77px">   <!-- Perakende Satış Adet % -->
             <col style="width:90px">   <!-- Perakende Brüt Kar -->
             <col style="width:77px">   <!-- Perakende Brüt Kar % -->
-            <col style="width:60px">   <!-- Stock Cover (Stok Ay) (uç değerler ör. 3687,0) -->
-            <col style="width:69px">   <!-- Turnover (Devir Hızı) ("Turnover" 44px ölçüldü) -->
-            <col style="width:103px">  <!-- Perakende Satış Tutar (Ciro) (LY) -->
-            <col style="width:79px">   <!-- Perakende Ortalama Satış Fiyatı (LY) (başlık "Perakende" 52px→77px yeterliydi ama DATA taşması bağlayıcı oldu: 558 kombinasyon taramasında en uzun değer "138030,30" = 54,4px→79px) -->
+            <col style="width:60px">   <!-- Stok Ay (uç değerler ör. 3687,0) -->
+            <col style="width:69px">   <!-- Devir Hızı ("Turnover" iken 44px ölçülmüştü; "Devir Hızı" daha dar) -->
+            <col style="width:103px">  <!-- Perakende Satış Tutar (Ciro) (Geçen Sene) -->
+            <col style="width:79px">   <!-- Perakende Ortalama Satış Fiyatı (Geçen Sene) (başlık "Perakende" 52px→77px yeterliydi ama DATA taşması bağlayıcı oldu: 558 kombinasyon taramasında en uzun değer "138030,30" = 54,4px→79px) -->
             <col style="width:77px">   <!-- Gelecek Yıl Periyot Perakende Plan Stok % -->
             <col style="width:77px">   <!-- Gelecek Yıl Periyot Perakende Plan Stok Adet -->
-            <col style="width:96px">   <!-- Hedef Stock Cover (Hedef Stok Ay) — 76→96: elle giriş kutusunun yanına geçmiş stok ay referansı için (i) butonu eklendi -->
+            <col style="width:96px">   <!-- Hedef Stok Ay — 76→96: elle giriş kutusunun yanına geçmiş stok ay referansı için (i) butonu eklendi -->
             <col style="width:77px">   <!-- Perakende Satış Adet Bütçe -->
-            <col style="width:83px">   <!-- Perakende Ortalama Satış Fiyatı (TY) (elle giriş, kalın font — DATA taşması bağlayıcı: "144931,82" = 58,5px→83px) -->
+            <col style="width:83px">   <!-- Perakende Ortalama Satış Fiyatı (Gelecek Sene) (elle giriş, kalın font — DATA taşması bağlayıcı: "144931,82" = 58,5px→83px) -->
             <col style="width:103px">  <!-- Perakende Satış Bütçe Tutar (Ciro Bütçe) (DATA taşması bağlayıcı: uç parametrelerde "14.702.494.305" = 79px→103px) -->
-            <col style="width:65px">   <!-- LFL % ("Büyüme" 41px ölçüldü) -->
-            <col style="width:65px">   <!-- R-LFL % -->
+            <col style="width:86px">   <!-- Satış Büyümesi % (65→86: "Büyümesi" 65px'e SIĞMADI, ekranda "Büyümes/i" diye bölünüyordu) -->
+            <col style="width:86px">   <!-- Stoktan Arındırılmış Büyüme % (65→86: "Arındırılmış" tek kelime 65px'e sığmıyordu) -->
             <col style="width:73px">   <!-- Stok Büyümesi ("Büyümesi" 48px ölçüldü; uç değerler ör. 127292%) -->
             <col style="width:110px">  <!-- Durum -->
             <col style="width:210px">  <!-- Aksiyon -->
@@ -243,8 +243,8 @@
           <thead>
             <tr>
               <th rowspan="2" id="grpColHead" title="ÜH4">ÜH4</th>
-              <th colspan="10" class="grp-real">GERÇEKLEŞEN (LY)</th>
-              <th colspan="9" class="grp-plan">GELECEK YIL PLANI (TY)</th>
+              <th colspan="10" class="grp-real">GERÇEKLEŞEN (GEÇEN SENE)</th>
+              <th colspan="9" class="grp-plan">GELECEK SENE PLANI</th>
               <th rowspan="2">Durum</th><th rowspan="2">Aksiyon</th>
             </tr>
             <tr>
@@ -252,14 +252,14 @@
               <th title="Perakende Satış Adet">Perakende Satış Adet</th><th title="Perakende Satış Adet %">Perakende Satış Adet %</th>
               <th title="Perakende Brüt Kar">Perakende Brüt Kar</th>
               <th title="Perakende Brüt Kar %">Perakende Brüt Kar %</th>
-              <th title="Stock Cover (Stok Ay)">Stock Cover (Stok Ay)</th><th title="Turnover (Devir Hızı)">Turnover (Devir Hızı)</th>
+              <th title="Stok Ay">Stok Ay</th><th title="Devir Hızı">Devir Hızı</th>
               <th title="Perakende Satış Tutar (Ciro)">Perakende Satış Tutar (Ciro)</th>
-              <th title="Perakende Ortalama Satış Fiyatı (LY)">Perakende Ortalama Satış Fiyatı (LY)</th>
+              <th title="Perakende Ortalama Satış Fiyatı (Geçen Sene)">Perakende Ortalama Satış Fiyatı (Geçen Sene)</th>
               <th title="Gelecek Yıl Periyot Perakende Plan Stok %">Gelecek Yıl Periyot Perakende Plan Stok %</th><th title="Gelecek Yıl Periyot Perakende Plan Stok Adet">Gelecek Yıl Periyot Perakende Plan Stok Adet</th>
-              <th class="wH" title="Hedef Stock Cover (Hedef Stok Ay)">Hedef Stock Cover (Hedef Stok Ay)</th><th title="Perakende Satış Adet Bütçe">Perakende Satış Adet Bütçe</th>
-              <th title="Perakende Ortalama Satış Fiyatı (TY)">Perakende Ortalama Satış Fiyatı (TY)</th>
+              <th class="wH" title="Hedef Stok Ay">Hedef Stok Ay</th><th title="Perakende Satış Adet Bütçe">Perakende Satış Adet Bütçe</th>
+              <th title="Perakende Ortalama Satış Fiyatı (Gelecek Sene)">Perakende Ortalama Satış Fiyatı (Gelecek Sene)</th>
               <th title="Perakende Satış Bütçe Tutar (Ciro Bütçe)">Perakende Satış Bütçe Tutar (Ciro Bütçe)</th>
-              <th title="LFL(Like for like) Büyüme %">LFL(Like for like) Büyüme %</th><th title="R-LFL Büyüme %">R-LFL Büyüme %</th><th title="Stok Büyümesi">Stok Büyümesi</th>
+              <th title="Satış Büyümesi %">Satış Büyümesi %</th><th title="Stoktan Arındırılmış Büyüme %">Stoktan Arındırılmış Büyüme %</th><th title="Stok Büyümesi">Stok Büyümesi</th>
             </tr>
           </thead>
           <tbody id="rows"></tbody>
@@ -272,7 +272,7 @@
           <span class="badge b-blue">Yavaş &amp; Kârlı</span>
           <span class="badge b-red">Yavaş &amp; Kârsız</span>
         </div>
-        <div class="note">Kâr % = grup kârının alt-toplamdaki payı (Kâr = Satış Tutarı × Marj). Hedef Cover hücresi bütçe sahibinin uzman yargısıdır — değeri değiştir, Satış Bütçe/LFL anında güncellenir.</div>
+        <div class="note">Kâr % = grup kârının alt-toplamdaki payı (Kâr = Satış Tutarı × Marj). Hedef Stok Ay hücresi bütçe sahibinin uzman yargısıdır — değeri değiştir, Satış Bütçe ve Satış Büyümesi anında güncellenir.</div>
       </div>
 
       <!-- PARAMETRELER -->
@@ -331,7 +331,7 @@
          Bütçe sekmesine set olarak akar. -->
     <div class="tabpane" data-pane="toptan" style="display:none">
       <div class="panel">
-        <h2>Özet / Rollup <span class="pill">Toptan bütçenin LY → TY alt-toplamı</span></h2>
+        <h2>Özet / Rollup <span class="pill">Toptan bütçenin geçen sene → gelecek sene alt-toplamı</span></h2>
         <div class="rollup-controls">
           <div class="segmented" id="toptanRollupLevelSeg">
             <button type="button" class="mini" data-level="uh1">ÜH1</button>
@@ -372,8 +372,8 @@
           <div class="rf-alan"><label for="t_f_uh2">ÜH2</label><select id="t_f_uh2"></select></div>
           <div class="rf-alan"><label for="t_f_uh3">ÜH3</label><select id="t_f_uh3"></select></div>
           <div class="rf-alan"><label for="t_f_uh4">ÜH4</label><select id="t_f_uh4"></select></div>
-          <div class="rf-alan"><label for="t_f_base">Baz Periyot (LY)</label><select id="t_f_base"></select></div>
-          <div class="rf-alan"><label for="t_f_target">Hedef Periyot (TY)</label><select id="t_f_target"></select></div>
+          <div class="rf-alan"><label for="t_f_base">Baz Periyot (Geçen Sene)</label><select id="t_f_base"></select></div>
+          <div class="rf-alan"><label for="t_f_target">Hedef Periyot (Gelecek Sene)</label><select id="t_f_target"></select></div>
         </div>
         <div class="revize-sayac-row">
           <span class="revize-sayac" id="toptanSayac">—</span>
@@ -393,12 +393,12 @@
             <col style="width:240px"> <!-- ÜH2 -->
             <col style="width:262px"> <!-- ÜH3 -->
             <col style="width:260px"> <!-- ÜH4 -->
-            <col style="width:85px">  <!-- Baz Periyot (LY) -->
-            <col style="width:85px">  <!-- Hedef Periyot (TY) -->
+            <col style="width:85px">  <!-- Baz Periyot (Geçen Sene) -->
+            <col style="width:85px">  <!-- Hedef Periyot (Gelecek Sene) -->
             <col style="width:112px"> <!-- Perakende Bütçe -->
             <col style="width:104px"> <!-- Dönüşüm Çarpanı -->
             <col style="width:120px"> <!-- Toptan Bütçe (elle düzenlenebilir) -->
-            <col style="width:132px"> <!-- Toptan Ortalama Satış Fiyatı (TY) (elle, ZORUNLU) -->
+            <col style="width:132px"> <!-- Toptan Ortalama Satış Fiyatı (Gelecek Sene) (elle, ZORUNLU) -->
             <col style="width:140px"> <!-- Toptan Satış Tutar Bütçe (türetilmiş) -->
           </colgroup>
           <thead>
@@ -414,13 +414,13 @@
               <th>ÜH2</th>
               <th>ÜH3</th>
               <th title="ÜH4">ÜH4</th>
-              <th>Baz Periyot (LY)</th>
-              <th>Hedef Periyot (TY)</th>
+              <th>Baz Periyot (Geçen Sene)</th>
+              <th>Hedef Periyot (Gelecek Sene)</th>
               <th title="Perakende Satış Adet Bütçe — kayıttan geldiği gibi, salt okunur">Perakende Bütçe</th>
               <th title="Satıra UYGULANAN çarpan = Hedef Periyot ayının ulusal toptan/perakende oranı (donusum.js, 2021-2025 bayi kanalı) + Bayi Stok Politikası, × kampanya/gam-kota çarpanları. Aynı ay ve aynı parametrelerdeki tüm satırlarda AYNIDIR. Elle rakam girilmiş satırlarda uygulanan çarpan yoktur; orada ima edilen oran (toptan ÷ perakende) gösterilir. Hücrenin üzerine gelince kırılım görünür.">Dönüşüm Çarpanı</th>
               <th title="Toptan Bütçe (adet) — ELLE DÜZENLENEBİLİR. Yazdığınız değer yeni taban olur, kampanya/gam-kota çarpanları onun üzerine biner. Hücreyi boşaltıp Enter'a basarsanız formüle döner.">Toptan Bütçe ✎</th>
-              <th title="Toptan Ortalama Satış Fiyatı (TY) — ELLE GİRİLİR, ZORUNLUDUR. Bayiye kesilecek ortalama birim fiyat. Perakende fiyatından farklıdır, o yüzden otomatik doldurulmaz. Fiyatı girilmemiş satır varken onay yapılamaz.">Toptan Ort. Satış Fiyatı (TY) ✎</th>
-              <th title="Toptan Satış Tutar Bütçe = Toptan Bütçe (adet) × Toptan Ortalama Satış Fiyatı (TY). Türetilmiştir, elle girilmez.">Toptan Satış Tutar Bütçe</th>
+              <th title="Toptan Ortalama Satış Fiyatı (Gelecek Sene) — ELLE GİRİLİR, ZORUNLUDUR. Bayiye kesilecek ortalama birim fiyat. Perakende fiyatından farklıdır, o yüzden otomatik doldurulmaz. Fiyatı girilmemiş satır varken onay yapılamaz.">Toptan Ort. Satış Fiyatı (Gelecek Sene) ✎</th>
+              <th title="Toptan Satış Tutar Bütçe = Toptan Bütçe (adet) × Toptan Ortalama Satış Fiyatı (Gelecek Sene). Türetilmiştir, elle girilmez.">Toptan Satış Tutar Bütçe</th>
             </tr>
           </thead>
           <tbody id="toptanRows"></tbody>
@@ -757,17 +757,17 @@
 
     <!-- ========== TAB: KAYITLAR ========== -->
     <div class="tabpane" data-pane="kayitlar" style="display:none">
-      <!-- ÖZET / ROLLUP PANELİ — ÜH4'te çalışılan bütçenin ÜH1/ÜH2/ÜH3 alt-toplamda LY→TY özeti -->
+      <!-- ÖZET / ROLLUP PANELİ — ÜH4'te çalışılan bütçenin ÜH1/ÜH2/ÜH3 alt-toplamda geçen sene → gelecek sene özeti -->
       <div class="panel">
-        <h2>Özet / Rollup <span class="pill">Kayıtlı çalışmaların LY → TY alt-toplamı</span></h2>
+        <h2>Özet / Rollup <span class="pill">Kayıtlı çalışmaların geçen sene → gelecek sene alt-toplamı</span></h2>
         <div class="rollup-controls">
           <div class="rollup-period">
             <div>
-              <label>Baz Periyot (LY)</label>
+              <label>Baz Periyot (Geçen Sene)</label>
               <select id="rollup_baseperiod"><option>2026 Ocak</option><option>2026 Tam Yıl</option></select>
             </div>
             <div>
-              <label>Hedef Periyot (TY)</label>
+              <label>Hedef Periyot (Gelecek Sene)</label>
               <select id="rollup_targetperiod"><option>2027 Ocak</option><option>2027 Tam Yıl</option></select>
             </div>
           </div>
@@ -783,15 +783,15 @@
             <thead>
               <tr>
                 <th>Grup</th>
-                <th title="Geçen sene aynı periyot satış adedi (alt-toplam)">LY Satış</th>
-                <th title="Bu sene plan satış adedi (alt-toplam)">TY Bütçe</th>
-                <th title="Satış büyümesi: TY Bütçe / LY Satış − 1">LFL %</th>
-                <th title="Stoktan arındırılmış büyüme">R-LFL %</th>
-                <th title="Stok büyümesi: TY Plan Stok / LY Stok − 1">Stok Δ%</th>
-                <th title="Bayi Stok Ay: LY → TY">Cover LY→TY</th>
-                <th title="Geçen sene ağırlıklı ortalama satış fiyatı">LY Ort.Fiyat</th>
-                <th title="Bu sene ağırlıklı ortalama satış fiyatı">TY Ort.Fiyat</th>
-                <th title="Ortalama fiyat değişimi: TY Ort.Fiyat / LY Ort.Fiyat − 1">Fiyat Δ%</th>
+                <th title="Geçen sene aynı periyot satış adedi (alt-toplam)">Geçen Sene Satış</th>
+                <th title="Bu sene plan satış adedi (alt-toplam)">Gelecek Sene Bütçe</th>
+                <th title="Satış büyümesi: Gelecek Sene Bütçe / Geçen Sene Satış − 1">Satış Büyümesi %</th>
+                <th title="Stoktan arındırılmış büyüme">Stoktan Arındırılmış Büyüme %</th>
+                <th title="Stok büyümesi: Gelecek Sene Plan Stok / Geçen Sene Stok − 1">Stok Δ%</th>
+                <th title="Bayi Stok Ay: geçen sene → gelecek sene">Stok Ay (Geçen → Gelecek)</th>
+                <th title="Geçen sene ağırlıklı ortalama satış fiyatı">Geçen Sene Ort. Fiyat</th>
+                <th title="Bu sene ağırlıklı ortalama satış fiyatı">Gelecek Sene Ort. Fiyat</th>
+                <th title="Ortalama fiyat değişimi: Gelecek Sene Ort. Fiyat / Geçen Sene Ort. Fiyat − 1">Fiyat Δ%</th>
               </tr>
             </thead>
             <tbody id="rollupRows"></tbody>
@@ -819,13 +819,13 @@
           <input id="scName" placeholder="Senaryo adı (ör. Karlı-Agresif)">
           <button id="saveSc" class="btn">Senaryo kaydet</button>
           <button id="clearSc" class="btn ghost">Temizle</button>
-          <span class="note" style="margin:0">O anki parametre + Hedef Cover setini kaydeder, yan yana kıyaslar. En yüksek LFL yeşil vurgulanır.</span>
+          <span class="note" style="margin:0">O anki parametre + Hedef Stok Ay setini kaydeder, yan yana kıyaslar. En yüksek Satış Büyümesi yeşil vurgulanır.</span>
         </div>
         <div class="sc-empty" id="scEmpty">Henüz senaryo kaydedilmedi. "Bütçe &amp; Stok Karışımı" ekranında parametreleri ayarlayıp başlıktaki <b>Senaryo kaydet</b> butonuna bas.</div>
         <div class="sc-table-wrap" id="scTableWrap" style="display:none">
           <table id="scTable"><thead><tr>
             <th>Senaryo</th><th>Stok Büy.%</th><th>Pazar.%</th><th>Ağırlık K/S/St</th><th>Çarpan</th>
-            <th>Toplam Satış Bütçe</th><th>Toplam Plan Stok</th><th>LFL %</th><th></th>
+            <th>Toplam Satış Bütçe</th><th>Toplam Plan Stok</th><th>Satış Büyümesi %</th><th></th>
           </tr></thead><tbody id="scRows"></tbody></table>
         </div>
         <div class="note">Senaryo adına tıklayarak yeniden adlandırabilirsin. Senaryolar bu oturuma özeldir (sayfa yenilenince sıfırlanır).</div>
@@ -845,8 +845,8 @@
     <div class="fbox">
       <div><b>1) Plan Stok %</b> = ( <span class="wK">Kâr%×W</span> + <span class="wS">Satış%×W</span> + <span class="wSt">Stok%×W</span> ) → 100'e normalize</div>
       <div><b>2) Plan Stok Adet</b> = ( Toplam Stok × Hedef Stok Büyümesi ) × Plan Stok %</div>
-      <div><b>3) Satış Bütçe</b> = ( Plan Stok Adet ÷ <span class="wH">Hedef Cover [elle]</span> ) × Pazarlama Büyümesi × Çarpanlar</div>
-      <div><b>4)</b> LFL = Bütçe/LY Satış−1 · R-LFL = (Bütçe/PlanStok)/(LY Satış/LY Stok)−1 · Stok Büyümesi = PlanStok/LY Stok−1</div>
+      <div><b>3) Satış Bütçe</b> = ( Plan Stok Adet ÷ <span class="wH">Hedef Stok Ay [elle]</span> ) × Pazarlama Büyümesi × Çarpanlar</div>
+      <div><b>4)</b> Satış Büyümesi = Bütçe / Geçen Sene Satış − 1 · Stoktan Arındırılmış Büyüme = (Bütçe/PlanStok) / (Geçen Sene Satış / Geçen Sene Stok) − 1 · Stok Büyümesi = PlanStok / Geçen Sene Stok − 1</div>
     </div>
   </div>
 </div>
@@ -878,7 +878,7 @@
   </div>
 </div>
 
-<!-- Hedef Cover referans popup'ı — Bütçe & Stok Karışım Tablosu'ndaki (i)
+<!-- Hedef Stok Ay referans popup'ı — Bütçe & Stok Karışım Tablosu'ndaki (i)
      butonları açar. Tablo `overflow:auto` bir kutunun içinde olduğu için
      popup position:fixed ve <body> sonunda durur; .tabpane/panel içine
      TAŞIMA, kırpılır. Tamamen bilgilendirme — hiçbir hesaba dokunmaz. -->
