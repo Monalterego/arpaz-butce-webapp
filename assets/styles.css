@@ -406,6 +406,36 @@ tfoot td{background:#eef3f8;font-weight:700;border-top:2px solid var(--navy)}
 /* gruplu başlık */
 #grid th.grp-real{background:var(--grp-real);text-align:center}
 #grid th.grp-plan{background:var(--grp-plan);text-align:center}
+/* Banner ile kolon başlıkları artık AYNI renkte (aşağıdaki blok ayrımı kuralı);
+   ikisi tek bir renk kütlesine dönüşmesin diye aralarına saydam beyaz ince çizgi.
+   Blok rengini bölmez, sadece satır hiyerarşisini geri verir. */
+#grid th.grp-real,#grid th.grp-plan{border-bottom:1px solid rgba(255,255,255,.28)}
+
+/* ===== GERÇEKLEŞEN / GELECEK SENE PLANI blok ayrımı =====
+   SORUN: grup banner'ı iki renkliydi ama ALTINDAKİ kolon başlığı satırı ve gövde
+   tek düzeydi (hepsi --navy / beyaz). İki blok, banner'ın bittiği satırda görsel
+   olarak birleşiyordu — 19 metrik kolonu tek bir blok gibi okunuyordu.
+   ÇÖZÜM iki katmanlı: (1) kolon başlığı satırı da bloğun rengini taşır, böylece
+   renk banner'dan başlığa iner; (2) blok sınırı gövde ve TOPLAM satırı boyunca
+   DİKEY ÇİZGİ olarak devam eder.
+   Yeni renk token'ı EKLENMEDİ — mevcut --grp-real/--grp-plan kullanıldı
+   (CLAUDE.md Bölüm 9: ikiden fazla vurgu rengi yok).
+
+   KOLON İNDEKSLERİ — kolon ekler/çıkarırsan BURAYI DA GÜNCELLE (bkz. Bölüm 9):
+   · başlık 2. satırı (rowspan'lı ÜH4/Durum/Aksiyon burada YOK): 1-10 = GEÇEN
+     SENE, 11-19 = GELECEK SENE
+   · gövde/tfoot: 1 = ÜH4, 2-11 = GEÇEN SENE, 12-20 = GELECEK SENE,
+     21 = Durum, 22 = Aksiyon */
+#grid thead tr:last-child th:nth-child(-n+10){background:var(--grp-real)}
+#grid thead tr:last-child th:nth-child(n+11){background:var(--grp-plan)}
+/* 12. hücre = GELECEK SENE PLANI'nın ilk kolonu. Başlık satırında sınır zaten
+   renk değişimiyle görünüyor, o yüzden çizgi yalnızca beyaz zeminli gövdede. */
+#grid tbody td:nth-child(12),
+#grid tfoot td:nth-child(12){border-left:2px solid var(--grp-plan)}
+/* Bloğun SAĞ ucu: Durum kolonu (21) plan bloğunun dışındadır — nötr çizgiyle
+   kapatılır ki plan bloğu iki yanı belli bir şerit olarak okunsun. */
+#grid tbody td:nth-child(21),
+#grid tfoot td:nth-child(21){border-left:2px solid var(--line)}
 /* table-layout:auto ile max-width/min-width sütun genişliğini öngörülemez şekilde
    hesaplıyordu (asıl darboğaz dar sayı hücreleriydi, header genişliği hiç etkilemiyordu).
    Kökten çözüm: table-layout:fixed + <colgroup> ile her sütuna açık piksel genişliği.
