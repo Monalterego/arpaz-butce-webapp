@@ -2244,20 +2244,29 @@ function updateAll() {
     "Dinî bayramlar (Ramazan, Kurban Bayramı vb.) Hicri takvime bağlıdır ve " +
     "Diyanet'in resmi 2027 takvimi yayımlanmadan hesaplanamaz. Bu listede yer almazlar.";
 
-  // --- KANDİL GECELERİ LİSTELERDEN ÇIKARILIR ---
-  // Regaib · Miraç · Berat · Kadir Gecesi · Mevlid (6 yılda 31 kayıt).
+  // --- ETKİSİZ DİNÎ GÜNLER LİSTELERDEN ÇIKARILIR ---
+  // Kandiller (Regaib · Miraç · Berat · Kadir Gecesi · Mevlid) + Hicri Yılbaşı,
+  // Aşure Günü, Üç Ayların Başlangıcı — 6-7 yılda toplam 50 kayıt.
   // Gerekçe (üçü birden geçerli): resmî tatil DEĞİLLER (hepsinde
   // resmiTatilStatu "Tatil Değil", tatilGunEsdeger 0 → sevk/çalışma gününü
   // etkilemezler), ticari/kampanya günü DEĞİLLER, ve beyaz eşya talebine
   // bağlanabilir bir etkileri yok. Planlama sinyali taşımadan listeyi
   // uzatıyorlardı.
   //
+  // BAYRAMLAR KALIR: Ramazan/Kurban Bayramı (arife + günler) gerçek tatildir,
+  // sevkiyatı durdurur. "Ramazan Başlangıcı" da kalır — bayram değil ama
+  // tüketim davranışını değiştiren bir DÖNEM başlangıcı.
+  //
   // VERİ DOSYASINA DOKUNULMADI: ozelgunler.js kaynak Excel'e sadık kalır
   // (silseydik veri bir daha dışa aktarıldığında kandiller sessizce geri
   // gelirdi). Eleme burada, tek kapıda yapılır — hem Takvim sekmesi hem
   // özel gün şeridi bu fonksiyondan okur.
-  // Geri istenirse: OG_HARIC_RE'yi kaldırmak yeter, veri yerinde duruyor.
-  const OG_HARIC_RE = /kandil|kadir gecesi/i;
+  // Geri istenirse: OG_HARIC_RE'den ilgili parçayı silmek yeter, veri yerinde.
+  // Türkçe karakterler için desende İKİ BİÇİM de yazılı ([ıi], [şs], [üu], [çc]):
+  // JS'in `i` bayrağı noktalı/noktasız I çiftinde güvenilir değildir.
+  // DİKKAT: desen "Ramazan Başlangıcı"nı ELEMEMELİ (kalması gereken bir kayıt) —
+  // değiştirirsen node ile sayarak doğrula.
+  const OG_HARIC_RE = /kandil|kadir gecesi|hicri y[ıi]lba[şs][ıi]|a[şs]ure|[üu][çc] aylar/i;
   function ozelGunKaynak() {
     const src = (typeof OZEL_GUNLER !== "undefined" && Array.isArray(OZEL_GUNLER)) ? OZEL_GUNLER : [];
     return src.filter((g) => !OG_HARIC_RE.test(String(g && g.isim)));
@@ -3019,7 +3028,7 @@ function updateAll() {
 
     const liste = gunler.length
       ? "<ul class=\"og-liste\">" + gunler.map((r) =>
-          "<li><b>" + escapeHtml(ozelGunTarihTr(r.tarih)) + "</b> " + escapeHtml(r.isim) +
+          "<li><b>" + escapeHtml(ozelGunTarihTr(r.tarih)) + "</b>" + ozelGunHaftaHtml(r) + " " + escapeHtml(r.isim) +
           ' <span class="og-kat">' + escapeHtml(r.kategori) + "</span>" +
           (Number(r.tatilGunEsdeger) > 0 ? ' <span class="og-tatil">' + escapeHtml(r.resmiTatilStatu) + "</span>" : "") +
           (r.tahmini2027 ? ' <span class="og-kat">tahmini</span>' : "") +
@@ -3038,6 +3047,24 @@ function updateAll() {
         "Hicri takvime bağlı oldukları için Diyanet'in resmi takvimi yayımlanmadan hesaplanamıyor. " +
         "Bu periyodu &quot;dinî gün yok&quot; diye okumayın.</div>" : "") +
       "</div>";
+  }
+  // Haftanın günü rozeti. Veriden OKUNUR (`haftaninGunu`), Date ile HESAPLANMAZ
+  // — saat dilimi kayması tarihi bir gün oynatabilir (ozelGunTarihTr ile aynı
+  // gerekçe) ve alan 278 kaydın hepsinde dolu.
+  //
+  // Hafta sonu AYRI renkte: aynı resmî tatil, hafta içine denk gelirse bir sevk
+  // günü götürür, cumartesi/pazara denk gelirse götürmez. Veride bu ayrım YOK —
+  // hafta sonuna denk gelen 43 resmî tatil kaydının tatilGunEsdeger'i yine 1,0.
+  // Rozet bu körlüğü kullanıcının GÖREBİLMESİNİ sağlar; hesabı DEĞİŞTİRMEZ
+  // (tatilGunEsdeger toplamına dokunulmadı — o veri sahibinin kararı).
+  const OG_HAFTA_SONU_RE = /Cumartesi|Pazar$/;
+  function ozelGunHaftaHtml(r) {
+    const gun = String((r && r.haftaninGunu) || "").trim();
+    if (!gun) return "";
+    const hs = OG_HAFTA_SONU_RE.test(gun);
+    return ' <span class="og-hafta' + (hs ? " og-hafta-sonu" : "") + '"' +
+      (hs ? ' title="Hafta sonuna denk geliyor — sevk/çalışma günü kaybı yok sayılabilir"' : "") +
+      ">" + escapeHtml(gun) + "</span>";
   }
   // "2026-08-30" → "30.08.2026". Date nesnesi KULLANMA (saat dilimi kayması),
   // veri zaten düz metin — takvim ekranındaki trTarih ile aynı gerekçe.

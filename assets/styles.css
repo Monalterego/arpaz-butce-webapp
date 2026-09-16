@@ -746,6 +746,12 @@ tfoot td{background:#eef3f8;font-weight:700;border-top:2px solid var(--navy)}
 .og-liste li{margin-bottom:3px;line-height:1.45}
 .og-kat{color:var(--grey);font-size:10px}
 .og-tatil{color:var(--red);font-size:10px;font-weight:600}
+/* Haftanın günü — tarihin hemen yanında küçük rozet. Hafta sonu ayrı tonda:
+   aynı tatil hafta içine denk gelirse sevk günü götürür, cumartesi/pazara
+   denk gelirse götürmez (bkz. ozelGunHaftaHtml). Yeni renk token'ı yok. */
+.og-hafta{display:inline-block;margin-left:4px;padding:0 5px;border-radius:var(--radius-pill);
+  background:var(--bg);color:var(--grey);font-size:10px;font-weight:600;line-height:1.6}
+.og-hafta.og-hafta-sonu{background:var(--accent-bg);color:var(--accent)}
 /* Dinî gün verisi eksik olan yıl (Hicri takvim) — sessizce "gün yok" sanılmasın. */
 .og-eksik{margin-top:6px;padding:6px 8px;border-radius:var(--radius-sm);
   background:var(--amberbg);color:var(--amber);font-size:11px;line-height:1.45}
