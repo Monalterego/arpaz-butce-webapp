@@ -193,11 +193,11 @@ ulusal çarpanı geçemedi (docs/donusum-spec.md §2). `assets/toptan_katsayi.js
 (`TOPTAN_KATSAYI`, ÜH2×ay) projeden TAMAMEN KALDIRILDI — tek kullanıcısı olan
 Kanıt ısı haritası da kaldırıldı (bkz. 13.9). Geri ekleme.
 
-#### Tablo — 11 kolon, tamamı salt okunur ve türetilmiş
+#### Tablo — 10 kolon, tamamı salt okunur ve türetilmiş
 
 | # | Kolon | Kaynak |
 |---|---|---|
-| 1-6 | Satış Teşkilatı · Şube/Bölge · ÜH1 · ÜH2 · ÜH3 · ÜH4 | perakende kaydından |
+| 1-5 | Satış Teşkilatı · ÜH1 · ÜH2 · ÜH3 · ÜH4 | perakende kaydından — **ŞUBE KOLONU YOK**, bkz. aşağıdaki şube pivotu |
 | 7-8 | Baz Periyot (LY) · Hedef Periyot (TY) | perakende kaydından |
 | 9 | Perakende Bütçe | perakende kaydından (`salesBudget`) |
 | 10 | Dönüşüm Çarpanı | `donusum.js`, 3 ondalık; tooltip = `ACIKLAMA`; >1,10 yeşil tint, <0,90 kırmızı tint |
@@ -285,11 +285,24 @@ varsayılan `canliParams`'ı artık `bosToptanParams()` (hepsi %0).
 #### Store: `toptanDuzeltmeleri` (`localStorage["arpaz_toptan_duzeltmeleri"]`)
 Kayıtlı mix set'leriyle aynı desen (JSON dizi). Kayıt şeması:
 ```js
-{ dims: { org, region, uh1, uh2, uh3, uh4, baseperiod, targetperiod },
+{ dims: { org, uh1, uh2, uh3, uh4, baseperiod, targetperiod },   // region YOK — şube pivotu
   params: { paro, bundle, event, gam, kota, stokPolitikasi },
   savedAt }
 ```
-Kimlik anahtarı `toptanFixKey(dims)` — 8 alanın `␟` ile birleşimi.
+Kimlik anahtarı `toptanFixKey(dims)` — 7 alanın `␟` ile birleşimi (şube ÇIKARILDI).
+
+#### ŞUBE PİVOTU (2026-09-16) — toptan tarafının giriş kapısı
+Perakende bütçesi ŞUBE bazında çalışılır ve orada öyle kalır; toptan tarafında
+sevkiyat/sipariş kararı TEŞKİLAT seviyesinde alındığı için satırlar bu ekrana
+girmeden önce şubeden pivotlanır: `toptanPivotlaSubeden()` aynı
+org × ÜH1-4 × baz/hedef periyot satırlarını TEK satıra indirir, perakende
+bütçelerini TOPLAR. Pivot `computeToptanFromSaved()`in GİRDİSİNDE yapılır —
+böylece tablo, elle girişler, kaskad filtreler, onay kaydı ve Özet/Rollup aynı
+satır listesini görür. Satır hangi şubelerden toplandığını `bolgeler` dizisinde
+taşır (onay kaydına da yazılır): Özet/Rollup'un LY kıyası TAM OLARAK o şubeler
+üzerinden toplanır, aksi halde LY tüm teşkilata genişler ve yalnızca bazı şubeler
+çalışılmışken bütçeyle kıyaslanamaz. `TOPTAN_DIM_ALANLARI`'na region'ı GERİ
+EKLEME.
 `buildFlatRows()` çıktısı org'u `salesOrg`, ÜH4'ü `name` taşıdığı için kimlik
 **TEK yerde** (`toptanRowDims()`) kurulur; tablo, "Revize Et" ve düzeltme listesi
 aynı anahtarı üretsin diye. Yeni bir dims alanı eklersen `TOPTAN_DIM_ALANLARI`'nı

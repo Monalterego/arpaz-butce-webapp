@@ -851,15 +851,26 @@ function updateAll() {
   //
   // İki ekranın satır şekli farklı: çalışma satırında ÜH4 adı `name`, onaylanmış
   // satırda `uh4`. Boyut adları (org/region/uh1..uh3/baseperiod) aynı.
+  // Satırlar şubeden pivotlanmış (bkz. toptanPivotlaSubeden) — bu yüzden LY de
+  // TEK BİR şubeden değil, o satırın toplandığı ŞUBELERİN TAMAMINDAN toplanır.
+  // `bolgeler` boşsa (eski onay kayıtları, ya da "Tümü" ile kaydedilmiş satır)
+  // r.region'a düşülür; o da boşsa DataService tüm şubeleri toplar.
   function rowLyMetrics(r) {
     if (!DataService || typeof DataService.lyMetricsFor !== "function") {
       return { perakendeAdet: 0, toptanAdet: 0 };
     }
-    return DataService.lyMetricsFor({
-      org: r.org, region: r.region, uh1: r.uh1, uh2: r.uh2, uh3: r.uh3,
+    const temel = {
+      org: r.org, uh1: r.uh1, uh2: r.uh2, uh3: r.uh3,
       uh4: r.uh4 || r.name,
       period: periyotAnahtari(r.baseperiod),
-    });
+    };
+    const bolgeler = Array.isArray(r.bolgeler) && r.bolgeler.length ? r.bolgeler : [r.region];
+    return bolgeler.reduce((a, b) => {
+      const m = DataService.lyMetricsFor(Object.assign({ region: b }, temel));
+      a.perakendeAdet += m.perakendeAdet;
+      a.toptanAdet += m.toptanAdet;
+      return a;
+    }, { perakendeAdet: 0, toptanAdet: 0 });
   }
   // "2026 Ağustos" → "2026-08" · "2026 Tam Yıl" / "—" / boş → "TUM_YIL".
   // REAL_DATA'nın ay anahtarı biçimi budur; kayıtlarda periyot ETİKET olarak
@@ -2357,13 +2368,54 @@ function updateAll() {
   // --- Satır kimliği (TEK yerde) ---
   // buildFlatRows() çıktısı org'u salesOrg, ÜH4'ü name olarak taşır. Tablo, elle
   // giriş haritası, filtre ve onaylanan set AYNI anahtarı üretsin diye burada.
-  const TOPTAN_DIM_ALANLARI = ["org", "region", "uh1", "uh2", "uh3", "uh4", "baseperiod", "targetperiod"];
+  //
+  // ŞUBE (region) BİLEREK YOK — bkz. toptanPivotlaSubeden(). Bu diziye region'ı
+  // GERİ EKLEME: eklersen anahtar şube bazına döner, pivot dağılır ve elle
+  // girişler/onay kayıtları yeniden şube kırılımında oluşur.
+  const TOPTAN_DIM_ALANLARI = ["org", "uh1", "uh2", "uh3", "uh4", "baseperiod", "targetperiod"];
   function toptanFixKey(d) {
     return TOPTAN_DIM_ALANLARI.map((k) => String((d && d[k]) == null ? "" : d[k])).join("␟");
   }
   function toptanRowDims(r) {
-    return { org: r.salesOrg, region: r.region, uh1: r.uh1, uh2: r.uh2, uh3: r.uh3,
+    return { org: r.salesOrg, uh1: r.uh1, uh2: r.uh2, uh3: r.uh3,
       uh4: r.name, baseperiod: r.baseperiod, targetperiod: r.targetperiod };
+  }
+
+  // --- ŞUBE PİVOTU — toptan tarafının giriş kapısı ---
+  // Perakende bütçesi ŞUBE bazında çalışılır (doğru kurgu, orada kalıyor); ama
+  // toptan tarafında şube kırılımına ihtiyaç YOKTUR — sevkiyat/sipariş kararı
+  // TEŞKİLAT seviyesinde alınır. Bu yüzden kayıt satırları toptan ekranına
+  // girmeden ÖNCE şubeden pivotlanır: aynı org × ÜH1-4 × baz/hedef periyot olan
+  // satırlar TEK satıra iner, perakende bütçeleri TOPLANIR.
+  //
+  // Pivot NEDEN burada (computeToptanFromSaved'in girdisinde): dönüşüm çarpanı,
+  // elle giriş anahtarı, kaskad filtreler, onay kaydı ve Özet/Rollup — hepsi
+  // aynı satır listesinden beslenir. Pivotu render katmanına koysaydık bunlar
+  // ayrışır, toplamlar tablodakiyle tutmazdı.
+  //
+  // YAN ETKİ (kasıtlı): aynı kapsam iki kez kaydedilmişse o iki satır da burada
+  // birleşir. Toplam DEĞİŞMEZ (zaten ikisi de toplanıyordu), sadece satır sayısı
+  // düşer.
+  function toptanPivotlaSubeden(flat) {
+    const map = new Map();
+    flat.forEach((r) => {
+      const k = toptanFixKey(toptanRowDims(r));
+      if (!map.has(k)) {
+        // İlk satırın boyutları grubun boyutlarıdır (anahtarın parçası oldukları
+        // için hepsinde aynı). Şube alanı bilinçli olarak DÜŞÜRÜLÜR.
+        map.set(k, Object.assign({}, r, { region: "", salesBudget: 0, subeSayisi: 0, bolgeler: [] }));
+      }
+      const g = map.get(k);
+      g.salesBudget += Number(r.salesBudget) || 0;
+      g.subeSayisi++;
+      // Hangi şubelerden toplandığı KAYDEDİLİR. Şube kolonu ekranda yok ama bu
+      // liste ölü bilgi değil: Özet/Rollup'ın LY tarafı (rowLyMetrics) geçen sene
+      // gerçekleşmesini TAM OLARAK bu şubeler üzerinden toplar. Atılırsa LY tüm
+      // teşkilata genişler ve yalnızca bazı şubeler çalışılmışken bütçeyle
+      // kıyaslanamaz hale gelir (elmayla armut).
+      if (r.region && g.bolgeler.indexOf(r.region) < 0) g.bolgeler.push(r.region);
+    });
+    return Array.from(map.values());
   }
 
   // --- Elle girişler: BELLEKTE, kalıcı DEĞİL ---
@@ -2378,9 +2430,10 @@ function updateAll() {
   const toptanFiyat = new Map();
 
   // --- Kaskad filtre (Toptan çalışma ekranı) ---
+  // Şube filtresi YOK — satırlar şubeden pivotlanmış durumda (bkz.
+  // toptanPivotlaSubeden), filtrelenecek bir şube boyutu kalmadı.
   const TOPTAN_FILTRE = [
     { id: "t_f_org", key: "org" },
-    { id: "t_f_region", key: "region" },
     { id: "t_f_uh1", key: "uh1" },
     { id: "t_f_uh2", key: "uh2" },
     { id: "t_f_uh3", key: "uh3" },
@@ -2423,7 +2476,7 @@ function updateAll() {
     const campParts = toptanCampParts(params);
     const spPct = Number(params.stokPolitikasi) || 0;
 
-    const tum = buildFlatRows().map((r) => {
+    const tum = toptanPivotlaSubeden(buildFlatRows()).map((r) => {
       const don = donusumSatir(r.salesBudget, r.targetperiod);
       const dims = toptanRowDims(r);
       const anahtar = toptanFixKey(dims);
@@ -2448,6 +2501,8 @@ function updateAll() {
       //    kullanıcı parametresi değil.
       const carpan = don.carpanRaw;
       const aciklama = [
+        "Perakende kaynağı: " + fmtN(r.salesBudget) + " adet · " +
+          (r.subeSayisi > 1 ? fmtN(r.subeSayisi) + " şube kaydı toplandı (teşkilat seviyesi)" : "tek kayıt"),
         manuel != null
           ? "Taban: ELLE GİRİLDİ → " + fmtN(manuel) + " adet (formül yerine bu kullanıldı)"
           : "Taban: " + fmtN(Math.round(temel)) + " adet = " + fmtN(r.salesBudget) + " × " + fmtD3(temelCarpan),
@@ -2466,9 +2521,9 @@ function updateAll() {
       const fiyat = toptanFiyat.has(anahtar) ? toptanFiyat.get(anahtar) : null;
       const tutar = fiyat != null ? toptanButce * fiyat : null;
       return {
-        org: r.salesOrg, region: r.region, uh1: r.uh1, uh2: r.uh2, uh3: r.uh3, name: r.name,
+        org: r.salesOrg, uh1: r.uh1, uh2: r.uh2, uh3: r.uh3, name: r.name,
         baseperiod: r.baseperiod, targetperiod: r.targetperiod,
-        salesBudget: r.salesBudget,
+        salesBudget: r.salesBudget, subeSayisi: r.subeSayisi, bolgeler: r.bolgeler,
         temel: Math.round(temel), manuel, carpan, carpanAciklama: aciklama, toptanButce,
         fiyat, tutar,
         dims, anahtar,
@@ -2571,7 +2626,7 @@ function updateAll() {
       const mesaj = hicKayitYok
         ? "Önce Bütçe & Stok Karışımı ekranından bütçe çalışıp kaydedin. Toptan bütçesi Perakende Bütçe kayıtlarından otomatik türetilir."
         : "Bu filtreyle eşleşen satır yok. Yukarıdaki seçimleri gevşetin.";
-      tbody.innerHTML = '<tr><td colspan="13" style="text-align:center;color:var(--grey);padding:18px">' + mesaj + "</td></tr>";
+      tbody.innerHTML = '<tr><td colspan="12" style="text-align:center;color:var(--grey);padding:18px">' + mesaj + "</td></tr>";
       $("toptanFoot").innerHTML = "";
       guncelleToptanOnayNote(0, 0);
       autoFitToptanColumns();
@@ -2580,14 +2635,13 @@ function updateAll() {
 
     tbody.innerHTML = data.rows.map((r, i) => '<tr>' +
       "<td>" + escapeHtml(r.org) + "</td>" +
-      "<td>" + escapeHtml(r.region) + "</td>" +
       "<td>" + escapeHtml(r.uh1) + "</td>" +
       "<td>" + escapeHtml(r.uh2) + "</td>" +
       "<td>" + escapeHtml(r.uh3) + "</td>" +
       "<td>" + escapeHtml(r.name) + "</td>" +
       "<td>" + escapeHtml(r.baseperiod) + "</td>" +
       "<td>" + escapeHtml(r.targetperiod) + "</td>" +
-      '<td class="num-cell">' + fmtN(r.salesBudget) + "</td>" +
+      '<td class="num-cell" title="' + escapeAttribute(r.subeSayisi > 1 ? fmtN(r.subeSayisi) + " şube kaydının toplamı (şubeden pivotlandı)" : "Tek kayıt") + '">' + fmtN(r.salesBudget) + "</td>" +
       '<td class="num-cell' + toptanCarpanCls(r.carpan) + '" title="' + escapeAttribute(r.carpanAciklama) + '">' + fmtD3(r.carpan) + "</td>" +
       // type="number" tr-TR binlik ayracını GÖSTEREMEZ ("1084" çıkar, tablonun geri
       // kalanı "1.084" yazarken). Bu yüzden type="text" + inputmode="numeric":
@@ -2608,7 +2662,7 @@ function updateAll() {
       "</tr>").join("");
 
     $("toptanFoot").innerHTML =
-      "<td>TOPLAM</td><td>—</td><td>—</td><td>—</td><td>—</td><td>—</td><td>—</td><td>—</td>" +
+      "<td>TOPLAM</td><td>—</td><td>—</td><td>—</td><td>—</td><td>—</td><td>—</td>" +
       '<td class="num-cell">' + fmtN(data.T.salesBudget) + "</td>" +
       '<td class="num-cell' + toptanCarpanCls(data.T.carpan) + '" title="Saf aylık çarpanların perakende ağırlıklı ortalaması">' + fmtD3(data.T.carpan) + "</td>" +
       '<td class="num-cell">' + fmtN(data.T.toptanButce) + "</td>" +
@@ -2712,7 +2766,7 @@ function updateAll() {
     try { localStorage.setItem(TOPTAN_SET_KEY, JSON.stringify(list)); } catch (e) { /* geç */ }
   }
   function toptanKapsamOzeti(sec) {
-    const etiket = { org: "Teşkilat", region: "Bölge", uh1: "ÜH1", uh2: "ÜH2", uh3: "ÜH3",
+    const etiket = { org: "Teşkilat", uh1: "ÜH1", uh2: "ÜH2", uh3: "ÜH3",
       uh4: "ÜH4", baseperiod: "Baz", targetperiod: "Hedef" };
     const secili = TOPTAN_FILTRE.filter((f) => sec[f.key]).map((f) => etiket[f.key] + ": " + sec[f.key]);
     return secili.length ? secili.join(" · ") : "Tümü (filtresiz)";
@@ -2772,7 +2826,10 @@ function updateAll() {
         kapsamOzeti: toptanKapsamOzeti(toptanSecim()),
         params: Object.assign(bosToptanParams(), p),
         rows: data.rows.map((r) => ({
-          org: r.org, region: r.region, uh1: r.uh1, uh2: r.uh2, uh3: r.uh3, uh4: r.name,
+          org: r.org, uh1: r.uh1, uh2: r.uh2, uh3: r.uh3, uh4: r.name,
+          // Sube kolonu ekranda yok ama hangi subelerden pivotlandigi kayda YAZILIR:
+          // Ozet/Rollup'un LY kiyasi bu listeye dayanir (bkz. rowLyMetrics).
+          bolgeler: r.bolgeler,
           baseperiod: r.baseperiod, targetperiod: r.targetperiod,
           perakendeBudget: r.salesBudget, temel: r.temel,
           elle: r.manuel != null, carpan: r.carpan, toptanButce: r.toptanButce,
@@ -2798,7 +2855,6 @@ function updateAll() {
   const REVIZE_SET_COLUMNS = [
     { label: "Onay Zamanı", width: 92 },
     { label: "Satış Teşkilatı", width: 68 },
-    { label: "Şube / Bölge", width: 164 },
     { label: "ÜH1", width: 140 },
     { label: "ÜH2", width: 240 },
     { label: "ÜH3", width: 262 },
@@ -2839,7 +2895,6 @@ function updateAll() {
         satirlar.push("<tr>" +
           "<td>" + escapeHtml(s.savedAt || "—") + "</td>" +
           "<td>" + escapeHtml(r.org || "—") + "</td>" +
-          "<td>" + escapeHtml(r.region || "—") + "</td>" +
           "<td>" + escapeHtml(r.uh1 || "—") + "</td>" +
           "<td>" + escapeHtml(r.uh2 || "—") + "</td>" +
           "<td>" + escapeHtml(r.uh3 || "—") + "</td>" +

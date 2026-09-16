@@ -368,7 +368,6 @@
         <div class="note" style="margin-bottom:var(--s2)">Önce neyi revize edeceğinizi seçin — <b>onay yalnızca aşağıda görünen satırlara uygulanır.</b> Boş bıraktığınız alan "hepsi" demektir; ÜH2/ÜH3/ÜH4 bir üst seviyedeki seçime göre daralır.</div>
         <div class="revize-filtre">
           <div class="rf-alan"><label for="t_f_org">Satış Teşkilatı</label><select id="t_f_org"></select></div>
-          <div class="rf-alan"><label for="t_f_region">Şube / Bölge</label><select id="t_f_region"></select></div>
           <div class="rf-alan"><label for="t_f_uh1">ÜH1</label><select id="t_f_uh1"></select></div>
           <div class="rf-alan"><label for="t_f_uh2">ÜH2</label><select id="t_f_uh2"></select></div>
           <div class="rf-alan"><label for="t_f_uh3">ÜH3</label><select id="t_f_uh3"></select></div>
@@ -383,14 +382,13 @@
       </div>
 
       <div class="panel">
-        <h2 style="display:flex;align-items:center;gap:8px;">Toptan Bütçe Tablosu <span class="pill">Sell-in</span>
+        <h2 style="display:flex;align-items:center;gap:8px;">Toptan Bütçe Tablosu <span class="pill">Sell-in</span> <span class="pill" title="Perakende bütçesi şube bazında çalışılır; toptan tarafında sevkiyat/sipariş kararı teşkilat seviyesinde alındığı için satırlar şubeden pivotlanır — aynı teşkilat × ÜH × periyot satırları tek satırda toplanır.">Teşkilat bazında · şubeden pivotlu</span>
           <button type="button" class="info-ico" id="toptanInfoBtn" title="Toptan bütçesi nasıl hesaplanıyor?" aria-label="Toptan bütçesi nasıl hesaplanıyor?">i</button>
         </h2>
         <div style="max-height:520px;overflow:auto">
         <table id="toptanGrid">
           <colgroup>
             <col style="width:68px">  <!-- Satış Teşkilatı -->
-            <col style="width:164px"> <!-- Şube/Bölge -->
             <col style="width:140px"> <!-- ÜH1 -->
             <col style="width:240px"> <!-- ÜH2 -->
             <col style="width:262px"> <!-- ÜH3 -->
@@ -405,14 +403,13 @@
           </colgroup>
           <thead>
             <tr>
-              <th colspan="6" class="tgrp-secim">TEŞKİLAT &amp; ÜRÜN</th>
+              <th colspan="5" class="tgrp-secim">TEŞKİLAT &amp; ÜRÜN</th>
               <th colspan="2" class="tgrp-periyot">PERİYOT</th>
               <th colspan="1" class="tgrp-perakende">PERAKENDE (KAYNAK)</th>
               <th colspan="4" class="tgrp-sonuc">TOPTAN SONUCU</th>
             </tr>
             <tr>
-              <th>Satış Teşkilatı</th>
-              <th>Şube / Bölge</th>
+              <th title="Satış Teşkilatı — satırlar ŞUBEDEN PİVOTLANMIŞTIR: perakende bütçesi şube bazında çalışılır, toptan tarafında karar teşkilat seviyesinde alınır.">Satış Teşkilatı</th>
               <th>ÜH1</th>
               <th>ÜH2</th>
               <th>ÜH3</th>
@@ -508,7 +505,7 @@
       </div>
 
       <div class="panel">
-        <h2>Revize Toptan Bütçe <span class="pill">Onaylanmış Kayıtlar</span></h2>
+        <h2>Revize Toptan Bütçe <span class="pill">Onaylanmış Kayıtlar</span> <span class="pill" title="Perakende bütçesi şube bazında çalışılır; toptan tarafında sevkiyat/sipariş kararı teşkilat seviyesinde alındığı için satırlar şubeden pivotlanır — aynı teşkilat × ÜH × periyot satırları tek satırda toplanır.">Teşkilat bazında · şubeden pivotlu</span></h2>
         <div class="note" style="margin-bottom:var(--s2)">Her satır, Toptan Bütçe ekranında onaylandığı andaki <b>dondurulmuş</b> değerdir — sonradan parametre oynatmak bu kayıtları DEĞİŞTİRMEZ. Güncellemek için Toptan Bütçe ekranına dönüp yeniden onaylayın. "Sil", o onayın TÜM satırlarını kaldırır.</div>
         <div id="revizeSetList"></div>
       </div>
