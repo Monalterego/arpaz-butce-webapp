@@ -1010,8 +1010,27 @@ function updateAll() {
       return [];
     }
   }
+  // Kayıt SAYISI sınırı. Eskiden 25'ti ve aşılınca en ESKİ kayıtlar SESSİZCE
+  // siliniyordu (slice(0,25)) — kullanıcı 8 periyot × 5 ÜH2 çalıştığında 40
+  // kayıttan 15'i yok oluyor, Toptan Bütçe tablosunda bazı AYLAR hiç
+  // görünmüyordu. Sonra o ay yeniden çalışılınca bu kez başka aylar düşüyordu.
+  // Ölçüldü: set başına ~2,5 KB (ortalama 3 satır). 500 set ≈ 1,3 MB, tipik
+  // 5 MB'lık localStorage kotasının içinde rahat kalır.
+  // KURAL: sınıra gelince SESSİZCE SİLME — kaydı reddet ve kullanıcıya söyle.
+  const MIX_SET_LIMIT = 500;
+  // Yazma BAŞARISIZ olursa da sessiz kalma: catch bloğu eskiden boştu, kota
+  // dolduğunda kayıt hiç yazılmıyor ama ekran kaydedilmiş gibi davranıyordu.
   function saveSavedMixSets(list) {
-    try { localStorage.setItem(MIX_SAVE_KEY, JSON.stringify(list)); } catch (e) { /* geç */ }
+    try {
+      localStorage.setItem(MIX_SAVE_KEY, JSON.stringify(list));
+      return true;
+    } catch (e) {
+      alert("Kayıt YAZILAMADI — tarayıcının depolama alanı dolmuş olabilir.\n\n" +
+        "Çalışmanız kaydedilmedi. \"Çalışılmış Bütçe ve Stok Karışım\" listesinden " +
+        "birkaç eski kaydı silip tekrar deneyin.\n\n" +
+        "(Teknik: " + ((e && e.name) || "bilinmeyen hata") + ")");
+      return false;
+    }
   }
   function buildCurrentMixRecord() {
     const p = readParams();
@@ -1634,8 +1653,19 @@ function updateAll() {
       if (idx !== -1) next[idx] = { ...payload, id: next[idx].id };
       saveSavedMixSets(next);
     } else {
+      // Sınır dolduysa kaydı REDDET. Eskiden burada slice(0,25) vardı ve en eski
+      // kayıtlar haber verilmeden siliniyordu — kullanıcı çalıştığı ayların
+      // Toptan Bütçe'de kaybolduğunu görüyordu. Veri kaybetmektense kaydı
+      // yapmamak ve söylemek doğru: hangi kaydın gideceğine kullanıcı karar verir.
+      if (next.length >= MIX_SET_LIMIT) {
+        alert("Kayıt sınırına ulaşıldı (" + fmtN(MIX_SET_LIMIT) + " kayıt).\n\n" +
+          "Yeni çalışma KAYDEDİLMEDİ — eski kayıtlar otomatik silinmiyor.\n" +
+          "\"Çalışılmış Bütçe ve Stok Karışım\" listesinden artık kullanmadığınız " +
+          "kayıtları silip tekrar deneyin.");
+        return;
+      }
       next.unshift(payload);
-      saveSavedMixSets(next.slice(0, 25));
+      saveSavedMixSets(next);
     }
     renderSavedMixTable();
     updateSaveButtonState();
@@ -2791,8 +2821,20 @@ function updateAll() {
       return Array.isArray(parsed) ? parsed : [];
     } catch (e) { return []; }
   }
+  // savedMixSets ile AYNI kural (bkz. MIX_SET_LIMIT): sınıra gelince sessizce
+  // silme, kaydı reddet ve söyle. Yazma hatası da yutulmaz.
+  const TOPTAN_SET_LIMIT = 500;
   function saveToptanSets(list) {
-    try { localStorage.setItem(TOPTAN_SET_KEY, JSON.stringify(list)); } catch (e) { /* geç */ }
+    try {
+      localStorage.setItem(TOPTAN_SET_KEY, JSON.stringify(list));
+      return true;
+    } catch (e) {
+      alert("Onay YAZILAMADI — tarayıcının depolama alanı dolmuş olabilir.\n\n" +
+        "Revizyon kaydedilmedi. Revize Toptan Bütçe listesinden birkaç eski onayı " +
+        "silip tekrar deneyin.\n\n" +
+        "(Teknik: " + ((e && e.name) || "bilinmeyen hata") + ")");
+      return false;
+    }
   }
   function toptanKapsamOzeti(sec) {
     const etiket = { org: "Teşkilat", uh1: "ÜH1", uh2: "ÜH2", uh3: "ÜH3",
@@ -2866,8 +2908,14 @@ function updateAll() {
         })),
       };
       const list = loadToptanSets();
+      if (list.length >= TOPTAN_SET_LIMIT) {
+        alert("Onay sınırına ulaşıldı (" + fmtN(TOPTAN_SET_LIMIT) + " kayıt).\n\n" +
+          "Bu revizyon KAYDEDİLMEDİ — eski onaylar otomatik silinmiyor.\n" +
+          "Revize Toptan Bütçe ekranından artık kullanmadığınız onayları silip tekrar deneyin.");
+        return;
+      }
       list.unshift(set);
-      saveToptanSets(list.slice(0, 25)); // savedMixSets ile aynı sınır
+      saveToptanSets(list);
       renderRevizeSets();
       showTab("revize"); // Miks ekranındaki "Senaryo kaydet" gibi: sonucu göster
     });
