@@ -13,13 +13,23 @@
   --green:#2e7d32;--greenbg:#e6f4ea;--red:#c62828;--redbg:#fdecea;
   --amber:#b26a00;--amberbg:#fff4e0;--blue:#1565c0;--bluebg:#e7f0fb;
   --good:#2e7d32;--warn:#b26a00;--bad:#c62828;--info:#1565c0;
-  /* #grid grup banner'ları (GERÇEKLEŞEN / GELECEK YIL PLANI). İkisi de MAVİ
-     ailesindendir — ayrım HUE değil TON: geçmiş sakin/soluk slate, gelecek
-     doygun accent mavisi. Kasıtlı: banner'a ayrı bir hue vermek (eski TY
-     yeşili #0b6e4f) tablonun hemen altındaki DURUM yeşiliyle ("Hızlı & Kârlı"
-     rozeti) karışıyordu. Yeşil artık yalnızca durum anlamı taşır.
-     Beyaz metinle kontrast: 8,7:1 ve 7,4:1 (WCAG AA fazlasıyla sağlanır). */
-  --grp-real:#334e68;--grp-plan:#0a5c8a;
+  /* #grid grup banner'ları + kolon başlıkları (GERÇEKLEŞEN / GELECEK SENE PLANI).
+     İkisi de MAVİ ailesindendir — ayrım HUE değil TON. Banner'a ayrı bir hue
+     vermek DENENDİ ve REDDEDİLDİ (eski TY yeşili #0b6e4f): tablonun hemen
+     altındaki DURUM yeşiliyle ("Hızlı & Kârlı" rozeti) karışıyordu. Yeşil
+     yalnızca durum anlamı taşır — buraya yeşil/kırmızı/amber GETİRME.
+
+     ÜÇ KADEMELİ TON (bu sıra kasıtlı, karıştırma):
+       --navy   (en koyu)  → ÜH4 · Durum · Aksiyon = iki bloğun da DIŞI
+       --grey   (orta)     → GEÇEN SENE  = referans, geri çekilir
+       --accent (canlı)    → GELECEK SENE = kararın alındığı yer, öne çıkar
+     Eski değerler (#334e68 / #0a5c8a) ikisi de koyu mavi olduğu için birbirine
+     çok yakın duruyordu; ayrım bu yüzden zayıftı.
+
+     Yeni ham renk EKLENMEDİ: ikisi de mevcut token'a bağlandı (CLAUDE.md
+     Bölüm 9). Beyaz metinle kontrast 5,5:1 ve 4,9:1 — WCAG AA (4,5:1) sağlanır.
+     Daha canlı/koyu bir accent denersen bu iki oranı YENİDEN HESAPLA. */
+  --grp-real:var(--grey);--grp-plan:var(--accent);
   /* Nötr skala */
   --grey:#5b6b7c;--ink-soft:#5b6b7c;
   --line:#e6eaf0;--bg:#f5f7fa;--surface:#ffffff;--ink:#1b2733;
@@ -410,6 +420,12 @@ tfoot td{background:#eef3f8;font-weight:700;border-top:2px solid var(--navy)}
    ikisi tek bir renk kütlesine dönüşmesin diye aralarına saydam beyaz ince çizgi.
    Blok rengini bölmez, sadece satır hiyerarşisini geri verir. */
 #grid th.grp-real,#grid th.grp-plan{border-bottom:1px solid rgba(255,255,255,.28)}
+/* "Hedef Stok Ay" başlığı .wH ile AMBER yazılıyor (elle giriş kolonu olduğunu
+   belli etsin diye, hücrelerdeki amber çerçeveyle eşleşiyor). Ama .wH'nin koyu
+   amber'i (#b26a00) KOYU BANDIN üstünde okunmuyordu — eski bantta 1,7:1, yeni
+   accent bantta 1,1:1 olurdu. Bant üstünde açık amber'e çevrilir (4,5:1).
+   SADECE #grid thead'de: formül modal'ındaki .wH beyaz zeminde, oraya dokunma. */
+#grid thead .wH{color:var(--amberbg)}
 
 /* ===== GERÇEKLEŞEN / GELECEK SENE PLANI blok ayrımı =====
    SORUN: grup banner'ı iki renkliydi ama ALTINDAKİ kolon başlığı satırı ve gövde
